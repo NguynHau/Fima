@@ -12,7 +12,7 @@ function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
- * Local client-side OCR using Tesseract.js
+ * Local client-side OCR using Tesseract.js fallback
  */
 export class LocalTesseractRecognizer implements ReceiptRecognizer {
   async recognize(imageBlob: Blob): Promise<ReceiptRecognitionResult> {
@@ -49,59 +49,71 @@ export class LocalTesseractRecognizer implements ReceiptRecognizer {
 }
 
 /**
- * Server-side Gemini 3.7 Flash Vision AI Recognizer
+ * Server-side Gemini Vision AI Recognizer with retry mechanism
  */
 export class ApiGeminiRecognizer implements ReceiptRecognizer {
   async recognize(imageBlob: Blob): Promise<ReceiptRecognitionResult> {
+    const base64Data = await blobToBase64(imageBlob);
+
+    // Attempt 1
     try {
-      const base64Data = await blobToBase64(imageBlob);
-
-      const response = await fetch('/api/receipt/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          imageBase64: base64Data,
-          mimeType: imageBlob.type || 'image/jpeg',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API response status ${response.status}`);
+      return await this.callApi(base64Data, imageBlob.type || 'image/jpeg', 1);
+    } catch (firstErr) {
+      console.warn('Gemini AI API Attempt 1 failed, retrying Attempt 2 with stronger focus...', firstErr);
+      // Attempt 2 Retry
+      try {
+        return await this.callApi(base64Data, imageBlob.type || 'image/jpeg', 2);
+      } catch (secondErr) {
+        console.error('Gemini AI API Attempt 2 failed:', secondErr);
+        throw secondErr;
       }
-
-      const resJson = await response.json();
-      if (!resJson.success || !resJson.data) {
-        throw new Error(resJson.error || 'Failed to analyze receipt via AI API');
-      }
-
-      const d = resJson.data;
-
-      return {
-        amount: typeof d.amount === 'number' && d.amount > 0 ? d.amount : undefined,
-        date: d.date && typeof d.date === 'string' && d.date.length >= 8 ? d.date : undefined,
-        merchant: d.merchant && typeof d.merchant === 'string' ? d.merchant : undefined,
-        category: d.category && typeof d.category === 'string' ? d.category : undefined,
-        type: d.type === 'income' ? 'income' : 'expense',
-        note: d.note && typeof d.note === 'string' ? d.note : (d.merchant || undefined),
-        confidence: {
-          amount: 0.98,
-          date: 0.98,
-          merchant: 0.95,
-          category: 0.95,
-          type: 0.99,
-        },
-      };
-    } catch (err) {
-      console.warn('Gemini AI API recognition failed, falling back to local OCR:', err);
-      throw err;
     }
+  }
+
+  private async callApi(imageBase64: string, mimeType: string, attempt: number): Promise<ReceiptRecognitionResult> {
+    const response = await fetch('/api/receipt/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        imageBase64,
+        mimeType,
+        attempt,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API response status ${response.status}`);
+    }
+
+    const resJson = await response.json();
+    if (!resJson.success || !resJson.data) {
+      throw new Error(resJson.error || 'Failed to analyze receipt via AI API');
+    }
+
+    const d = resJson.data;
+
+    return {
+      amount: typeof d.amount === 'number' && d.amount > 0 ? d.amount : undefined,
+      date: d.date && typeof d.date === 'string' && d.date.length >= 8 ? d.date : undefined,
+      merchant: d.merchant && typeof d.merchant === 'string' ? d.merchant : undefined,
+      category: d.category && typeof d.category === 'string' ? d.category : 'Khác',
+      type: d.type === 'income' ? 'income' : 'expense',
+      note: d.note && typeof d.note === 'string' ? d.note : (d.merchant || undefined),
+      confidence: d.confidence || {
+        amount: d.amount ? 0.9 : 0.4,
+        category: 0.85,
+        merchant: d.merchant ? 0.9 : 0.4,
+        date: d.date ? 0.9 : 0.4,
+        type: 0.95,
+      },
+    };
   }
 }
 
 /**
- * Hybrid Recognizer: Tries Gemini AI Vision API first; if unavailable or fails, falls back to local Tesseract OCR.
+ * Hybrid Recognizer: Tries Gemini AI Vision API (with 1 retry); if fails or low reliability, falls back to local Tesseract OCR.
  */
 export class HybridReceiptRecognizer implements ReceiptRecognizer {
   private apiRecognizer = new ApiGeminiRecognizer();
@@ -114,7 +126,7 @@ export class HybridReceiptRecognizer implements ReceiptRecognizer {
         return result;
       }
     } catch {
-      // API call failed or error returned -> Fall back to local OCR
+      console.warn('Gemini AI endpoint unavailable or error returned -> Falling back to local OCR');
     }
 
     // Fallback to local OCR
@@ -122,5 +134,5 @@ export class HybridReceiptRecognizer implements ReceiptRecognizer {
   }
 }
 
-// Singleton default instance uses the hybrid Gemini API + Local Fallback strategy
+// Singleton default instance
 export const defaultReceiptRecognizer: ReceiptRecognizer = new HybridReceiptRecognizer();
