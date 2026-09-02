@@ -1,0 +1,6 @@
+{
+  "name": "Fima",
+  "description": "Fima - Ứng dụng quản lý thu chi cá nhân hàng ngày kèm ảnh chứng từ, hỗ trợ PWA offline và lưu trữ thiết bị",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
