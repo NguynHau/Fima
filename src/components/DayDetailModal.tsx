@@ -99,13 +99,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     accountFilter === 'wallet' || accountFilter === 'bank' ? accountFilter : undefined;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden text-neutral-100">
-      <div className="w-full max-w-lg bg-[#202328] border border-[#3a3f4b] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden text-neutral-100">
+      <div className="w-full max-w-lg bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
         {/* Header */}
-        <div className="px-4.5 py-3 bg-[#282c34] border-b border-[#3a3f4b] shrink-0 space-y-2.5">
+        <div className="px-4.5 py-3 bg-[#121212] border-b border-neutral-800 shrink-0 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-white/10 text-white border border-neutral-800 flex items-center justify-center shrink-0">
                 <Calendar size={18} />
               </div>
               <div>
@@ -120,7 +120,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-[#323640] hover:bg-[#3c414f] text-neutral-200 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
               aria-label="Đóng"
             >
               <X size={18} />
@@ -129,19 +129,19 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
           {/* Account Filter Switcher within Day Detail */}
           {onAccountFilterChange && (
-            <div className="bg-[#313540] p-1 rounded-xl border border-[#3a3f4b] grid grid-cols-3 gap-1.5">
+            <div className="bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 grid grid-cols-3 gap-1.5">
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('all')}
                 className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   accountFilter === 'all'
-                    ? 'bg-[#3d4250] text-white shadow-xs border border-[#4a5060]'
+                    ? 'bg-white text-black font-extrabold shadow-xs'
                     : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <Layers
                   size={14}
-                  className={accountFilter === 'all' ? 'text-white' : 'text-neutral-400'}
+                  className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
                 />
                 <span>Tất cả</span>
               </button>
@@ -181,7 +181,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
           )}
 
           {/* Daily Summary Banner */}
-          <div className="bg-[#313540] rounded-2xl p-3 border border-[#3a3f4b] flex items-center justify-between">
+          <div className="bg-[#1a1a1a] rounded-2xl p-3 border border-neutral-800 flex items-center justify-between">
             <div>
               <div className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
                 {accountFilter === 'all'
@@ -212,7 +212,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                   +{formatVND(dayIncome)}
                 </div>
               </div>
-              <div className="w-px h-6 bg-[#3a3f4b]" />
+              <div className="w-px h-6 bg-neutral-800" />
               <div>
                 <div className="text-xs text-neutral-300 font-bold flex items-center gap-0.5 justify-end uppercase tracking-wider">
                   <TrendingDown size={12} className="text-rose-400" /> Chi
@@ -229,12 +229,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center text-neutral-400 gap-2">
-              <div className="w-7 h-7 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
               <span className="text-sm font-bold">Đang tải giao dịch...</span>
             </div>
           ) : filteredTransactions.length === 0 ? (
             <div className="py-12 text-center px-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 text-white border border-neutral-800 flex items-center justify-center mx-auto mb-3">
                 <Calendar size={24} />
               </div>
               <h3 className="text-sm font-bold text-white mb-1">
@@ -247,7 +247,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => onAddNewForDate(date, defaultAccountForNew)}
-                className="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-black rounded-xl text-xs sm:text-sm font-black shadow-md inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                className="px-4 py-2.5 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs sm:text-sm font-black shadow-md inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
               >
                 <Plus size={16} strokeWidth={3} />
                 Thêm giao dịch ngay
@@ -260,12 +260,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                 <div
                   key={tx.id}
                   onClick={() => onSelectTransaction(tx)}
-                  className="bg-[#282c34] rounded-2xl p-3 border border-[#3a3f4b] shadow-sm hover:border-neutral-400 transition-all active:scale-[0.99] cursor-pointer"
+                  className="bg-[#1a1a1a] rounded-2xl p-3 border border-neutral-800 shadow-sm hover:border-neutral-500 transition-all active:scale-[0.99] cursor-pointer"
                 >
                   {/* Visual Proof Photo Preview */}
                   {photoUrl && (
                     <div
-                      className="relative rounded-xl overflow-hidden h-32 w-full bg-[#181a1e] border border-[#3a3f4b] mb-2.5 group"
+                      className="relative rounded-xl overflow-hidden h-32 w-full bg-[#121212] border border-neutral-800 mb-2.5 group"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPhoto(photoUrl);
@@ -278,7 +278,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                        <span className="text-xs font-bold bg-black/80 px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1.5 border border-[#424754]">
+                        <span className="text-xs font-bold bg-black/80 px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1.5 border border-neutral-800">
                           <ImageIcon size={12} /> Phóng to
                         </span>
                       </div>
@@ -347,11 +347,11 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
         {/* Bottom Bar: Add more for this date */}
         {filteredTransactions.length > 0 && (
-          <div className="p-3 bg-[#282c34] border-t border-[#3a3f4b] shrink-0 pb-[max(env(safe-area-inset-bottom),14px)]">
+          <div className="p-3 bg-[#121212] border-t border-neutral-800 shrink-0 pb-[max(env(safe-area-inset-bottom),14px)]">
             <button
               type="button"
               onClick={() => onAddNewForDate(date, defaultAccountForNew)}
-              className="w-full py-3 bg-white/15 hover:bg-white/25 text-white border border-white/20 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-sm"
+              className="w-full py-3 bg-white hover:bg-neutral-200 text-black rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-sm"
             >
               <Plus size={18} strokeWidth={3} />
               Thêm giao dịch vào ngày {formatDateVN(date)}

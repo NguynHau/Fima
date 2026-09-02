@@ -526,7 +526,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       <div className="flex items-center justify-between pt-1">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <BarChart3 className="text-emerald-400" size={24} />
+            <BarChart3 className="text-white" size={24} />
             Thống kê tài chính
           </h1>
           <p className="text-xs text-neutral-400 font-medium mt-0.5">
@@ -536,12 +536,12 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       </div>
 
       {/* 2. ACCOUNT FILTER */}
-      <div className="bg-[#282c34] border border-[#3a3f4b] p-1.5 rounded-2xl grid grid-cols-3 gap-2 shadow-sm">
+      <div className="bg-[#121212] border border-neutral-800 p-1.5 rounded-2xl grid grid-cols-3 gap-2 shadow-sm">
         <button
           onClick={() => setAccountFilter('all')}
           className={`py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             accountFilter === 'all'
-              ? 'bg-[#363a44] text-white border border-[#484e5c] shadow-xs'
+              ? 'bg-white text-black font-extrabold shadow-xs'
               : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
@@ -573,8 +573,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       </div>
 
       {/* 3. TIME FILTER & NAVIGATION */}
-      <div className="bg-[#282c34] rounded-2xl p-2.5 border border-[#3a3f4b] shadow-sm space-y-2.5">
-        <div className="flex items-center justify-between gap-1.5 bg-[#313540] p-1 rounded-xl border border-[#3e4350]">
+      <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">
+        <div className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800">
           {(
             [
               { id: 'week', label: 'Tuần' },
@@ -588,7 +588,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               onClick={() => setTimeFilter(tab.id)}
               className={`flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 timeFilter === tab.id
-                  ? 'bg-emerald-400 text-black shadow-xs font-extrabold'
+                  ? 'bg-white text-black shadow-xs font-extrabold'
                   : 'text-neutral-300 hover:text-white'
               }`}
             >
@@ -602,7 +602,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           <div className="flex items-center justify-between px-2 pt-0.5">
             <button
               onClick={handlePrevPeriod}
-              className="w-8 h-8 rounded-lg bg-[#323640] hover:bg-[#3c414f] text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
               title="Kỳ trước"
             >
               <ChevronLeft size={18} />
@@ -617,13 +617,13 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             <div className="flex items-center gap-1">
               <button
                 onClick={handleResetToToday}
-                className="px-2 py-1 rounded-md bg-[#323640] hover:bg-[#3c414f] text-[11px] font-bold text-neutral-300 transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded-md bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-[11px] font-bold text-neutral-200 transition-colors cursor-pointer"
               >
                 Hôm nay
               </button>
               <button
                 onClick={handleNextPeriod}
-                className="w-8 h-8 rounded-lg bg-[#323640] hover:bg-[#3c414f] text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
                 title="Kỳ sau"
               >
                 <ChevronRight size={18} />
@@ -641,7 +641,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="w-full bg-[#313540] border border-[#3e4350] rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-emerald-400 font-mono"
+                className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
               />
             </div>
             <div>
@@ -652,7 +652,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="w-full bg-[#313540] border border-[#3e4350] rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-emerald-400 font-mono"
+                className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
               />
             </div>
           </div>
@@ -662,8 +662,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       {/* 4. OVERVIEW KPIs (4 Cards) */}
       <div className="grid grid-cols-2 gap-2.5">
         {/* Total Income */}
-        <div className="bg-[#282c34] rounded-2xl p-3.5 border border-[#3a3f4b] shadow-sm">
-          <div className="text-xs font-bold text-neutral-300 flex items-center gap-1.5 uppercase tracking-wider">
+        <div className="bg-[#121212] rounded-2xl p-3.5 border border-neutral-800 shadow-sm">
+          <div className="text-xs font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
             <TrendingUp size={15} className="text-emerald-400" /> Thu nhập
           </div>
           <div className="text-sm sm:text-lg font-black text-emerald-400 mt-1.5 truncate font-mono">
@@ -672,8 +672,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         </div>
 
         {/* Total Expense */}
-        <div className="bg-[#282c34] rounded-2xl p-3.5 border border-[#3a3f4b] shadow-sm">
-          <div className="text-xs font-bold text-neutral-300 flex items-center gap-1.5 uppercase tracking-wider">
+        <div className="bg-[#121212] rounded-2xl p-3.5 border border-neutral-800 shadow-sm">
+          <div className="text-xs font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
             <TrendingDown size={15} className="text-rose-400" /> Chi tiêu
           </div>
           <div className="text-sm sm:text-lg font-black text-rose-400 mt-1.5 truncate font-mono">
@@ -682,9 +682,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         </div>
 
         {/* Net Difference */}
-        <div className="bg-[#282c34] rounded-2xl p-3.5 border border-[#3a3f4b] shadow-sm">
-          <div className="text-xs font-bold text-neutral-300 flex items-center gap-1.5 uppercase tracking-wider">
-            <Scale size={15} className="text-neutral-300" /> Chênh lệch
+        <div className="bg-[#121212] rounded-2xl p-3.5 border border-neutral-800 shadow-sm">
+          <div className="text-xs font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
+            <Scale size={15} className="text-neutral-400" /> Chênh lệch
           </div>
           <div
             className={`text-sm sm:text-lg font-black mt-1.5 truncate font-mono ${
@@ -699,10 +699,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           </div>
         </div>
 
-        {/* Current Available Balance (Non-period constrained) */}
-        <div className="bg-[#282c34] rounded-2xl p-3.5 border border-emerald-500/30 shadow-sm bg-gradient-to-br from-[#282c34] to-[#20322c]">
-          <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5 uppercase tracking-wider">
-            <Wallet size={15} className="text-emerald-400" /> Tiền hiện có
+        {/* Current Available Balance */}
+        <div className="bg-[#121212] rounded-2xl p-3.5 border border-neutral-800 shadow-sm">
+          <div className="text-xs font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
+            <Wallet size={15} className="text-amber-400" /> Tiền hiện có
           </div>
           <div className="text-sm sm:text-lg font-black text-white mt-1.5 truncate font-mono">
             {formatVND(availableBalance)}
@@ -712,8 +712,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
       {!hasDataInPeriod ? (
         /* Empty State */
-        <div className="bg-[#282c34] border border-[#3a3f4b] rounded-2xl p-8 text-center my-4 space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-[#313540] border border-[#3a3f4b] flex items-center justify-center mx-auto text-neutral-400 shadow-inner">
+        <div className="bg-[#121212] border border-neutral-800 rounded-2xl p-8 text-center my-4 space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center mx-auto text-neutral-400 shadow-inner">
             <AlertCircle size={28} />
           </div>
           <div className="space-y-1">
@@ -721,7 +721,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             <p className="text-xs sm:text-sm text-neutral-300 font-medium">
               Không có giao dịch nào trong khoảng thời gian đã chọn.
             </p>
-            <p className="text-xs text-emerald-400 font-bold pt-1">
+            <p className="text-xs text-white font-bold pt-1">
               Thêm giao dịch đầu tiên để xem thống kê.
             </p>
           </div>
@@ -729,10 +729,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       ) : (
         <>
           {/* 5. CHART 1 — THU NHẬP VS CHI TIÊU */}
-          <div className="bg-[#282c34] rounded-2xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-3">
+          <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                <LineChartIcon size={18} className="text-emerald-400" />
+                <LineChartIcon size={18} className="text-white" />
                 Thu nhập vs Chi tiêu
               </h3>
               <div className="flex items-center gap-3 text-xs font-bold">
@@ -780,7 +780,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           </div>
 
           {/* 6. CHART 2 — DÒNG TIỀN RÒNG (NET CASHFLOW BAR CHART) */}
-          <div className="bg-[#282c34] rounded-2xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-3">
+          <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                 <BarChart3 size={18} className="text-blue-400" />
@@ -813,8 +813,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           </div>
 
           {/* 7. CHART 3 — CHI TIÊU THEO HẠNG MỤC (EXPENSE DONUT CHART) */}
-          <div className="bg-[#282c34] rounded-2xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-[#3a3f4b] pb-3">
+          <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                 <PieChartIcon size={18} className="text-purple-400" />
                 Chi tiêu theo hạng mục
@@ -863,7 +863,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 </div>
 
                 {/* Categories Compact Ranking List */}
-                <div className="space-y-3 pt-1 border-t border-[#3a3f4b]">
+                <div className="space-y-3 pt-1 border-t border-neutral-800">
                   {categoryBreakdown.list.map((cat) => (
                     <div key={cat.name} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs sm:text-sm">
@@ -883,7 +883,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                       </div>
 
                       {/* Bar Fill */}
-                      <div className="w-full h-2 bg-[#313540] rounded-full overflow-hidden border border-[#3e4350]">
+                      <div className="w-full h-2 bg-[#1a1a1a] rounded-full overflow-hidden border border-neutral-800">
                         <div
                           className="h-full rounded-full transition-all duration-300"
                           style={{
@@ -900,7 +900,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           </div>
 
           {/* 8. CHART 4 — SỐ DƯ VÍ & BANK THEO THỜI GIAN */}
-          <div className="bg-[#282c34] rounded-2xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-3">
+          <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                 <LineChartIcon size={18} className="text-amber-400" />
@@ -958,7 +958,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
           {/* 9. CHART 5 — SO SÁNH VÍ VS BANK (Visible ONLY when accountFilter === 'all') */}
           {accountFilter === 'all' && (
-            <div className="bg-[#282c34] rounded-2xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-3">
+            <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                   <BarChart3 size={18} className="text-indigo-400" />
@@ -996,9 +996,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       )}
 
       {/* 10. SO SÁNH VỚI KỲ TRƯỚC */}
-      <div className="bg-[#282c34] rounded-2xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-3">
-        <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-[#3a3f4b] pb-2.5">
-          <Scale size={18} className="text-emerald-400" />
+      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-neutral-800 pb-2.5">
+          <Scale size={18} className="text-white" />
           So sánh với kỳ trước
         </h3>
 
@@ -1007,7 +1007,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           {(() => {
             const expMeta = compareMeta(currentKPI.expense, prevKPI.expense);
             return (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#313540] border border-[#3e4350]">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
                 <div>
                   <div className="text-xs font-bold text-neutral-300">Chi tiêu kỳ này</div>
                   <div className="text-sm font-black text-white font-mono mt-0.5">
@@ -1039,7 +1039,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           {(() => {
             const incMeta = compareMeta(currentKPI.income, prevKPI.income);
             return (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#313540] border border-[#3e4350]">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
                 <div>
                   <div className="text-xs font-bold text-neutral-300">Thu nhập kỳ này</div>
                   <div className="text-sm font-black text-white font-mono mt-0.5">
@@ -1071,7 +1071,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           {(() => {
             const netMeta = compareMeta(currentKPI.net, prevKPI.net);
             return (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#313540] border border-[#3e4350]">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
                 <div>
                   <div className="text-xs font-bold text-neutral-300">Chênh lệch kỳ này</div>
                   <div className="text-sm font-black text-white font-mono mt-0.5">
@@ -1102,8 +1102,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       </div>
 
       {/* 11. INSIGHTS CARDS */}
-      <div className="bg-[#282c34] rounded-2xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-3.5">
-        <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-[#3a3f4b] pb-2.5">
+      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
+        <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-neutral-800 pb-2.5">
           <Sparkles size={18} className="text-amber-400" />
           Gợi ý & Thông tin nhanh (Insights)
         </h3>
@@ -1118,8 +1118,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             }}
             className={`p-3.5 rounded-2xl border transition-all ${
               highestExpenseDay
-                ? 'bg-[#313540] hover:bg-[#383d4a] border-[#3e4350] cursor-pointer active:scale-98'
-                : 'bg-[#313540]/60 border-[#3e4350]/60'
+                ? 'bg-[#1a1a1a] hover:bg-[#222] border-neutral-800 cursor-pointer active:scale-98'
+                : 'bg-[#1a1a1a]/60 border-neutral-800/60'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -1143,7 +1143,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   <div className="text-xs font-black text-rose-400 font-mono">
                     −{formatVND(highestExpenseDay.amount)}
                   </div>
-                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5 justify-end mt-0.5">
+                  <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
                     Xem chi tiết <ArrowRight size={10} />
                   </span>
                 </div>
@@ -1160,8 +1160,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             }}
             className={`p-3.5 rounded-2xl border transition-all ${
               largestTransaction
-                ? 'bg-[#313540] hover:bg-[#383d4a] border-[#3e4350] cursor-pointer active:scale-98'
-                : 'bg-[#313540]/60 border-[#3e4350]/60'
+                ? 'bg-[#1a1a1a] hover:bg-[#222] border-neutral-800 cursor-pointer active:scale-98'
+                : 'bg-[#1a1a1a]/60 border-neutral-800/60'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -1197,7 +1197,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   >
                     {formatSignedVND(largestTransaction.amount, largestTransaction.type)}
                   </div>
-                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5 justify-end mt-0.5">
+                  <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
                     Sửa <ArrowRight size={10} />
                   </span>
                 </div>
@@ -1206,7 +1206,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           </div>
 
           {/* Card 3: Tỷ lệ tiền còn lại (Savings / Remaining Income Rate) */}
-          <div className="p-3.5 rounded-2xl bg-[#313540] border border-[#3e4350]">
+          <div className="p-3.5 rounded-2xl bg-[#1a1a1a] border border-neutral-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">

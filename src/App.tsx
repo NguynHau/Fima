@@ -148,9 +148,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#181a1e] flex justify-center text-neutral-100 font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-black flex justify-center text-neutral-100 font-sans selection:bg-white/20">
       {/* Mobile-first centered phone container (max-w-md = 448px) */}
-      <div className="w-full max-w-md min-h-screen bg-[#202328] border-x border-[#333842]/60 flex flex-col relative shadow-2xl">
+      <div className="w-full max-w-md min-h-screen bg-black border-x border-neutral-900 flex flex-col relative shadow-2xl">
         {/* Header - shown on Dòng tiền (home) screen */}
         {activeTab === 'flow' && (
           <Header

@@ -125,12 +125,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div
           className={`p-3.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2.5 ${
             statusMessage.type === 'success'
-              ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/40'
+              ? 'bg-white/10 text-white border border-white/20'
               : 'bg-rose-500/20 text-rose-200 border border-rose-500/40'
           }`}
         >
           {statusMessage.type === 'success' ? (
-            <Check size={18} className="text-emerald-300 shrink-0" />
+            <Check size={18} className="text-white shrink-0" />
           ) : (
             <AlertTriangle size={18} className="text-rose-300 shrink-0" />
           )}
@@ -139,8 +139,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
 
       {/* 1. SECTION: TÀI CHÍNH */}
-      <div className="bg-[#282c34] rounded-3xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-3.5">
-        <h3 className="text-xs font-black text-neutral-300 uppercase tracking-wider">
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
+        <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
           Tài chính & Số dư ban đầu
         </h3>
 
@@ -158,7 +158,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={walletNum > 0 ? walletNum.toLocaleString('vi-VN') : ''}
                 onChange={(e) => setWalletStr(e.target.value)}
                 placeholder="0"
-                className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#313540] border border-[#3e4350] rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-400"
+                className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#1a1a1a] border border-neutral-800 rounded-xl px-3.5 py-2.5 outline-none focus:border-amber-400"
               />
               <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
             </div>
@@ -177,7 +177,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 value={bankNum > 0 ? bankNum.toLocaleString('vi-VN') : ''}
                 onChange={(e) => setBankStr(e.target.value)}
                 placeholder="0"
-                className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#313540] border border-[#3e4350] rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-400"
+                className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#1a1a1a] border border-neutral-800 rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-400"
               />
               <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
             </div>
@@ -186,7 +186,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="submit"
             disabled={isSavingBalances}
-            className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-black rounded-xl text-xs sm:text-sm font-extrabold transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shadow-md mt-1"
+            className="w-full py-3 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs sm:text-sm font-extrabold transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shadow-md mt-1"
           >
             {isSavingBalances ? 'Đang lưu...' : 'Lưu thay đổi số dư ban đầu'}
           </button>
@@ -194,8 +194,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* 2. SECTION: DỮ LIỆU */}
-      <div className="bg-[#282c34] rounded-3xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-3">
-        <h3 className="text-xs font-black text-neutral-300 uppercase tracking-wider">
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
           Sao lưu & Khôi phục Dữ liệu
         </h3>
         <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
@@ -215,13 +215,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={handleExport}
             disabled={isExporting}
-            className="py-3 px-3 bg-[#313540] hover:bg-[#3c414f] text-neutral-100 border border-[#3e4350] rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-xs"
+            className="py-3 px-3 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-100 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-xs"
           >
             {isExporting ? (
-              <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
-                <Download size={16} className="text-emerald-400" />
+                <Download size={16} className="text-white" />
                 Xuất backup (.zip)
               </>
             )}
@@ -231,10 +231,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isImporting}
-            className="py-3 px-3 bg-[#313540] hover:bg-[#3c414f] text-neutral-100 border border-[#3e4350] rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-xs"
+            className="py-3 px-3 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-100 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-xs"
           >
             {isImporting ? (
-              <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
                 <Upload size={16} className="text-neutral-300" />
@@ -246,16 +246,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* 3. SECTION: ỨNG DỤNG */}
-      <div className="bg-[#282c34] rounded-3xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm flex items-center justify-between">
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-white/10 text-white border border-white/20 flex items-center justify-center shrink-0">
             <Smartphone size={20} />
           </div>
           <div>
             <div className="text-xs sm:text-sm font-bold text-white">
               Cài đặt Màn hình chính (PWA)
             </div>
-            <div className="text-xs text-neutral-300 font-medium">
+            <div className="text-xs text-neutral-400 font-medium">
               Dùng như ứng dụng native trên iPhone & Android
             </div>
           </div>
@@ -263,26 +263,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <button
           onClick={onOpenInstallGuide}
-          className="px-3.5 py-2 rounded-xl bg-emerald-400 text-black text-xs sm:text-sm font-extrabold hover:bg-emerald-300 active:scale-95 transition-all shrink-0 ml-2 cursor-pointer shadow-md"
+          className="px-3.5 py-2 rounded-xl bg-white text-black text-xs sm:text-sm font-extrabold hover:bg-neutral-200 active:scale-95 transition-all shrink-0 ml-2 cursor-pointer shadow-md"
         >
           Hướng dẫn
         </button>
       </div>
 
       {/* 4. PRIVACY */}
-      <div className="bg-emerald-500/15 rounded-2xl p-3.5 border border-emerald-500/30 flex items-start gap-2.5">
-        <ShieldCheck size={18} className="text-emerald-300 shrink-0 mt-0.5" />
-        <div className="text-xs sm:text-sm text-neutral-200 leading-relaxed font-medium">
-          <span className="font-bold text-emerald-300">Bảo mật:</span> 100% dữ liệu và ảnh lưu trực tiếp trên thiết bị của bạn. Không qua máy chủ bên ngoài.
+      <div className="bg-white/5 rounded-2xl p-3.5 border border-white/10 flex items-start gap-2.5">
+        <ShieldCheck size={18} className="text-white shrink-0 mt-0.5" />
+        <div className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
+          <span className="font-bold text-white">Bảo mật:</span> 100% dữ liệu và ảnh lưu trực tiếp trên thiết bị của bạn. Không qua máy chủ bên ngoài.
         </div>
       </div>
 
       {/* 5. DANGER ZONE */}
-      <div className="bg-rose-500/15 rounded-3xl p-4 sm:p-5 border border-rose-500/30 space-y-2.5">
+      <div className="bg-rose-500/10 rounded-3xl p-4 sm:p-5 border border-rose-500/25 space-y-2.5">
         <h3 className="text-xs font-black text-rose-300 uppercase tracking-wider">
           Xóa toàn bộ dữ liệu
         </h3>
-        <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
+        <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed font-medium">
           Hành động này sẽ xóa vĩnh viễn toàn bộ số dư, lịch sử giao dịch và hình ảnh chứng từ trên thiết bị này.
         </p>
 
@@ -299,7 +299,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Clear Data Confirmation Modal */}
       {showClearConfirm && (
         <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xs bg-[#282c34] border border-[#3a3f4b] rounded-3xl p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150">
+          <div className="w-full max-w-xs bg-[#121212] border border-neutral-800 rounded-3xl p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150">
             <div className="w-14 h-14 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center mx-auto mb-3.5">
               <AlertTriangle size={28} />
             </div>
@@ -313,7 +313,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(false)}
-                className="py-3 rounded-2xl bg-[#323640] text-neutral-200 text-xs sm:text-sm font-bold hover:bg-[#3c414f] active:scale-95 cursor-pointer border border-[#3a3f4b]"
+                className="py-3 rounded-2xl bg-[#1a1a1a] text-neutral-200 text-xs sm:text-sm font-bold hover:bg-[#262626] active:scale-95 cursor-pointer border border-neutral-800"
               >
                 Hủy
               </button>

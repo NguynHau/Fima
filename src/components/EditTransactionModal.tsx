@@ -321,7 +321,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           <button
             type="button"
             onClick={() => setIsDatePickerOpen(true)}
-            className="py-2.5 px-5 rounded-full bg-[#282c34] hover:bg-[#323640] border border-[#3a3f4b] text-neutral-100 text-sm sm:text-base font-bold flex items-center gap-2.5 active:scale-95 transition-all cursor-pointer shadow-xs"
+            className="py-2.5 px-5 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-100 text-sm sm:text-base font-bold flex items-center gap-2.5 active:scale-95 transition-all cursor-pointer shadow-xs"
           >
             <CalendarIcon size={16} className="text-neutral-300" />
             <span>{dateDisplayText}</span>
@@ -331,14 +331,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
       </div>
 
       {/* 7. Action Area at the Bottom */}
-      <div className="w-full max-w-md mx-auto px-6 py-3 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-between shrink-0 border-t border-[#333842]/60">
+      <div className="w-full max-w-md mx-auto px-6 py-3 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-between shrink-0 border-t border-neutral-800/80">
         {/* Left: Chụp lại / Đổi ảnh */}
         <button
           type="button"
           onClick={onRequestChangePhoto}
           className="flex flex-col items-center gap-1 text-neutral-300 hover:text-white active:scale-90 transition-all cursor-pointer group"
         >
-          <div className="w-12 h-12 rounded-full bg-[#282c34] hover:bg-[#323640] border border-[#3a3f4b] group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
+          <div className="w-12 h-12 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
             <Camera size={22} />
           </div>
           <span className="text-xs font-bold text-neutral-300 group-hover:text-white">
@@ -352,7 +352,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           type="button"
           onClick={() => handleSave()}
           disabled={isSaving || numericAmount <= 0}
-          className="w-16 h-16 rounded-full bg-emerald-400 hover:bg-emerald-300 disabled:bg-neutral-600 disabled:opacity-40 disabled:cursor-not-allowed text-black flex items-center justify-center shadow-xl border-4 border-[#202328] active:scale-95 transition-all cursor-pointer"
+          className="w-16 h-16 rounded-full bg-white hover:bg-neutral-200 disabled:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed text-black flex items-center justify-center shadow-xl border-4 border-black active:scale-95 transition-all cursor-pointer"
           title="Xác nhận lưu thay đổi"
         >
           {isSaving ? (
@@ -379,16 +379,16 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
       {/* Category Picker Sheet */}
       {isCategorySheetOpen && (
-        <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-sm bg-[#282c34] border border-[#3a3f4b] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[75vh]">
-            <div className="flex items-center justify-between pb-3.5 border-b border-[#3a3f4b] mb-3.5">
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[75vh]">
+            <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
               <h3 className="text-base font-extrabold text-white">
                 Chọn hạng mục {type === 'expense' ? 'chi tiêu' : 'thu nhập'}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsCategorySheetOpen(false)}
-                className="w-8 h-8 rounded-full bg-[#323640] text-neutral-300 hover:text-white flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full bg-[#1a1a1a] text-neutral-300 hover:text-white flex items-center justify-center cursor-pointer border border-neutral-800"
               >
                 <X size={18} />
               </button>
@@ -407,8 +407,8 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                     }}
                     className={`p-3 rounded-2xl border flex flex-col items-center gap-2 transition-all text-center active:scale-95 cursor-pointer ${
                       isSelected
-                        ? 'border-emerald-400 bg-emerald-500/25 text-emerald-200 font-bold shadow-xs'
-                        : 'border-[#3a3f4b] bg-[#313540] hover:bg-[#3a3f4c] text-neutral-200'
+                        ? 'border-white bg-white/20 text-white font-bold shadow-xs'
+                        : 'border-neutral-800 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200'
                     }`}
                   >
                     <CategoryIcon category={cat.name} type={type} size={22} />
@@ -423,14 +423,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
       {/* Account Picker Sheet */}
       {isAccountSheetOpen && (
-        <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-xs bg-[#282c34] border border-[#3a3f4b] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between pb-3.5 border-b border-[#3a3f4b] mb-3.5">
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-xs bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
               <h3 className="text-base font-extrabold text-white">Chọn nguồn tiền</h3>
               <button
                 type="button"
                 onClick={() => setIsAccountSheetOpen(false)}
-                className="w-8 h-8 rounded-full bg-[#323640] text-neutral-300 hover:text-white flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full bg-[#1a1a1a] text-neutral-300 hover:text-white flex items-center justify-center cursor-pointer border border-neutral-800"
               >
                 <X size={18} />
               </button>

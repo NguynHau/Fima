@@ -37,15 +37,21 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         id={`nav-btn-${tab}`}
         onClick={() => onChangeTab(tab)}
         whileTap={{ scale: 0.88 }}
-        className="relative flex items-center justify-center flex-1 h-10 cursor-pointer outline-none touch-manipulation z-0"
+        className="relative flex items-center justify-center flex-1 h-11 cursor-pointer outline-none touch-manipulation z-0"
         aria-label={label}
         title={label}
       >
-        {/* LIQUID GLASS INDICATOR */}
+        {/* LIQUID GLASS INDICATOR (CAPSULE SHAPE) */}
         {isActive && (
           <motion.div
             layoutId="liquid-glass-indicator"
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white/[0.12] backdrop-blur-xl border border-white/15 rounded-full shadow-[inset_0_0_10px_rgba(255,255,255,0.08),0_0_15px_rgba(255,255,255,0.08)] -z-10"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/[0.12] backdrop-blur-xl border border-white/15 rounded-full shadow-[inset_0_0_10px_rgba(255,255,255,0.08),0_0_15px_rgba(255,255,255,0.08)] -z-10"
+            style={{
+              width: '106px',
+              height: '56px',
+              marginLeft: '0px',
+              paddingLeft: '0px',
+            }}
             transition={{
               type: 'spring',
               bounce: 0.35,
@@ -74,7 +80,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     >
       <motion.nav
         onPanEnd={handlePanEnd}
-        className="w-full max-w-md border rounded-full touch-none pointer-events-auto p-1.5 transition-all"
+        className="w-full max-w-md border rounded-full touch-none pointer-events-auto p-2.5 transition-all"
         style={{
           backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
           backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
@@ -84,7 +90,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           transform: 'scale(var(--island-scale))',
         }}
       >
-        <div className="flex items-center justify-between relative px-3">
+        <div className="flex items-center justify-between relative px-2">
           <NavItem tab="flow" Icon={Layers} label="Dòng tiền" />
           <NavItem tab="statistics" Icon={PieChart} label="Thống kê" />
 
@@ -95,7 +101,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               onClick={onOpenAddTransaction}
               whileTap={{ scale: 0.88 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className="w-10 h-10 rounded-full bg-white hover:bg-neutral-200 text-black shadow-[0_0_18px_rgba(255,255,255,0.2)] flex items-center justify-center cursor-pointer outline-none touch-manipulation"
+              className="w-11 h-11 rounded-full bg-white hover:bg-neutral-200 text-black shadow-[0_0_18px_rgba(255,255,255,0.2)] flex items-center justify-center cursor-pointer outline-none touch-manipulation"
               aria-label="Thêm giao dịch mới"
               title="Thêm giao dịch mới"
             >

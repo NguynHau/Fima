@@ -214,7 +214,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             <div className="space-y-3">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-98 rounded-2xl font-bold text-black shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 bg-white hover:bg-neutral-200 active:scale-98 rounded-2xl font-bold text-black shadow-lg flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Camera size={20} />
                 Mở máy ảnh hệ thống / Chọn ảnh
