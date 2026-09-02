@@ -14,7 +14,7 @@ export default defineConfig(() => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.png', 'logo.jpg'],
         manifest: {
-          id: '/',
+          id: './',
           name: 'Fima - Quản Lý Thu Chi',
           short_name: 'Fima',
           description: 'Fima - Ứng dụng quản lý thu chi cá nhân hàng ngày kèm ảnh chứng từ',
@@ -22,23 +22,23 @@ export default defineConfig(() => {
           background_color: '#0a0a0a',
           display: 'standalone',
           orientation: 'portrait',
-          start_url: '/',
-          scope: '/',
+          start_url: './',
+          scope: './',
           icons: [
             {
-              src: '/pwa-192x192.png',
+              src: 'pwa-192x192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-512x512.png',
+              src: 'pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-maskable-512x512.png',
+              src: 'pwa-maskable-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',
