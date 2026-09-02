@@ -37,7 +37,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; tx: Transaction } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -265,10 +265,10 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                   {/* Visual Proof Photo Preview */}
                   {photoUrl && (
                     <div
-                      className="relative rounded-xl overflow-hidden h-32 w-full bg-[#121212] border border-neutral-800 mb-2.5 group"
+                      className="relative rounded-2xl overflow-hidden h-36 w-full bg-[#121212] border border-neutral-800 mb-2.5 group cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedPhoto(photoUrl);
+                        setSelectedPhoto({ url: photoUrl, tx });
                       }}
                     >
                       <img
@@ -277,10 +277,21 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                        <span className="text-xs font-bold bg-black/80 px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1.5 border border-neutral-800">
-                          <ImageIcon size={12} /> Phóng to
-                        </span>
+                      {/* Gradient Overlay with Amount & Phóng to */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-between p-2.5">
+                        <div className="flex justify-end">
+                          <span className="text-[11px] font-bold bg-black/70 text-neutral-200 px-2.5 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1 border border-white/10 group-hover:border-white/30 transition-all">
+                            <ImageIcon size={11} /> Phóng to
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-white pt-2">
+                          <span className="text-xs font-bold bg-black/70 px-2 py-0.5 rounded-lg border border-white/10 text-neutral-200">
+                            {tx.category}
+                          </span>
+                          <span className={`text-base font-black font-mono drop-shadow-md ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatSignedVND(tx.amount, tx.type)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -362,25 +373,60 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         {/* Full Screen Photo Viewer Modal */}
         {selectedPhoto && (
           <div
-            className="fixed inset-0 z-70 bg-black/95 flex flex-col justify-between p-4"
+            className="fixed inset-0 z-70 bg-black/95 flex flex-col justify-between p-4 animate-in fade-in duration-200"
             onClick={() => setSelectedPhoto(null)}
           >
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-between items-center pt-2 px-2">
+              <span className="text-xs font-bold text-neutral-400">Xem ảnh chứng từ</span>
               <button
+                type="button"
                 onClick={() => setSelectedPhoto(null)}
-                className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center active:scale-95 cursor-pointer"
+                className="w-8 h-8 rounded-full bg-neutral-800 text-white flex items-center justify-center active:scale-95 cursor-pointer border border-neutral-700"
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 flex items-center justify-center p-2">
+
+            <div className="flex-1 flex flex-col items-center justify-center p-2 gap-4 my-auto">
               <img
-                src={selectedPhoto}
-                alt="Ảnh phóng to"
-                className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl border border-[#333333]"
+                src={selectedPhoto.url}
+                alt="Ảnh chứng từ"
+                className="max-w-full max-h-[62vh] object-contain rounded-2xl shadow-2xl border border-neutral-800"
               />
+
+              {/* Amount and Transaction Info Panel Below Photo */}
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-xs bg-[#1a1a1a]/95 border border-neutral-800 rounded-2xl p-4 text-center backdrop-blur-md shadow-2xl flex flex-col items-center gap-1.5"
+              >
+                <div className="flex items-center gap-2 text-xs font-bold text-neutral-300">
+                  <CategoryIcon category={selectedPhoto.tx.category} type={selectedPhoto.tx.type} size={16} />
+                  <span>{selectedPhoto.tx.category}</span>
+                  <span className="text-neutral-500">•</span>
+                  <span className={selectedPhoto.tx.account === 'wallet' ? 'text-amber-400 font-bold' : 'text-blue-400 font-bold'}>
+                    {selectedPhoto.tx.account === 'wallet' ? 'Ví tiền' : 'Ngân hàng'}
+                  </span>
+                </div>
+
+                {/* Big Amount */}
+                <div className={`text-2xl sm:text-3xl font-black font-mono tracking-tight my-0.5 ${selectedPhoto.tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {formatSignedVND(selectedPhoto.tx.amount, selectedPhoto.tx.type)}
+                </div>
+
+                {/* Date & Note */}
+                <div className="text-xs text-neutral-400 font-medium flex items-center justify-center gap-1.5 flex-wrap">
+                  <span>Ngày {formatDateVN(selectedPhoto.tx.date)}</span>
+                  {selectedPhoto.tx.note && (
+                    <>
+                      <span className="text-neutral-600">•</span>
+                      <span className="text-neutral-200 italic">&ldquo;{selectedPhoto.tx.note}&rdquo;</span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="text-center text-xs text-neutral-400 pb-4 font-medium">
+
+            <div className="text-center text-xs text-neutral-400 pb-2 font-medium">
               Chạm vào màn hình để đóng
             </div>
           </div>
