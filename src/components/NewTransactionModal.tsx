@@ -22,6 +22,7 @@ import { createTransaction } from '../db/database';
 import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
+import { defaultReceiptRecognizer } from '../services/receiptRecognition';
 
 interface NewTransactionModalProps {
   isOpen: boolean;
@@ -52,6 +53,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const [note, setNote] = useState<string>('');
   const [account, setAccount] = useState<AccountType>(defaultAccount || 'wallet');
   const [isSaving, setIsSaving] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Selector modal states
@@ -60,6 +62,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const userEditedRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -70,6 +73,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
       setIsCategorySheetOpen(false);
       setIsAccountSheetOpen(false);
       setErrorMessage(null);
+      userEditedRef.current = false;
     }
   }, [isOpen, defaultDate, defaultAccount]);
 
@@ -81,6 +85,38 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
       setAmountStr(''); // Reset amount to 0 whenever a new photo is captured
       setNote(''); // Reset note
       setErrorMessage(null);
+      userEditedRef.current = false;
+
+      // Automatically trigger AI/OCR receipt recognition in background
+      setIsAnalyzing(true);
+      defaultReceiptRecognizer
+        .recognize(initialPhotoBlob)
+        .then((result) => {
+          if (!userEditedRef.current) {
+            if (result.amount) {
+              setAmountStr(result.amount.toString());
+            }
+            if (result.date) {
+              setDate(result.date);
+            }
+            if (result.type) {
+              setType(result.type);
+            }
+            if (result.category) {
+              setCategory(result.category);
+            }
+            if (result.note) {
+              setNote(result.note);
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn('Receipt recognition notice:', err);
+        })
+        .finally(() => {
+          setIsAnalyzing(false);
+        });
+
       return () => URL.revokeObjectURL(url);
     }
   }, [initialPhotoBlob]);
@@ -99,6 +135,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const numericAmount = parseInt(amountStr.replace(/[^0-9]/g, '') || '0', 10);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    userEditedRef.current = true;
     const raw = e.target.value.replace(/[^0-9]/g, '');
     setAmountStr(raw);
     if (errorMessage) setErrorMessage(null);
@@ -167,7 +204,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
         </button>
 
         <div className="px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/35 text-emerald-300 text-xs sm:text-sm font-extrabold flex items-center gap-1.5">
-          <span>Giao dịch mới</span>
+          {isAnalyzing && (
+            <div className="w-3.5 h-3.5 border-2 border-emerald-300 border-t-transparent rounded-full animate-spin shrink-0" />
+          )}
+          <span>{isAnalyzing ? 'Đang nhận diện...' : 'Giao dịch mới'}</span>
         </div>
       </div>
 
@@ -241,7 +281,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                 type="text"
                 placeholder="Thêm ghi chú / chi tiết"
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={(e) => {
+                  userEditedRef.current = true;
+                  setNote(e.target.value);
+                }}
                 className="w-full text-sm sm:text-base text-white placeholder:text-neutral-300 bg-transparent border-none outline-none font-medium"
               />
             </div>
@@ -287,7 +330,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             {/* Thu Button */}
             <button
               type="button"
-              onClick={() => setType('income')}
+              onClick={() => {
+                userEditedRef.current = true;
+                setType('income');
+              }}
               className={`py-2 px-5 rounded-full text-sm sm:text-base font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 type === 'income'
                   ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50 shadow-xs'
@@ -301,7 +347,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             {/* Chi Button */}
             <button
               type="button"
-              onClick={() => setType('expense')}
+              onClick={() => {
+                userEditedRef.current = true;
+                setType('expense');
+              }}
               className={`py-2 px-5 rounded-full text-sm sm:text-base font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 type === 'expense'
                   ? 'bg-rose-500/30 text-rose-300 border border-rose-500/50 shadow-xs'
@@ -392,6 +441,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                     key={cat.name}
                     type="button"
                     onClick={() => {
+                      userEditedRef.current = true;
                       setCategory(cat.name);
                       setIsCategorySheetOpen(false);
                     }}
@@ -483,7 +533,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
       <DatePickerModal
         isOpen={isDatePickerOpen}
         selectedDate={date}
-        onSelectDate={(newDate) => setDate(newDate)}
+        onSelectDate={(newDate) => {
+          userEditedRef.current = true;
+          setDate(newDate);
+        }}
         onClose={() => setIsDatePickerOpen(false)}
       />
     </div>

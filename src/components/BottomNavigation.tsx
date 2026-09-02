@@ -46,7 +46,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           <motion.div
             layoutId="liquid-glass-indicator"
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/[0.12] backdrop-blur-xl border border-white/15 rounded-full shadow-[inset_0_0_10px_rgba(255,255,255,0.08),0_0_15px_rgba(255,255,255,0.08)] -z-10"
-            style={{ height: '64px', width: '96px' }}
+            style={{ height: '60px', width: '88px' }}
             transition={{
               type: 'spring',
               bounce: 0.35,
@@ -78,7 +78,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         className="w-full border rounded-full touch-none pointer-events-auto p-2.5 transition-all flex items-center"
         style={{
           width: '541px',
-          height: '94.4432px',
+          height: '88.4432px',
           maxWidth: '100%',
           backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
           backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
