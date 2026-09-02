@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet, Building2, Check, User } from 'lucide-react';
+import { Wallet, Building2, Check, User, Sparkles } from 'lucide-react';
 import { updateUserSettings } from '../db/database';
 import { parseAmountInput } from '../utils/formatters';
 import appLogo from '../assets/logo.png';
@@ -43,37 +43,48 @@ export const InitialSetupModal: React.FC<InitialSetupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-neutral-100">
-      <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-        <div className="flex flex-col items-center justify-center mx-auto mb-2 text-center">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-neutral-100 overflow-y-auto">
+      <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 my-auto">
+        <div className="flex flex-col items-center justify-center mx-auto mb-3 text-center">
           <img
             src={appLogo}
             alt="Fima Logo"
             className="w-14 h-14 rounded-2xl object-cover border border-neutral-800 shadow-lg mb-2"
           />
           <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-1.5">
-            <span>Chào bạn</span>
-            <span>👋</span>
+            <span>Chào mừng tới Fima AI</span>
+            <span>✨</span>
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-300 mt-1 font-medium leading-relaxed">
-            Bạn muốn chúng tôi gọi bạn là gì?
+        </div>
+
+        {/* AI App Intro Card */}
+        <div className="bg-gradient-to-br from-emerald-950/40 via-[#181818] to-[#121212] border border-emerald-500/30 rounded-2xl p-3.5 mb-4 text-left space-y-1.5 shadow-inner">
+          <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-xs sm:text-sm">
+            <Sparkles size={16} className="shrink-0 text-emerald-400 animate-pulse" />
+            <span>Trợ lý Quản lý Tài chính AI</span>
+          </div>
+          <p className="text-xs text-neutral-300 leading-relaxed font-medium">
+            Fima ứng dụng công nghệ AI thông minh giúp tự động hóa ghi chép chi tiêu: Chỉ cần <strong className="text-white">chụp ảnh hóa đơn</strong>, AI sẽ tự động quét, nhận diện cửa hàng, số tiền và phân loại hạng mục chính xác trong vài giây mà không cần nhập tay!
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-3.5 mt-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
           {/* Nickname Input */}
-          <div className="bg-[#1a1a1a] p-3.5 rounded-2xl border border-neutral-800">
-            <label htmlFor="initial-nickname-input" className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+          <div className="bg-[#1a1a1a] p-3.5 rounded-2xl border border-neutral-800 space-y-2">
+            <label htmlFor="initial-nickname-input" className="block text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-2">
               <User size={15} className="text-white" />
-              Biệt danh / Nickname
+              Biệt danh / Nickname của bạn
             </label>
+            <p className="text-[11px] text-neutral-400 font-medium leading-normal">
+              Nhập tên hoặc biệt danh để Fima AI dễ dàng xưng hô và đồng hành cùng bạn:
+            </p>
             <input
               id="initial-nickname-input"
               type="text"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               placeholder="Nhập biệt danh của bạn..."
-              className="w-full text-base sm:text-lg font-bold text-white bg-[#222222] border border-neutral-700 rounded-xl px-3.5 py-2.5 outline-none focus:border-white"
+              className="w-full text-base font-bold text-white bg-[#222222] border border-neutral-700 rounded-xl px-3.5 py-2.5 outline-none focus:border-white transition-colors"
             />
           </div>
 

@@ -90,6 +90,17 @@ export default function App() {
 
   useEffect(() => {
     refreshData();
+
+    // Check if opening on web for the first time (not standalone mode)
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+
+    const hasSeenGuide = localStorage.getItem('fima_has_seen_install_guide') === 'true';
+
+    if (!isStandalone && !hasSeenGuide) {
+      setIsInstallGuideOpen(true);
+    }
   }, [refreshData]);
 
   // Handle month navigation
