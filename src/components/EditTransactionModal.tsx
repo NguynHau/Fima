@@ -197,7 +197,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           )}
 
           {/* Ultra-transparent Glass Overlay inside Photo for Amount + Note */}
-          <div className="absolute bottom-3 left-3 right-3 bg-black/20 hover:bg-black/30 backdrop-blur-xl border border-white/20 rounded-2xl p-3 text-center shadow-2xl flex flex-col items-center transition-all">
+          <div className="absolute bottom-3 left-3 right-3 bg-black/10 hover:bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center shadow-2xl flex flex-col items-center transition-all">
             {/* Amount display & inline input */}
             <div
               onClick={() => amountInputRef.current?.focus()}
@@ -231,7 +231,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
             </div>
 
             {/* Note / Ghi chú inside overlay */}
-            <div className="w-full flex items-center gap-2.5 bg-black/20 hover:bg-black/30 border border-white/15 rounded-full px-4 py-2 mt-2 transition-colors">
+            <div className="w-full flex items-center gap-2.5 bg-black/10 hover:bg-black/20 border border-white/10 rounded-full px-4 py-2 mt-2 transition-colors">
               <Pencil size={15} className="text-neutral-200 shrink-0" />
               <input
                 type="text"
