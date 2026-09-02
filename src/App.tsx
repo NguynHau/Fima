@@ -5,6 +5,7 @@ import {
   type UserSettings,
   type CalendarAccountFilter,
   type AccountType,
+  type ActiveTab,
 } from './types';
 import {
   calculateBalances,
@@ -15,11 +16,12 @@ import { Header } from './components/Header';
 import { BottomNavigation } from './components/BottomNavigation';
 import { MonthCalendar } from './components/MonthCalendar';
 import { StatisticsView } from './components/StatisticsView';
+import { SettingsView } from './components/SettingsView';
+import { ProfileView } from './components/ProfileView';
 import { CameraCaptureModal } from './components/CameraCaptureModal';
 import { NewTransactionModal } from './components/NewTransactionModal';
 import { EditTransactionModal } from './components/EditTransactionModal';
 import { DayDetailModal } from './components/DayDetailModal';
-import { SettingsModal } from './components/SettingsModal';
 import { InitialSetupModal } from './components/InitialSetupModal';
 import { IOSInstallGuide } from './components/IOSInstallGuide';
 import { usePWA } from './hooks/usePWA';
@@ -28,8 +30,8 @@ import { getTodayString } from './utils/formatters';
 export default function App() {
   const { isOnline } = usePWA();
 
-  // Core state
-  const [activeTab, setActiveTab] = useState<'calendar' | 'statistics'>('calendar');
+  // Core state - 4 tabs: flow | statistics | settings | profile
+  const [activeTab, setActiveTab] = useState<ActiveTab>('flow');
   const [balances, setBalances] = useState<BalancesSummary>({
     initialWallet: 0,
     initialBank: 0,
@@ -60,7 +62,6 @@ export default function App() {
 
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [showInitialSetup, setShowInitialSetup] = useState(false);
 
@@ -116,7 +117,7 @@ export default function App() {
     setCurrentMonth(now.getMonth() + 1);
   };
 
-  // Transaction Creation Flow (Section 7: + -> Camera -> New Transaction)
+  // Transaction Creation Flow (+ button -> Camera -> New Transaction)
   const handleOpenAddTransaction = (customDate?: string, customAccount?: AccountType) => {
     setNewTxDefaultDate(customDate || getTodayString());
     setNewTxDefaultAccount(customAccount || (calendarAccountFilter === 'all' ? undefined : calendarAccountFilter));
@@ -150,21 +151,25 @@ export default function App() {
     <div className="min-h-screen bg-[#181a1e] flex justify-center text-neutral-100 font-sans selection:bg-emerald-500/30">
       {/* Mobile-first centered phone container (max-w-md = 448px) */}
       <div className="w-full max-w-md min-h-screen bg-[#202328] border-x border-[#333842]/60 flex flex-col relative shadow-2xl">
-        {/* Header */}
-        <Header
-          balances={balances}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          isOnline={isOnline}
-        />
+        {/* Header - shown on Dòng tiền (home) screen */}
+        {activeTab === 'flow' && (
+          <Header
+            balances={balances}
+            nickname={userSettings?.nickname}
+            avatarDataUrl={userSettings?.avatarDataUrl}
+            onNavigateToProfile={() => setActiveTab('profile')}
+            isOnline={isOnline}
+          />
+        )}
 
         {/* Main Content Area */}
-        <main className="flex-1 px-3.5 sm:px-4 pt-3">
+        <main className={`flex-1 px-3.5 sm:px-4 ${activeTab === 'flow' ? 'pt-3' : 'pt-5'}`}>
           {isLoading ? (
             <div className="py-24 flex flex-col items-center justify-center gap-3 text-neutral-500">
               <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
               <span className="text-xs font-semibold tracking-wider">Đang tải dữ liệu...</span>
             </div>
-          ) : activeTab === 'calendar' ? (
+          ) : activeTab === 'flow' ? (
             <MonthCalendar
               currentYear={currentYear}
               currentMonth={currentMonth}
@@ -176,8 +181,26 @@ export default function App() {
               onTodayMonth={handleTodayMonth}
               onSelectDay={(d) => setSelectedDayDate(d)}
             />
+          ) : activeTab === 'statistics' ? (
+            <StatisticsView
+              transactions={transactions}
+              balances={balances}
+              userSettings={userSettings}
+              onSelectDay={(d) => setSelectedDayDate(d)}
+              onSelectTransaction={(tx) => setEditingTransaction(tx)}
+            />
+          ) : activeTab === 'settings' ? (
+            <SettingsView
+              onDataChanged={refreshData}
+              onOpenInstallGuide={() => setIsInstallGuideOpen(true)}
+            />
           ) : (
-            <StatisticsView transactions={transactions} />
+            <ProfileView
+              userSettings={userSettings}
+              transactions={transactions}
+              balances={balances}
+              onDataChanged={refreshData}
+            />
           )}
         </main>
 
@@ -238,18 +261,7 @@ export default function App() {
           onSuccess={handleEditTxSuccess}
         />
 
-        {/* 5. Settings Modal */}
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          onDataChanged={refreshData}
-          onOpenInstallGuide={() => {
-            setIsSettingsOpen(false);
-            setIsInstallGuideOpen(true);
-          }}
-        />
-
-        {/* 6. Initial Balances Setup for First-Time Use */}
+        {/* 5. Initial Setup Onboarding for First-Time Use */}
         <InitialSetupModal
           isOpen={showInitialSetup}
           onComplete={() => {
@@ -258,7 +270,7 @@ export default function App() {
           }}
         />
 
-        {/* 7. iOS Safari PWA Install Guide */}
+        {/* 6. iOS Safari PWA Install Guide */}
         <IOSInstallGuide
           isOpen={isInstallGuideOpen}
           onClose={() => setIsInstallGuideOpen(false)}

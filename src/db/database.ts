@@ -46,7 +46,7 @@ export async function getUserSettings(): Promise<UserSettings> {
 }
 
 export async function updateUserSettings(
-  updates: Partial<Pick<UserSettings, 'initialWalletBalance' | 'initialBankBalance' | 'isInitialSetupDone'>>
+  updates: Partial<UserSettings>
 ): Promise<UserSettings> {
   const current = await getUserSettings();
   const updated: UserSettings = {

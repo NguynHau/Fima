@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+:root {
+  --glass-bg-opacity: 0.00;
+  --glass-blur: 5.0px;
+  --glass-border-opacity: 0.09;
+  --glass-saturate: 95%;
+  --glass-shadow-opacity: 0.31;
+  --glass-inner-reflection: 0.15;
+  --glass-glow-size: 0.0px;
+  --glass-glow-color: rgba(139, 92, 246, 0.20);
+  --island-scale: 1.00;
+  --lang-shift: 0px;
+  --theme-shift: 0px;
+  --nav-shift: 41px;
+  --orcid-shift: 0px;
+  --mobile-shift: 0px;
+}

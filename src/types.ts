@@ -1,6 +1,7 @@
 export type TransactionType = 'income' | 'expense';
 export type AccountType = 'wallet' | 'bank';
 export type CalendarAccountFilter = 'all' | 'wallet' | 'bank';
+export type ActiveTab = 'flow' | 'statistics' | 'settings' | 'profile';
 
 export interface Transaction {
   id: string;
@@ -27,6 +28,8 @@ export interface UserSettings {
   initialWalletBalance: number;
   initialBankBalance: number;
   isInitialSetupDone: boolean;
+  nickname?: string;
+  avatarDataUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

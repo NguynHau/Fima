@@ -1,66 +1,112 @@
 import React from 'react';
-import { Layers, PieChart, Plus } from 'lucide-react';
+import { Layers, PieChart, Plus, Settings, User } from 'lucide-react';
+import { type ActiveTab } from '../types';
+import { motion } from 'motion/react';
 
 interface BottomNavigationProps {
-  activeTab: 'calendar' | 'statistics';
-  onChangeTab: (tab: 'calendar' | 'statistics') => void;
+  activeTab: ActiveTab;
+  onChangeTab: (tab: ActiveTab) => void;
   onOpenAddTransaction: () => void;
 }
+
+const TAB_ORDER: ActiveTab[] = ['flow', 'statistics', 'settings', 'profile'];
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   activeTab,
   onChangeTab,
   onOpenAddTransaction,
 }) => {
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#202328]/95 backdrop-blur-lg border-t border-[#333842] pb-[max(env(safe-area-inset-bottom),10px)] pt-1.5 px-4 shadow-2xl">
-      <div className="max-w-md mx-auto flex items-center justify-between">
-        {/* Left: Dòng tiền */}
-        <button
-          id="nav-btn-calendar"
-          onClick={() => onChangeTab('calendar')}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'calendar'
-              ? 'text-white font-bold'
-              : 'text-neutral-400 hover:text-neutral-200 font-medium'
+  // Handle swipe gestures on the tab bar
+  const handlePanEnd = (event: any, info: any) => {
+    const swipeThreshold = 40;
+    if (info.offset.x > swipeThreshold) {
+      // Swipe right -> Go to previous tab
+      const currentIndex = TAB_ORDER.indexOf(activeTab);
+      if (currentIndex > 0) onChangeTab(TAB_ORDER[currentIndex - 1]);
+    } else if (info.offset.x < -swipeThreshold) {
+      // Swipe left -> Go to next tab
+      const currentIndex = TAB_ORDER.indexOf(activeTab);
+      if (currentIndex < TAB_ORDER.length - 1) onChangeTab(TAB_ORDER[currentIndex + 1]);
+    }
+  };
+
+  const NavItem = ({ tab, Icon, label }: { tab: ActiveTab; Icon: any; label: string }) => {
+    const isActive = activeTab === tab;
+    return (
+      <motion.button
+        id={`nav-btn-${tab}`}
+        onClick={() => onChangeTab(tab)}
+        whileTap={{ scale: 0.88 }}
+        className="relative flex items-center justify-center flex-1 h-10 cursor-pointer outline-none touch-manipulation z-0"
+        aria-label={label}
+        title={label}
+      >
+        {/* LIQUID GLASS INDICATOR */}
+        {isActive && (
+          <motion.div
+            layoutId="liquid-glass-indicator"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white/[0.12] backdrop-blur-xl border border-white/15 rounded-full shadow-[inset_0_0_10px_rgba(255,255,255,0.08),0_0_15px_rgba(255,255,255,0.08)] -z-10"
+            transition={{
+              type: 'spring',
+              bounce: 0.35,
+              duration: 0.5,
+            }}
+          />
+        )}
+
+        <motion.div
+          animate={{ scale: isActive ? 1.12 : 1 }}
+          transition={{ type: 'spring', bounce: 0.5, duration: 0.4 }}
+          className={`p-1.5 transition-colors ${
+            isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-colors ${activeTab === 'calendar' ? 'bg-white/20 text-white' : ''}`}>
-            <Layers size={22} strokeWidth={activeTab === 'calendar' ? 2.5 : 2} />
-          </div>
-          <span className="text-xs mt-1 tracking-tight font-bold">Dòng tiền</span>
-        </button>
+          <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+        </motion.div>
+      </motion.button>
+    );
+  };
 
-        {/* Center: Prominent Add (+) Button */}
-        <div className="flex-1 flex justify-center -mt-6">
-          <div className="p-1.5 rounded-full bg-[#202328] border border-[#333842] shadow-2xl">
-            <button
+  return (
+    <div 
+      className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none"
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
+    >
+      <motion.nav
+        onPanEnd={handlePanEnd}
+        className="w-full max-w-md border rounded-full touch-none pointer-events-auto p-1.5 transition-all"
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
+          backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+          WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+          borderColor: 'rgba(255, 255, 255, var(--glass-border-opacity))',
+          boxShadow: '0 15px 35px rgba(0, 0, 0, var(--glass-shadow-opacity)), inset 0 1px 1px rgba(255, 255, 255, var(--glass-inner-reflection)), 0 0 var(--glass-glow-size) var(--glass-glow-color)',
+          transform: 'scale(var(--island-scale))',
+        }}
+      >
+        <div className="flex items-center justify-between relative px-3">
+          <NavItem tab="flow" Icon={Layers} label="Dòng tiền" />
+          <NavItem tab="statistics" Icon={PieChart} label="Thống kê" />
+
+          {/* Center Prominent Add (+) Button */}
+          <div className="flex-1 flex justify-center z-10 relative">
+            <motion.button
               id="nav-btn-add-transaction"
               onClick={onOpenAddTransaction}
-              className="w-14 h-14 rounded-full bg-emerald-400 hover:bg-emerald-300 active:scale-90 text-black shadow-lg shadow-emerald-500/20 flex items-center justify-center transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              whileTap={{ scale: 0.88 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="w-10 h-10 rounded-full bg-white hover:bg-neutral-200 text-black shadow-[0_0_18px_rgba(255,255,255,0.2)] flex items-center justify-center cursor-pointer outline-none touch-manipulation"
               aria-label="Thêm giao dịch mới"
+              title="Thêm giao dịch mới"
             >
-              <Plus size={28} strokeWidth={3} />
-            </button>
+              <Plus size={22} strokeWidth={3.5} />
+            </motion.button>
           </div>
-        </div>
 
-        {/* Right: Thống kê */}
-        <button
-          id="nav-btn-statistics"
-          onClick={() => onChangeTab('statistics')}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'statistics'
-              ? 'text-white font-bold'
-              : 'text-neutral-400 hover:text-neutral-200 font-medium'
-          }`}
-        >
-          <div className={`p-1.5 rounded-xl transition-colors ${activeTab === 'statistics' ? 'bg-white/20 text-white' : ''}`}>
-            <PieChart size={22} strokeWidth={activeTab === 'statistics' ? 2.5 : 2} />
-          </div>
-          <span className="text-xs mt-1 tracking-tight font-bold">Thống kê</span>
-        </button>
-      </div>
-    </nav>
+          <NavItem tab="settings" Icon={Settings} label="Cài đặt" />
+          <NavItem tab="profile" Icon={User} label="Cá nhân" />
+        </div>
+      </motion.nav>
+    </div>
   );
 };

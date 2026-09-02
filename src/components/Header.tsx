@@ -1,52 +1,71 @@
 import React from 'react';
-import { Wallet, Building2, Settings as SettingsIcon, WifiOff } from 'lucide-react';
+import { Wallet, Building2, WifiOff } from 'lucide-react';
 import { type BalancesSummary } from '../types';
 import { formatVND } from '../utils/formatters';
-import appLogo from '../assets/logo.png';
 
 interface HeaderProps {
   balances: BalancesSummary;
-  onOpenSettings: () => void;
+  nickname?: string;
+  avatarDataUrl?: string;
+  onNavigateToProfile: () => void;
   isOnline: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   balances,
-  onOpenSettings,
+  nickname,
+  avatarDataUrl,
+  onNavigateToProfile,
   isOnline,
 }) => {
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Chào buổi sáng,';
+    if (hour < 18) return 'Chào buổi chiều,';
+    return 'Chào buổi tối,';
+  };
+
   return (
     <header className="pt-[max(env(safe-area-inset-top,0px),16px)] pb-3 px-4 bg-[#202328]/95 backdrop-blur-md sticky top-0 z-30 border-b border-[#333842]">
-      {/* Top action row */}
+      {/* Top greeting & avatar row */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <img
-            src={appLogo}
-            alt="Fima Logo"
-            className="w-10 h-10 rounded-xl object-cover border border-[#424754] shadow-xs shrink-0"
-          />
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-white leading-none">
-              Fima
-            </h1>
-          </div>
+        <div>
+          <p className="text-xs sm:text-sm font-semibold text-neutral-400 leading-tight">
+            {getGreeting()}
+          </p>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight flex items-center gap-1.5 mt-0.5">
+            <span className="truncate max-w-[200px] sm:max-w-[260px]">{nickname || 'Bạn'}</span>
+            <span>👋</span>
+          </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 shrink-0">
           {!isOnline && (
-            <div className="flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold">
-              <WifiOff size={14} className="text-amber-400" />
+            <div className="flex items-center gap-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">
+              <WifiOff size={13} className="text-amber-400" />
               <span>Offline</span>
             </div>
           )}
 
           <button
-            id="btn-open-settings"
-            onClick={onOpenSettings}
-            className="w-10 h-10 rounded-xl bg-[#2a2e36] text-neutral-300 hover:text-white hover:bg-[#343842] border border-[#3e4350] flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-xs"
-            aria-label="Cài đặt"
+            id="header-btn-profile-avatar"
+            onClick={onNavigateToProfile}
+            className="relative cursor-pointer active:scale-95 transition-transform"
+            aria-label="Cá nhân"
           >
-            <SettingsIcon size={20} />
+            <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-emerald-400 p-0.5 bg-[#282c34] shadow-md hover:border-emerald-300 transition-colors flex items-center justify-center">
+              {avatarDataUrl ? (
+                <img
+                  src={avatarDataUrl}
+                  alt={nickname || 'Avatar'}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-black text-sm uppercase">
+                  {nickname ? nickname.charAt(0) : 'F'}
+                </div>
+              )}
+            </div>
           </button>
         </div>
       </div>
