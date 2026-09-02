@@ -152,16 +152,16 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between overflow-hidden">
       {/* 1. Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
+      <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top,0px),14px)] pb-2.5 shrink-0">
         <button
           type="button"
           onClick={onClose}
-          className="px-3.5 py-1.5 rounded-full bg-[#1e1e1e] hover:bg-[#2a2a2a] text-xs font-semibold text-neutral-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
+          className="px-4 py-2 rounded-full bg-[#1e1e1e] hover:bg-[#2a2a2a] text-xs font-bold text-neutral-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
         >
           Hủy
         </button>
 
-        <div className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-bold flex items-center gap-1">
+        <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold flex items-center gap-1">
           <span>Giao dịch mới</span>
         </div>
       </div>
@@ -169,13 +169,13 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
       {/* Main Container */}
       <div className="flex-1 flex flex-col items-center justify-between px-4 py-1 max-w-md w-full mx-auto overflow-y-auto">
         {errorMessage && (
-          <div className="w-full bg-rose-500/15 text-rose-300 border border-rose-500/30 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-2 mb-2 animate-in fade-in duration-150 shrink-0">
-            <AlertCircle size={15} className="shrink-0 text-rose-400" />
+          <div className="w-full bg-rose-500/15 text-rose-300 border border-rose-500/30 rounded-xl px-3.5 py-2.5 text-xs font-bold flex items-center gap-2 mb-2 animate-in fade-in duration-150 shrink-0">
+            <AlertCircle size={16} className="shrink-0 text-rose-400" />
             <span className="flex-1">{errorMessage}</span>
           </div>
         )}
 
-        {/* 2 & 3. Central Square Photo with Overlay inside (Locket style) */}
+        {/* 2 & 3. Central Square Photo with Transparent Overlay inside (Locket style) */}
         <div className="w-full relative rounded-[2.5rem] border border-[#2a2a2a] bg-[#121212] overflow-hidden shadow-2xl flex items-center justify-center aspect-square max-h-[46vh] shrink-0 my-auto">
           {photoPreviewUrl ? (
             <img
@@ -187,15 +187,15 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             <button
               type="button"
               onClick={onRetakePhoto}
-              className="w-full h-full flex flex-col items-center justify-center gap-2 text-neutral-400 hover:text-emerald-400 cursor-pointer p-4"
+              className="w-full h-full flex flex-col items-center justify-center gap-2.5 text-neutral-400 hover:text-emerald-400 cursor-pointer p-4"
             >
-              <Camera size={36} className="text-neutral-500" />
-              <span className="text-xs font-semibold">Chạm để chụp ảnh giao dịch</span>
+              <Camera size={40} className="text-neutral-500" />
+              <span className="text-sm font-semibold">Chạm để chụp ảnh giao dịch</span>
             </button>
           )}
 
-          {/* Frosted Glass Overlay inside Photo for Amount + Note */}
-          <div className="absolute bottom-3 left-3 right-3 bg-black/65 backdrop-blur-xl border border-white/15 rounded-2xl p-2.5 text-center shadow-2xl flex flex-col items-center">
+          {/* Ultra-transparent Glass Overlay inside Photo for Amount + Note */}
+          <div className="absolute bottom-3 left-3 right-3 bg-black/20 hover:bg-black/30 backdrop-blur-xs border border-white/20 rounded-2xl p-2.5 sm:p-3 text-center shadow-lg flex flex-col items-center transition-all">
             {/* Amount display & inline input */}
             <div
               onClick={() => amountInputRef.current?.focus()}
@@ -203,7 +203,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             >
               {/* Sign: − or ＋ */}
               <span
-                className={`text-2xl sm:text-3xl font-bold transition-colors ${
+                className={`text-2xl sm:text-3xl font-black transition-colors drop-shadow-md ${
                   type === 'expense' ? 'text-rose-400' : 'text-emerald-400'
                 }`}
               >
@@ -221,75 +221,75 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                   value={numericAmount > 0 ? numericAmount.toLocaleString('vi-VN') : ''}
                   onChange={handleAmountChange}
                   autoFocus
-                  className="w-full text-center text-2xl sm:text-3xl font-light font-mono tracking-tight text-white bg-transparent border-none outline-none placeholder:text-neutral-500 max-w-[200px]"
+                  className="w-full text-center text-2xl sm:text-3xl font-light font-mono tracking-tight text-white bg-transparent border-none outline-none placeholder:text-white/50 max-w-[220px] drop-shadow-md"
                 />
               </div>
 
               {/* Currency Symbol */}
-              <span className="text-base sm:text-lg font-bold text-neutral-300">₫</span>
+              <span className="text-base sm:text-lg font-bold text-neutral-100 drop-shadow-md">₫</span>
             </div>
 
             {/* Note / Ghi chú inside overlay */}
-            <div className="w-full flex items-center gap-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-full px-3 py-1.5 mt-1 transition-colors">
-              <Pencil size={12} className="text-neutral-400 shrink-0" />
+            <div className="w-full flex items-center gap-2 bg-black/25 hover:bg-black/35 border border-white/15 rounded-full px-3.5 py-1.5 mt-1.5 transition-colors">
+              <Pencil size={13} className="text-neutral-300 shrink-0" />
               <input
                 type="text"
-                placeholder="Thêm chi tiết"
+                placeholder="Thêm ghi chú / chi tiết"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full text-xs text-white placeholder:text-neutral-400 bg-transparent border-none outline-none"
+                className="w-full text-xs sm:text-sm text-white placeholder:text-neutral-300/80 bg-transparent border-none outline-none"
               />
             </div>
           </div>
         </div>
 
         {/* 4. Two Selects: Category & Account in one single row */}
-        <div className="w-full grid grid-cols-2 gap-2 my-1 shrink-0">
+        <div className="w-full grid grid-cols-2 gap-2.5 my-1.5 shrink-0">
           {/* Category Select Button */}
           <button
             type="button"
             onClick={() => setIsCategorySheetOpen(true)}
-            className="w-full py-2 px-3 rounded-full bg-[#171717] hover:bg-[#222222] border border-[#2b2b2b] text-neutral-200 text-xs font-semibold flex items-center justify-between active:scale-98 transition-all cursor-pointer shadow-xs"
+            className="w-full py-2.5 px-3.5 rounded-full bg-[#171717] hover:bg-[#222222] border border-[#2b2b2b] text-neutral-200 text-xs sm:text-sm font-semibold flex items-center justify-between active:scale-98 transition-all cursor-pointer shadow-xs"
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <CategoryIcon category={category} type={type} size={14} showBackground={false} />
+            <div className="flex items-center gap-2 min-w-0">
+              <CategoryIcon category={category} type={type} size={16} showBackground={false} />
               <span className="truncate">{category}</span>
             </div>
-            <ChevronDown size={14} className="text-neutral-400 shrink-0 ml-1" />
+            <ChevronDown size={16} className="text-neutral-400 shrink-0 ml-1" />
           </button>
 
           {/* Account Select Button */}
           <button
             type="button"
             onClick={() => setIsAccountSheetOpen(true)}
-            className="w-full py-2 px-3 rounded-full bg-[#171717] hover:bg-[#222222] border border-[#2b2b2b] text-neutral-200 text-xs font-semibold flex items-center justify-between active:scale-98 transition-all cursor-pointer shadow-xs"
+            className="w-full py-2.5 px-3.5 rounded-full bg-[#171717] hover:bg-[#222222] border border-[#2b2b2b] text-neutral-200 text-xs sm:text-sm font-semibold flex items-center justify-between active:scale-98 transition-all cursor-pointer shadow-xs"
           >
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               {account === 'wallet' ? (
-                <Wallet size={14} className="text-amber-400 shrink-0" />
+                <Wallet size={16} className="text-amber-400 shrink-0" />
               ) : (
-                <Building2 size={14} className="text-blue-400 shrink-0" />
+                <Building2 size={16} className="text-blue-400 shrink-0" />
               )}
               <span className="truncate">{account === 'wallet' ? 'Ví (Wallet)' : 'Bank'}</span>
             </div>
-            <ChevronDown size={14} className="text-neutral-400 shrink-0 ml-1" />
+            <ChevronDown size={16} className="text-neutral-400 shrink-0 ml-1" />
           </button>
         </div>
 
         {/* 5. Toggle Thu / Chi (+ / −) */}
         <div className="flex items-center justify-center my-1 shrink-0">
-          <div className="bg-[#171717] border border-[#2a2a2a] p-1 rounded-full flex items-center gap-1 shadow-xs">
+          <div className="bg-[#171717] border border-[#2a2a2a] p-1 rounded-full flex items-center gap-1.5 shadow-xs">
             {/* Thu Button */}
             <button
               type="button"
               onClick={() => setType('income')}
-              className={`py-1.5 px-4 rounded-full text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+              className={`py-1.5 px-4.5 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 type === 'income'
                   ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-xs'
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <Plus size={13} strokeWidth={3} className={type === 'income' ? 'text-emerald-400' : 'text-neutral-500'} />
+              <Plus size={14} strokeWidth={3} className={type === 'income' ? 'text-emerald-400' : 'text-neutral-500'} />
               <span>Thu</span>
             </button>
 
@@ -297,13 +297,13 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             <button
               type="button"
               onClick={() => setType('expense')}
-              className={`py-1.5 px-4 rounded-full text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+              className={`py-1.5 px-4.5 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 type === 'expense'
                   ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40 shadow-xs'
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <Minus size={13} strokeWidth={3} className={type === 'expense' ? 'text-rose-400' : 'text-neutral-500'} />
+              <Minus size={14} strokeWidth={3} className={type === 'expense' ? 'text-rose-400' : 'text-neutral-500'} />
               <span>Chi</span>
             </button>
           </div>
@@ -314,11 +314,11 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           <button
             type="button"
             onClick={() => setIsDatePickerOpen(true)}
-            className="py-1.5 px-4 rounded-full bg-[#171717] hover:bg-[#222222] border border-[#2a2a2a] text-neutral-200 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-xs"
+            className="py-1.5 px-4.5 rounded-full bg-[#171717] hover:bg-[#222222] border border-[#2a2a2a] text-neutral-200 text-xs sm:text-sm font-semibold flex items-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs"
           >
-            <CalendarIcon size={13} className="text-neutral-400" />
+            <CalendarIcon size={14} className="text-neutral-400" />
             <span>{dateDisplayText}</span>
-            <ChevronDown size={13} className="text-neutral-400" />
+            <ChevronDown size={14} className="text-neutral-400" />
           </button>
         </div>
       </div>

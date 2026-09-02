@@ -151,46 +151,46 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
   }, [categoryBreakdown, activeTab, totals]);
 
   return (
-    <div className="space-y-2.5 pb-16">
+    <div className="space-y-3 pb-20">
       {/* 1. Account Filter Segment */}
-      <div className="bg-[#121212] border border-[#262626] p-1 rounded-xl grid grid-cols-3 gap-1">
+      <div className="bg-[#121212] border border-[#262626] p-1.5 rounded-2xl grid grid-cols-3 gap-1.5 shadow-sm">
         <button
           onClick={() => setAccountFilter('all')}
-          className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+          className={`py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             accountFilter === 'all'
               ? 'bg-[#1f1f1f] text-white border border-[#333333] shadow-xs'
               : 'text-neutral-500 hover:text-neutral-300'
           }`}
         >
-          <Layers size={13} />
-          Tổng
+          <Layers size={15} />
+          <span>Tổng</span>
         </button>
         <button
           onClick={() => setAccountFilter('wallet')}
-          className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+          className={`py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             accountFilter === 'wallet'
               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
               : 'text-neutral-500 hover:text-neutral-300'
           }`}
         >
-          <Wallet size={13} className="text-amber-400" />
-          Ví
+          <Wallet size={15} className="text-amber-400" />
+          <span>Ví</span>
         </button>
         <button
           onClick={() => setAccountFilter('bank')}
-          className={`py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+          className={`py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             accountFilter === 'bank'
               ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-xs'
               : 'text-neutral-500 hover:text-neutral-300'
           }`}
         >
-          <Building2 size={13} className="text-blue-400" />
-          Bank
+          <Building2 size={15} className="text-blue-400" />
+          <span>Bank</span>
         </button>
       </div>
 
       {/* 2. Time Range Selector */}
-      <div className="flex items-center justify-between bg-[#121212] rounded-xl p-1 border border-[#262626] shadow-sm">
+      <div className="flex items-center justify-between bg-[#121212] rounded-2xl p-1.5 border border-[#262626] shadow-sm">
         {(
           [
             { id: 'week', label: 'Tuần' },
@@ -202,7 +202,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
           <button
             key={tab.id}
             onClick={() => setTimeRange(tab.id)}
-            className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               timeRange === tab.id
                 ? 'bg-neutral-200 text-black shadow-xs font-black'
                 : 'text-neutral-400 hover:text-white'
@@ -214,34 +214,34 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
       </div>
 
       {/* 3. Summary Metric Cards */}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-2">
         {/* Income Card */}
-        <div className="bg-[#121212] rounded-xl p-2 border border-[#262626] shadow-sm">
-          <div className="text-[9px] font-medium text-neutral-400 flex items-center gap-0.5 uppercase tracking-wider">
-            <TrendingUp size={10} className="text-emerald-400" /> Thu
+        <div className="bg-[#121212] rounded-2xl p-2.5 sm:p-3 border border-[#262626] shadow-sm">
+          <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center gap-1 uppercase tracking-wider">
+            <TrendingUp size={12} className="text-emerald-400" /> Thu
           </div>
-          <div className="text-[11px] sm:text-xs font-bold text-emerald-400 mt-0.5 truncate font-mono">
+          <div className="text-xs sm:text-sm font-bold text-emerald-400 mt-1 truncate font-mono">
             +{formatVND(totals.income)}
           </div>
         </div>
 
         {/* Expense Card */}
-        <div className="bg-[#121212] rounded-xl p-2 border border-[#262626] shadow-sm">
-          <div className="text-[9px] font-medium text-neutral-400 flex items-center gap-0.5 uppercase tracking-wider">
-            <TrendingDown size={10} className="text-rose-400" /> Chi
+        <div className="bg-[#121212] rounded-2xl p-2.5 sm:p-3 border border-[#262626] shadow-sm">
+          <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center gap-1 uppercase tracking-wider">
+            <TrendingDown size={12} className="text-rose-400" /> Chi
           </div>
-          <div className="text-[11px] sm:text-xs font-bold text-rose-400 mt-0.5 truncate font-mono">
+          <div className="text-xs sm:text-sm font-bold text-rose-400 mt-1 truncate font-mono">
             −{formatVND(totals.expense)}
           </div>
         </div>
 
         {/* Net Card */}
-        <div className="bg-[#121212] rounded-xl p-2 border border-[#262626] shadow-sm">
-          <div className="text-[9px] font-medium text-neutral-400 flex items-center gap-0.5 uppercase tracking-wider">
-            <Scale size={10} className="text-neutral-400" /> Lệch
+        <div className="bg-[#121212] rounded-2xl p-2.5 sm:p-3 border border-[#262626] shadow-sm">
+          <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center gap-1 uppercase tracking-wider">
+            <Scale size={12} className="text-neutral-400" /> Lệch
           </div>
           <div
-            className={`text-[11px] sm:text-xs font-bold mt-0.5 truncate font-mono ${
+            className={`text-xs sm:text-sm font-bold mt-1 truncate font-mono ${
               totals.net > 0
                 ? 'text-emerald-400'
                 : totals.net < 0
@@ -255,17 +255,17 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
       </div>
 
       {/* 4. Tab switcher: Expense vs Income breakdown */}
-      <div className="bg-[#121212] rounded-2xl p-3 border border-[#262626] shadow-sm space-y-3">
-        <div className="flex items-center justify-between border-b border-[#262626] pb-2">
-          <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-            <PieChartIcon size={14} className="text-neutral-300" />
+      <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-4 border border-[#262626] shadow-sm space-y-3.5">
+        <div className="flex items-center justify-between border-b border-[#262626] pb-2.5">
+          <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+            <PieChartIcon size={16} className="text-neutral-300" />
             Cơ cấu {activeTab === 'expense' ? 'chi tiêu' : 'thu nhập'}
           </h3>
 
-          <div className="flex items-center gap-1 bg-[#171717] border border-[#262626] p-0.5 rounded-lg">
+          <div className="flex items-center gap-1 bg-[#171717] border border-[#262626] p-0.5 rounded-xl">
             <button
               onClick={() => setActiveTab('expense')}
-              className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'expense'
                   ? 'bg-rose-500 text-white shadow-xs'
                   : 'text-neutral-400 hover:text-white'
@@ -275,7 +275,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
             </button>
             <button
               onClick={() => setActiveTab('income')}
-              className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'income'
                   ? 'bg-emerald-500 text-black shadow-xs font-black'
                   : 'text-neutral-400 hover:text-white'
@@ -288,16 +288,16 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
 
         {categoryBreakdown.length === 0 ? (
           <div className="py-8 text-center text-neutral-500">
-            <div className="w-10 h-10 rounded-xl bg-[#171717] border border-[#262626] flex items-center justify-center mx-auto mb-2 text-neutral-500">
-              <PieChartIcon size={20} />
+            <div className="w-12 h-12 rounded-2xl bg-[#171717] border border-[#262626] flex items-center justify-center mx-auto mb-2.5 text-neutral-500">
+              <PieChartIcon size={22} />
             </div>
-            <p className="text-xs font-medium">Chưa có dữ liệu thống kê.</p>
+            <p className="text-xs sm:text-sm font-medium">Chưa có dữ liệu thống kê.</p>
           </div>
         ) : (
           <>
             {/* Donut Chart Visual */}
-            <div className="flex items-center justify-center py-1">
-              <div className="relative w-32 h-32 flex items-center justify-center">
+            <div className="flex items-center justify-center py-1.5">
+              <div className="relative w-36 h-36 flex items-center justify-center">
                 <svg viewBox="0 0 160 160" className="w-full h-full transform -rotate-90">
                   {donutSlices.map((slice, i) => (
                     <path
@@ -310,8 +310,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
                 </svg>
                 {/* Center text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                  <span className="text-[9px] font-medium text-neutral-500 uppercase tracking-wider">Tổng cộng</span>
-                  <span className="text-[11px] font-bold text-white px-1 font-mono">
+                  <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Tổng cộng</span>
+                  <span className="text-xs sm:text-sm font-black text-white px-1 font-mono">
                     {formatVND(activeTab === 'expense' ? totals.expense : totals.income)}
                   </span>
                 </div>
@@ -319,27 +319,27 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
             </div>
 
             {/* Breakdown List */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-2.5 pt-1">
               {categoryBreakdown.map((cat) => (
                 <div key={cat.name} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <CategoryIcon category={cat.name} type={activeTab} size={14} />
-                      <span className="font-semibold text-neutral-200 text-xs">{cat.name}</span>
-                      <span className="text-[10px] text-neutral-500">({cat.count})</span>
+                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                    <div className="flex items-center gap-2">
+                      <CategoryIcon category={cat.name} type={activeTab} size={16} />
+                      <span className="font-semibold text-neutral-200 text-xs sm:text-sm">{cat.name}</span>
+                      <span className="text-[11px] text-neutral-500">({cat.count})</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-white text-xs font-mono">
+                      <span className="font-bold text-white text-xs sm:text-sm font-mono">
                         {formatVND(cat.amount)}
                       </span>
-                      <span className="text-[10px] font-medium text-neutral-400 ml-1 font-mono">
+                      <span className="text-xs font-semibold text-neutral-400 ml-1.5 font-mono">
                         {cat.percentage.toFixed(1)}%
                       </span>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full h-1.5 bg-[#1c1c1c] rounded-full overflow-hidden border border-[#262626]">
+                  <div className="w-full h-2 bg-[#1c1c1c] rounded-full overflow-hidden border border-[#262626]">
                     <div
                       className="h-full rounded-full transition-all duration-300"
                       style={{
