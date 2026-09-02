@@ -110,39 +110,39 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   const weekHeaders = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
   return (
-    <div className="fixed inset-0 z-70 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
-      <div className="w-full max-w-sm bg-[#141414] border border-[#282828] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-70 bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150 text-neutral-100">
+      <div className="w-full max-w-sm bg-[#282c34] border border-[#3a3f4b] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#262626] mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-white/10 border border-white/15 text-neutral-200 flex items-center justify-center">
-              <CalendarIcon size={15} />
+        <div className="flex items-center justify-between pb-3.5 border-b border-[#3a3f4b] mb-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#323640] border border-[#3a3f4b] text-neutral-200 flex items-center justify-center">
+              <CalendarIcon size={18} />
             </div>
-            <h3 className="text-sm font-bold text-white">Chọn ngày giao dịch</h3>
+            <h3 className="text-base font-extrabold text-white">Chọn ngày giao dịch</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-[#202020] hover:bg-[#2a2a2a] text-neutral-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            className="w-8 h-8 rounded-full bg-[#323640] hover:bg-[#3c414f] text-neutral-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
             aria-label="Đóng"
           >
-            <X size={15} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Month Navigation (< Tháng M, YYYY >) */}
-        <div className="flex items-center justify-between px-1 py-2 mb-2 bg-[#1a1a1a] border border-[#262626] rounded-2xl">
+        <div className="flex items-center justify-between px-2 py-2.5 mb-2.5 bg-[#313540] border border-[#3a3f4b] rounded-2xl">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="w-8 h-8 rounded-xl bg-[#222222] hover:bg-[#2c2c2c] active:scale-90 text-neutral-200 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            className="w-9 h-9 rounded-xl bg-[#3c414f] hover:bg-[#464c5d] active:scale-90 text-neutral-200 hover:text-white flex items-center justify-center transition-all cursor-pointer"
             aria-label="Tháng trước"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={20} />
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-white tracking-wide">
+            <span className="text-sm font-extrabold text-white tracking-wide">
               {formatMonthVN(viewYear, viewMonth)}
             </span>
           </div>
@@ -150,20 +150,20 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="w-8 h-8 rounded-xl bg-[#222222] hover:bg-[#2c2c2c] active:scale-90 text-neutral-200 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            className="w-9 h-9 rounded-xl bg-[#3c414f] hover:bg-[#464c5d] active:scale-90 text-neutral-200 hover:text-white flex items-center justify-center transition-all cursor-pointer"
             aria-label="Tháng sau"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </button>
         </div>
 
         {/* Day of Week Headers */}
-        <div className="grid grid-cols-7 gap-1 text-center mb-1.5 px-1">
+        <div className="grid grid-cols-7 gap-1 text-center mb-2 px-1">
           {weekHeaders.map((header, idx) => (
             <div
               key={header}
-              className={`text-[11px] font-bold py-1 ${
-                idx === 6 ? 'text-rose-400' : 'text-neutral-400'
+              className={`text-xs font-black py-1 ${
+                idx === 6 ? 'text-rose-400' : 'text-neutral-300'
               }`}
             >
               {header}
@@ -172,7 +172,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
         </div>
 
         {/* Calendar Matrix */}
-        <div className="grid grid-cols-7 gap-1 p-1">
+        <div className="grid grid-cols-7 gap-1.5 p-1">
           {allCalendarDays.map((cell) => {
             const isSelected = cell.dateStr === selectedDate;
             const isToday = cell.dateStr === todayStr;
@@ -185,19 +185,19 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                   onSelectDate(cell.dateStr);
                   onClose();
                 }}
-                className={`aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-semibold relative transition-all active:scale-90 cursor-pointer ${
+                className={`aspect-square rounded-xl flex flex-col items-center justify-center text-xs sm:text-sm font-bold relative transition-all active:scale-90 cursor-pointer ${
                   isSelected
-                    ? 'bg-neutral-200 text-black font-black shadow-md shadow-white/10'
+                    ? 'bg-emerald-400 text-black font-black shadow-md'
                     : cell.isCurrentMonth
                     ? isToday
-                      ? 'bg-white/10 border border-white/20 text-white font-bold'
-                      : 'text-neutral-200 hover:bg-[#242424]'
-                    : 'text-neutral-600 hover:text-neutral-400 hover:bg-[#1a1a1a]'
+                      ? 'bg-white/20 border border-white/30 text-white font-extrabold'
+                      : 'text-neutral-100 hover:bg-[#323640]'
+                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#323640]/50'
                 }`}
               >
                 <span>{cell.day}</span>
                 {isToday && !isSelected && (
-                  <span className="w-1 h-1 rounded-full bg-white mt-0.5 absolute bottom-1.5" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-0.5 absolute bottom-1.5" />
                 )}
               </button>
             );
@@ -205,11 +205,11 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
         </div>
 
         {/* Quick select "Hôm nay" button */}
-        <div className="mt-3 pt-3 border-t border-[#262626] flex items-center justify-between">
+        <div className="mt-3.5 pt-3.5 border-t border-[#3a3f4b] flex items-center justify-between">
           <button
             type="button"
             onClick={handleSelectToday}
-            className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-neutral-200 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+            className="px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer"
           >
             Hôm nay ({todayStr.split('-').slice(1).reverse().join('/')})
           </button>
@@ -217,7 +217,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-full bg-[#202020] hover:bg-[#2a2a2a] text-xs font-semibold text-neutral-300 hover:text-white transition-all active:scale-95 cursor-pointer"
+            className="px-4 py-2 rounded-full bg-[#323640] hover:bg-[#3c414f] text-xs sm:text-sm font-bold text-neutral-200 hover:text-white transition-all active:scale-95 cursor-pointer"
           >
             Đóng
           </button>

@@ -151,46 +151,46 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
   }, [categoryBreakdown, activeTab, totals]);
 
   return (
-    <div className="space-y-3 pb-20">
+    <div className="space-y-3.5 pb-24 text-neutral-100">
       {/* 1. Account Filter Segment */}
-      <div className="bg-[#121212] border border-[#262626] p-1.5 rounded-2xl grid grid-cols-3 gap-1.5 shadow-sm">
+      <div className="bg-[#282c34] border border-[#3a3f4b] p-1.5 rounded-2xl grid grid-cols-3 gap-2 shadow-sm">
         <button
           onClick={() => setAccountFilter('all')}
-          className={`py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             accountFilter === 'all'
-              ? 'bg-[#1f1f1f] text-white border border-[#333333] shadow-xs'
-              : 'text-neutral-500 hover:text-neutral-300'
+              ? 'bg-[#363a44] text-white border border-[#484e5c] shadow-xs'
+              : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
-          <Layers size={15} />
+          <Layers size={16} />
           <span>Tổng</span>
         </button>
         <button
           onClick={() => setAccountFilter('wallet')}
-          className={`py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             accountFilter === 'wallet'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
-              : 'text-neutral-500 hover:text-neutral-300'
+              ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-xs'
+              : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
-          <Wallet size={15} className="text-amber-400" />
+          <Wallet size={16} className="text-amber-400" />
           <span>Ví</span>
         </button>
         <button
           onClick={() => setAccountFilter('bank')}
-          className={`py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             accountFilter === 'bank'
-              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-xs'
-              : 'text-neutral-500 hover:text-neutral-300'
+              ? 'bg-blue-500/25 text-blue-300 border border-blue-500/40 shadow-xs'
+              : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
-          <Building2 size={15} className="text-blue-400" />
+          <Building2 size={16} className="text-blue-400" />
           <span>Bank</span>
         </button>
       </div>
 
       {/* 2. Time Range Selector */}
-      <div className="flex items-center justify-between bg-[#121212] rounded-2xl p-1.5 border border-[#262626] shadow-sm">
+      <div className="flex items-center justify-between bg-[#282c34] rounded-2xl p-1.5 border border-[#3a3f4b] shadow-sm">
         {(
           [
             { id: 'week', label: 'Tuần' },
@@ -202,10 +202,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
           <button
             key={tab.id}
             onClick={() => setTimeRange(tab.id)}
-            className={`flex-1 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               timeRange === tab.id
-                ? 'bg-neutral-200 text-black shadow-xs font-black'
-                : 'text-neutral-400 hover:text-white'
+                ? 'bg-emerald-400 text-black shadow-xs font-black'
+                : 'text-neutral-300 hover:text-white'
             }`}
           >
             {tab.label}
@@ -214,34 +214,34 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
       </div>
 
       {/* 3. Summary Metric Cards */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2.5">
         {/* Income Card */}
-        <div className="bg-[#121212] rounded-2xl p-2.5 sm:p-3 border border-[#262626] shadow-sm">
-          <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center gap-1 uppercase tracking-wider">
-            <TrendingUp size={12} className="text-emerald-400" /> Thu
+        <div className="bg-[#282c34] rounded-2xl p-3 sm:p-3.5 border border-[#3a3f4b] shadow-sm">
+          <div className="text-xs font-bold text-neutral-300 flex items-center gap-1 uppercase tracking-wider">
+            <TrendingUp size={14} className="text-emerald-400" /> Thu
           </div>
-          <div className="text-xs sm:text-sm font-bold text-emerald-400 mt-1 truncate font-mono">
+          <div className="text-xs sm:text-base font-extrabold text-emerald-400 mt-1 truncate font-mono">
             +{formatVND(totals.income)}
           </div>
         </div>
 
         {/* Expense Card */}
-        <div className="bg-[#121212] rounded-2xl p-2.5 sm:p-3 border border-[#262626] shadow-sm">
-          <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center gap-1 uppercase tracking-wider">
-            <TrendingDown size={12} className="text-rose-400" /> Chi
+        <div className="bg-[#282c34] rounded-2xl p-3 sm:p-3.5 border border-[#3a3f4b] shadow-sm">
+          <div className="text-xs font-bold text-neutral-300 flex items-center gap-1 uppercase tracking-wider">
+            <TrendingDown size={14} className="text-rose-400" /> Chi
           </div>
-          <div className="text-xs sm:text-sm font-bold text-rose-400 mt-1 truncate font-mono">
+          <div className="text-xs sm:text-base font-extrabold text-rose-400 mt-1 truncate font-mono">
             −{formatVND(totals.expense)}
           </div>
         </div>
 
         {/* Net Card */}
-        <div className="bg-[#121212] rounded-2xl p-2.5 sm:p-3 border border-[#262626] shadow-sm">
-          <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center gap-1 uppercase tracking-wider">
-            <Scale size={12} className="text-neutral-400" /> Lệch
+        <div className="bg-[#282c34] rounded-2xl p-3 sm:p-3.5 border border-[#3a3f4b] shadow-sm">
+          <div className="text-xs font-bold text-neutral-300 flex items-center gap-1 uppercase tracking-wider">
+            <Scale size={14} className="text-neutral-300" /> Lệch
           </div>
           <div
-            className={`text-xs sm:text-sm font-bold mt-1 truncate font-mono ${
+            className={`text-xs sm:text-base font-extrabold mt-1 truncate font-mono ${
               totals.net > 0
                 ? 'text-emerald-400'
                 : totals.net < 0
@@ -255,30 +255,30 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
       </div>
 
       {/* 4. Tab switcher: Expense vs Income breakdown */}
-      <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-4 border border-[#262626] shadow-sm space-y-3.5">
-        <div className="flex items-center justify-between border-b border-[#262626] pb-2.5">
-          <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-            <PieChartIcon size={16} className="text-neutral-300" />
+      <div className="bg-[#282c34] rounded-2xl p-4 sm:p-5 border border-[#3a3f4b] shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-[#3a3f4b] pb-3">
+          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+            <PieChartIcon size={18} className="text-neutral-300" />
             Cơ cấu {activeTab === 'expense' ? 'chi tiêu' : 'thu nhập'}
           </h3>
 
-          <div className="flex items-center gap-1 bg-[#171717] border border-[#262626] p-0.5 rounded-xl">
+          <div className="flex items-center gap-1 bg-[#313540] border border-[#3a3f4b] p-1 rounded-xl">
             <button
               onClick={() => setActiveTab('expense')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'expense'
-                  ? 'bg-rose-500 text-white shadow-xs'
-                  : 'text-neutral-400 hover:text-white'
+                  ? 'bg-rose-500 text-white shadow-xs font-extrabold'
+                  : 'text-neutral-300 hover:text-white'
               }`}
             >
               Chi tiêu
             </button>
             <button
               onClick={() => setActiveTab('income')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'income'
-                  ? 'bg-emerald-500 text-black shadow-xs font-black'
-                  : 'text-neutral-400 hover:text-white'
+                  ? 'bg-emerald-400 text-black shadow-xs font-extrabold'
+                  : 'text-neutral-300 hover:text-white'
               }`}
             >
               Thu nhập
@@ -287,17 +287,17 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
         </div>
 
         {categoryBreakdown.length === 0 ? (
-          <div className="py-8 text-center text-neutral-500">
-            <div className="w-12 h-12 rounded-2xl bg-[#171717] border border-[#262626] flex items-center justify-center mx-auto mb-2.5 text-neutral-500">
-              <PieChartIcon size={22} />
+          <div className="py-8 text-center text-neutral-400">
+            <div className="w-12 h-12 rounded-2xl bg-[#313540] border border-[#3a3f4b] flex items-center justify-center mx-auto mb-2.5 text-neutral-400">
+              <PieChartIcon size={24} />
             </div>
-            <p className="text-xs sm:text-sm font-medium">Chưa có dữ liệu thống kê.</p>
+            <p className="text-xs sm:text-sm font-bold">Chưa có dữ liệu thống kê.</p>
           </div>
         ) : (
           <>
             {/* Donut Chart Visual */}
-            <div className="flex items-center justify-center py-1.5">
-              <div className="relative w-36 h-36 flex items-center justify-center">
+            <div className="flex items-center justify-center py-2">
+              <div className="relative w-40 h-40 flex items-center justify-center">
                 <svg viewBox="0 0 160 160" className="w-full h-full transform -rotate-90">
                   {donutSlices.map((slice, i) => (
                     <path
@@ -310,8 +310,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
                 </svg>
                 {/* Center text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                  <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Tổng cộng</span>
-                  <span className="text-xs sm:text-sm font-black text-white px-1 font-mono">
+                  <span className="text-[11px] font-bold text-neutral-300 uppercase tracking-wider">Tổng cộng</span>
+                  <span className="text-xs sm:text-base font-extrabold text-white px-1 font-mono">
                     {formatVND(activeTab === 'expense' ? totals.expense : totals.income)}
                   </span>
                 </div>
@@ -319,27 +319,27 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({ transactions }) 
             </div>
 
             {/* Breakdown List */}
-            <div className="space-y-2.5 pt-1">
+            <div className="space-y-3 pt-1">
               {categoryBreakdown.map((cat) => (
-                <div key={cat.name} className="space-y-1">
+                <div key={cat.name} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs sm:text-sm">
-                    <div className="flex items-center gap-2">
-                      <CategoryIcon category={cat.name} type={activeTab} size={16} />
-                      <span className="font-semibold text-neutral-200 text-xs sm:text-sm">{cat.name}</span>
-                      <span className="text-[11px] text-neutral-500">({cat.count})</span>
+                    <div className="flex items-center gap-2.5">
+                      <CategoryIcon category={cat.name} type={activeTab} size={18} />
+                      <span className="font-bold text-neutral-100 text-xs sm:text-sm">{cat.name}</span>
+                      <span className="text-xs text-neutral-400">({cat.count})</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-white text-xs sm:text-sm font-mono">
+                      <span className="font-extrabold text-white text-xs sm:text-sm font-mono">
                         {formatVND(cat.amount)}
                       </span>
-                      <span className="text-xs font-semibold text-neutral-400 ml-1.5 font-mono">
+                      <span className="text-xs font-bold text-neutral-300 ml-1.5 font-mono">
                         {cat.percentage.toFixed(1)}%
                       </span>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full h-2 bg-[#1c1c1c] rounded-full overflow-hidden border border-[#262626]">
+                  <div className="w-full h-2.5 bg-[#313540] rounded-full overflow-hidden border border-[#3e4350]">
                     <div
                       className="h-full rounded-full transition-all duration-300"
                       style={{

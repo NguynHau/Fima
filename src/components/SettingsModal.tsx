@@ -15,6 +15,7 @@ import {
 import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
 import { exportBackupZip, importBackupZip, triggerBlobDownload } from '../services/backupService';
 import { parseAmountInput } from '../utils/formatters';
+import appLogo from '../assets/logo.png';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -126,57 +127,57 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-y-auto">
-      <div className="w-full max-w-lg bg-[#0f0f0f] border border-[#262626] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex justify-center items-end sm:items-center overflow-y-auto text-neutral-100">
+      <div className="w-full max-w-lg bg-[#202328] border border-[#3a3f4b] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-[#121212] border-b border-[#262626] shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-[#282c34] border-b border-[#3a3f4b] shrink-0">
+          <div className="flex items-center gap-2.5">
             <img
-              src="/logo.png"
-              alt="Fima"
-              className="w-5 h-5 rounded-md object-cover border border-[#333333]"
+              src={appLogo}
+              alt="Fima Logo"
+              className="w-7 h-7 rounded-lg object-cover border border-[#4a5060] shadow-xs"
             />
-            <h2 className="text-sm font-bold text-white">Fima - Cài đặt & Dữ liệu</h2>
+            <h2 className="text-base font-extrabold text-white">Fima - Cài đặt & Dữ liệu</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-[#1c1c1c] hover:bg-[#262626] text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-[#323640] hover:bg-[#3c414f] text-neutral-300 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
             aria-label="Đóng cài đặt"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
           {/* Status Message */}
           {statusMessage && (
             <div
-              className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+              className={`p-3 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2.5 ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                  : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                  ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/40'
+                  : 'bg-rose-500/20 text-rose-200 border border-rose-500/40'
               }`}
             >
               {statusMessage.type === 'success' ? (
-                <Check size={15} className="text-emerald-400 shrink-0" />
+                <Check size={18} className="text-emerald-300 shrink-0" />
               ) : (
-                <AlertTriangle size={15} className="text-rose-400 shrink-0" />
+                <AlertTriangle size={18} className="text-rose-300 shrink-0" />
               )}
               <span>{statusMessage.text}</span>
             </div>
           )}
 
           {/* 1. Initial Balances Card */}
-          <div className="bg-[#141414] rounded-xl p-3 border border-[#262626] shadow-sm">
-            <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">
+          <div className="bg-[#282c34] rounded-2xl p-4 border border-[#3a3f4b] shadow-sm">
+            <h3 className="text-xs font-black text-neutral-300 uppercase tracking-wider mb-3">
               Số dư ban đầu
             </h3>
 
-            <form onSubmit={handleSaveBalances} noValidate className="space-y-2">
+            <form onSubmit={handleSaveBalances} noValidate className="space-y-3">
               <div>
-                <label htmlFor="settings-wallet-input" className="block text-[11px] font-semibold text-neutral-300 mb-0.5 flex items-center gap-1.5">
-                  <Wallet size={13} className="text-amber-400" />
+                <label htmlFor="settings-wallet-input" className="block text-xs sm:text-sm font-bold text-neutral-200 mb-1 flex items-center gap-2">
+                  <Wallet size={16} className="text-amber-400" />
                   Số dư ban đầu của Ví
                 </label>
                 <div className="relative flex items-center">
@@ -187,15 +188,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     value={walletNum > 0 ? walletNum.toLocaleString('vi-VN') : ''}
                     onChange={(e) => setWalletStr(e.target.value)}
                     placeholder="0"
-                    className="w-full text-xs font-bold text-white font-mono bg-[#1a1a1a] border border-[#333333] rounded-lg px-2.5 py-1.5 outline-none focus:border-emerald-500"
+                    className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#313540] border border-[#3e4350] rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-400"
                   />
-                  <span className="absolute right-2.5 text-xs font-bold text-neutral-500">₫</span>
+                  <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="settings-bank-input" className="block text-[11px] font-semibold text-neutral-300 mb-0.5 flex items-center gap-1.5">
-                  <Building2 size={13} className="text-blue-400" />
+                <label htmlFor="settings-bank-input" className="block text-xs sm:text-sm font-bold text-neutral-200 mb-1 flex items-center gap-2">
+                  <Building2 size={16} className="text-blue-400" />
                   Số dư ban đầu của Ngân hàng
                 </label>
                 <div className="relative flex items-center">
@@ -206,16 +207,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     value={bankNum > 0 ? bankNum.toLocaleString('vi-VN') : ''}
                     onChange={(e) => setBankStr(e.target.value)}
                     placeholder="0"
-                    className="w-full text-xs font-bold text-white font-mono bg-[#1a1a1a] border border-[#333333] rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500"
+                    className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#313540] border border-[#3e4350] rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-400"
                   />
-                  <span className="absolute right-2.5 text-xs font-bold text-neutral-500">₫</span>
+                  <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={isSavingBalances}
-                className="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg text-xs font-extrabold transition-all active:scale-98 flex items-center justify-center gap-1 cursor-pointer shadow-xs shadow-emerald-500/20 mt-1"
+                className="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-black rounded-xl text-xs sm:text-sm font-extrabold transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer shadow-md mt-1"
               >
                 {isSavingBalances ? 'Đang lưu...' : 'Lưu thay đổi số dư ban đầu'}
               </button>
@@ -223,11 +224,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* 2. Backup & Restore */}
-          <div className="bg-[#141414] rounded-xl p-3 border border-[#262626] shadow-sm space-y-2">
-            <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+          <div className="bg-[#282c34] rounded-2xl p-4 border border-[#3a3f4b] shadow-sm space-y-2.5">
+            <h3 className="text-xs font-black text-neutral-300 uppercase tracking-wider">
               Sao lưu & Khôi phục
             </h3>
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
               Dữ liệu và ảnh được lưu an toàn trên máy (IndexedDB). Xuất file .zip để lưu trữ hoặc chuyển thiết bị.
             </p>
 
@@ -239,18 +240,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className="hidden"
             />
 
-            <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
               <button
                 type="button"
                 onClick={handleExport}
                 disabled={isExporting}
-                className="py-2 px-2.5 bg-[#1e1e1e] hover:bg-[#282828] text-neutral-200 border border-[#333333] rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 active:scale-98 transition-all cursor-pointer"
+                className="py-2.5 px-3 bg-[#313540] hover:bg-[#3c414f] text-neutral-100 border border-[#3e4350] rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-xs"
               >
                 {isExporting ? (
-                  <div className="w-3.5 h-3.5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <Download size={13} className="text-emerald-400" />
+                    <Download size={16} className="text-emerald-400" />
                     Xuất backup (.zip)
                   </>
                 )}
@@ -260,13 +261,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="py-2 px-2.5 bg-[#1e1e1e] hover:bg-[#282828] text-neutral-200 border border-[#333333] rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 active:scale-98 transition-all cursor-pointer"
+                className="py-2.5 px-3 bg-[#313540] hover:bg-[#3c414f] text-neutral-100 border border-[#3e4350] rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-xs"
               >
                 {isImporting ? (
-                  <div className="w-3.5 h-3.5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <Upload size={13} className="text-neutral-400" />
+                    <Upload size={16} className="text-neutral-300" />
                     Nhập backup (.zip)
                   </>
                 )}
@@ -275,16 +276,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           {/* 3. PWA Install Guide */}
-          <div className="bg-[#141414] rounded-xl p-3 border border-[#262626] shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 flex items-center justify-center shrink-0">
-                <Smartphone size={16} />
+          <div className="bg-[#282c34] rounded-2xl p-4 border border-[#3a3f4b] shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 flex items-center justify-center shrink-0">
+                <Smartphone size={20} />
               </div>
               <div>
-                <div className="text-xs font-bold text-white">
+                <div className="text-xs sm:text-sm font-bold text-white">
                   Cài đặt Màn hình chính (PWA)
                 </div>
-                <div className="text-[10px] text-neutral-400">
+                <div className="text-xs text-neutral-300 font-medium">
                   Dùng như app native trên iPhone & Android
                 </div>
               </div>
@@ -292,35 +293,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <button
               onClick={onOpenInstallGuide}
-              className="px-2.5 py-1 rounded-lg bg-emerald-500 text-black text-xs font-bold hover:bg-emerald-400 active:scale-95 transition-all shrink-0 ml-2 cursor-pointer shadow-xs"
+              className="px-3.5 py-2 rounded-xl bg-emerald-400 text-black text-xs sm:text-sm font-extrabold hover:bg-emerald-300 active:scale-95 transition-all shrink-0 ml-2 cursor-pointer shadow-md"
             >
               Hướng dẫn
             </button>
           </div>
 
           {/* 4. Privacy & Info */}
-          <div className="bg-emerald-500/10 rounded-xl p-2.5 border border-emerald-500/25 flex items-start gap-2">
-            <ShieldCheck size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-            <div className="text-[11px] text-neutral-300 leading-relaxed">
-              <span className="font-bold text-emerald-400">Bảo mật:</span> 100% dữ liệu và ảnh chỉ lưu trực tiếp trên thiết bị của bạn.
+          <div className="bg-emerald-500/15 rounded-2xl p-3.5 border border-emerald-500/30 flex items-start gap-2.5">
+            <ShieldCheck size={18} className="text-emerald-300 shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm text-neutral-200 leading-relaxed font-medium">
+              <span className="font-bold text-emerald-300">Bảo mật:</span> 100% dữ liệu và ảnh chỉ lưu trực tiếp trên thiết bị của bạn.
             </div>
           </div>
 
           {/* 5. Danger Zone */}
-          <div className="bg-rose-500/10 rounded-xl p-3 border border-rose-500/25 space-y-1.5">
-            <h3 className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+          <div className="bg-rose-500/15 rounded-2xl p-4 border border-rose-500/30 space-y-2">
+            <h3 className="text-xs font-black text-rose-300 uppercase tracking-wider">
               Xóa toàn bộ dữ liệu
             </h3>
-            <p className="text-[11px] text-neutral-400 leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
               Hành động này sẽ xóa toàn bộ số dư, lịch sử giao dịch và hình ảnh chứng từ trên thiết bị này.
             </p>
 
             <button
               type="button"
               onClick={() => setShowClearConfirm(true)}
-              className="w-full py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 active:scale-98 transition-colors cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-md"
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
               Xóa toàn bộ dữ liệu
             </button>
           </div>
@@ -329,28 +330,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Clear Data Confirmation Modal */}
         {showClearConfirm && (
           <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-xs bg-[#161616] border border-[#262626] rounded-3xl p-5 shadow-2xl text-center animate-in zoom-in-95 duration-150">
-              <div className="w-12 h-12 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto mb-3">
-                <AlertTriangle size={24} />
+            <div className="w-full max-w-xs bg-[#282c34] border border-[#3a3f4b] rounded-3xl p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150">
+              <div className="w-14 h-14 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center mx-auto mb-3.5">
+                <AlertTriangle size={28} />
               </div>
-              <h3 className="text-base font-bold text-white mb-1">
+              <h3 className="text-base font-extrabold text-white mb-1.5">
                 Xác nhận xóa tất cả?
               </h3>
-              <p className="text-xs text-neutral-400 mb-5 leading-relaxed">
+              <p className="text-xs sm:text-sm text-neutral-300 mb-6 leading-relaxed font-medium">
                 Tất cả dữ liệu giao dịch và ảnh hóa đơn sẽ bị xóa vĩnh viễn khỏi thiết bị.
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setShowClearConfirm(false)}
-                  className="py-2.5 rounded-xl bg-[#262626] text-neutral-300 text-xs font-bold hover:bg-[#333333] active:scale-95 cursor-pointer"
+                  className="py-3 rounded-2xl bg-[#323640] text-neutral-200 text-xs sm:text-sm font-bold hover:bg-[#3c414f] active:scale-95 cursor-pointer border border-[#3a3f4b]"
                 >
                   Hủy
                 </button>
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-500 active:scale-95 cursor-pointer"
+                  className="py-3 rounded-2xl bg-rose-600 text-white text-xs sm:text-sm font-bold hover:bg-rose-500 active:scale-95 cursor-pointer shadow-md"
                 >
                   Xác nhận xóa
                 </button>

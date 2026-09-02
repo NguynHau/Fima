@@ -99,20 +99,20 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     accountFilter === 'wallet' || accountFilter === 'bank' ? accountFilter : undefined;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden">
-      <div className="w-full max-w-lg bg-[#0f0f0f] border border-[#262626] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden text-neutral-100">
+      <div className="w-full max-w-lg bg-[#202328] border border-[#3a3f4b] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
         {/* Header */}
-        <div className="px-4 py-2.5 bg-[#121212] border-b border-[#262626] shrink-0 space-y-2">
+        <div className="px-4.5 py-3 bg-[#282c34] border-b border-[#3a3f4b] shrink-0 space-y-2.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
-                <Calendar size={15} />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                <Calendar size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-white leading-tight">
+                <h2 className="text-base font-extrabold text-white leading-tight">
                   {formatFullDateVN(date)}
                 </h2>
-                <p className="text-[11px] text-neutral-400 font-medium">
+                <p className="text-xs text-neutral-300 font-bold mt-0.5">
                   {filteredTransactions.length} giao dịch {accountFilter !== 'all' ? `(${accountFilter === 'wallet' ? 'Ví' : 'Bank'})` : ''}
                 </p>
               </div>
@@ -120,28 +120,28 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
             <button
               onClick={onClose}
-              className="w-7 h-7 rounded-full bg-[#1c1c1c] hover:bg-[#262626] text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-[#323640] hover:bg-[#3c414f] text-neutral-200 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
               aria-label="Đóng"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
 
           {/* Account Filter Switcher within Day Detail */}
           {onAccountFilterChange && (
-            <div className="bg-[#171717] p-0.5 rounded-lg border border-[#262626] grid grid-cols-3 gap-1">
+            <div className="bg-[#313540] p-1 rounded-xl border border-[#3a3f4b] grid grid-cols-3 gap-1.5">
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('all')}
-                className={`py-1 px-2 rounded-md text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   accountFilter === 'all'
-                    ? 'bg-[#262626] text-white shadow-xs border border-[#383838]'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-[#3d4250] text-white shadow-xs border border-[#4a5060]'
+                    : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <Layers
-                  size={11}
-                  className={accountFilter === 'all' ? 'text-neutral-200' : 'text-neutral-500'}
+                  size={14}
+                  className={accountFilter === 'all' ? 'text-white' : 'text-neutral-400'}
                 />
                 <span>Tất cả</span>
               </button>
@@ -149,15 +149,15 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('wallet')}
-                className={`py-1 px-2 rounded-md text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   accountFilter === 'wallet'
-                    ? 'bg-amber-500/20 text-amber-300 shadow-xs border border-amber-500/40'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-amber-500/25 text-amber-300 shadow-xs border border-amber-500/50'
+                    : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <Wallet
-                  size={11}
-                  className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-500'}
+                  size={14}
+                  className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
                 />
                 <span>Ví</span>
               </button>
@@ -165,15 +165,15 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('bank')}
-                className={`py-1 px-2 rounded-md text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   accountFilter === 'bank'
-                    ? 'bg-blue-500/20 text-blue-300 shadow-xs border border-blue-500/40'
-                    : 'text-neutral-400 hover:text-white'
+                    ? 'bg-blue-500/25 text-blue-300 shadow-xs border border-blue-500/50'
+                    : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <Building2
-                  size={11}
-                  className={accountFilter === 'bank' ? 'text-blue-400' : 'text-neutral-500'}
+                  size={14}
+                  className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
                 />
                 <span>Bank</span>
               </button>
@@ -181,9 +181,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
           )}
 
           {/* Daily Summary Banner */}
-          <div className="bg-[#171717] rounded-xl p-2.5 border border-[#262626] flex items-center justify-between">
+          <div className="bg-[#313540] rounded-2xl p-3 border border-[#3a3f4b] flex items-center justify-between">
             <div>
-              <div className="text-[9px] font-medium text-neutral-400 uppercase tracking-wider">
+              <div className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
                 {accountFilter === 'all'
                   ? 'Tổng trong ngày'
                   : accountFilter === 'wallet'
@@ -191,33 +191,33 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                     : 'Tổng Bank trong ngày'}
               </div>
               <div
-                className={`text-base font-bold tracking-tight mt-0.5 font-mono ${
+                className={`text-lg font-black tracking-tight mt-0.5 font-mono ${
                   dayNet > 0
                     ? 'text-emerald-400'
                     : dayNet < 0
                       ? 'text-rose-400'
-                      : 'text-neutral-300'
+                      : 'text-neutral-200'
                 }`}
               >
                 {dayNet !== 0 ? formatSignedVND(Math.abs(dayNet), dayNet > 0 ? 'income' : 'expense') : '0 ₫'}
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 text-right">
+            <div className="flex items-center gap-3 text-right">
               <div>
-                <div className="text-[9px] text-neutral-400 font-medium flex items-center gap-0.5 justify-end uppercase tracking-wider">
-                  <TrendingUp size={10} className="text-emerald-400" /> Thu
+                <div className="text-xs text-neutral-300 font-bold flex items-center gap-0.5 justify-end uppercase tracking-wider">
+                  <TrendingUp size={12} className="text-emerald-400" /> Thu
                 </div>
-                <div className="text-[11px] font-bold text-emerald-400 font-mono">
+                <div className="text-xs sm:text-sm font-bold text-emerald-400 font-mono">
                   +{formatVND(dayIncome)}
                 </div>
               </div>
-              <div className="w-px h-5 bg-[#262626]" />
+              <div className="w-px h-6 bg-[#3a3f4b]" />
               <div>
-                <div className="text-[9px] text-neutral-400 font-medium flex items-center gap-0.5 justify-end uppercase tracking-wider">
-                  <TrendingDown size={10} className="text-rose-400" /> Chi
+                <div className="text-xs text-neutral-300 font-bold flex items-center gap-0.5 justify-end uppercase tracking-wider">
+                  <TrendingDown size={12} className="text-rose-400" /> Chi
                 </div>
-                <div className="text-[11px] font-bold text-rose-400 font-mono">
+                <div className="text-xs sm:text-sm font-bold text-rose-400 font-mono">
                   −{formatVND(dayExpense)}
                 </div>
               </div>
@@ -226,30 +226,30 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         </div>
 
         {/* Transaction List */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {isLoading ? (
-            <div className="py-12 flex flex-col items-center justify-center text-neutral-500 gap-2">
-              <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs font-medium">Đang tải giao dịch...</span>
+            <div className="py-12 flex flex-col items-center justify-center text-neutral-400 gap-2">
+              <div className="w-7 h-7 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm font-bold">Đang tải giao dịch...</span>
             </div>
           ) : filteredTransactions.length === 0 ? (
             <div className="py-12 text-center px-4">
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2">
-                <Calendar size={22} />
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3">
+                <Calendar size={24} />
               </div>
-              <h3 className="text-xs font-bold text-white mb-0.5">
+              <h3 className="text-sm font-bold text-white mb-1">
                 Chưa có giao dịch nào
               </h3>
-              <p className="text-[11px] text-neutral-400 max-w-xs mx-auto mb-3">
+              <p className="text-xs text-neutral-300 max-w-xs mx-auto mb-4 leading-relaxed font-medium">
                 Ngày {formatDateVN(date)} chưa ghi nhận khoản thu hoặc chi nào{' '}
                 {accountFilter !== 'all' ? `thuộc ${accountFilter === 'wallet' ? 'Ví tiền' : 'Ngân hàng'}` : ''}.
               </p>
               <button
                 type="button"
                 onClick={() => onAddNewForDate(date, defaultAccountForNew)}
-                className="px-3 py-2 bg-neutral-200 hover:bg-white text-black rounded-lg text-xs font-extrabold shadow-sm inline-flex items-center gap-1 active:scale-95 cursor-pointer"
+                className="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-black rounded-xl text-xs sm:text-sm font-black shadow-md inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
               >
-                <Plus size={14} strokeWidth={2.5} />
+                <Plus size={16} strokeWidth={3} />
                 Thêm giao dịch ngay
               </button>
             </div>
@@ -260,12 +260,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                 <div
                   key={tx.id}
                   onClick={() => onSelectTransaction(tx)}
-                  className="bg-[#141414] rounded-xl p-2.5 border border-[#262626] shadow-sm hover:border-[#3a3a3a] transition-all active:scale-[0.99] cursor-pointer"
+                  className="bg-[#282c34] rounded-2xl p-3 border border-[#3a3f4b] shadow-sm hover:border-neutral-400 transition-all active:scale-[0.99] cursor-pointer"
                 >
                   {/* Visual Proof Photo Preview */}
                   {photoUrl && (
                     <div
-                      className="relative rounded-lg overflow-hidden h-28 w-full bg-[#0a0a0a] border border-[#262626] mb-2 group"
+                      className="relative rounded-xl overflow-hidden h-32 w-full bg-[#181a1e] border border-[#3a3f4b] mb-2.5 group"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPhoto(photoUrl);
@@ -278,8 +278,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                        <span className="text-[10px] font-bold bg-black/70 px-2 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1 border border-[#333333]">
-                          <ImageIcon size={10} /> Phóng to
+                        <span className="text-xs font-bold bg-black/80 px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1.5 border border-[#424754]">
+                          <ImageIcon size={12} /> Phóng to
                         </span>
                       </div>
                     </div>
@@ -287,38 +287,38 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
                   {/* Transaction Details Row */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <CategoryIcon
                         category={tx.category}
                         type={tx.type}
-                        size={16}
+                        size={20}
                       />
                       <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-extrabold text-white">
                             {tx.category}
                           </span>
                           {/* Account badge */}
                           <span
-                            className={`inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.2 rounded ${
+                            className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md ${
                               tx.account === 'wallet'
-                                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                                : 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
                             }`}
                           >
                             {tx.account === 'wallet' ? (
                               <>
-                                <Wallet size={9} /> Ví
+                                <Wallet size={11} /> Ví
                               </>
                             ) : (
                               <>
-                                <Building2 size={9} /> Bank
+                                <Building2 size={11} /> Bank
                               </>
                             )}
                           </span>
                         </div>
                         {tx.note && (
-                          <p className="text-[11px] text-neutral-400 mt-0.5 font-medium line-clamp-1">
+                          <p className="text-xs text-neutral-300 mt-0.5 font-medium line-clamp-1">
                             &ldquo;{tx.note}&rdquo;
                           </p>
                         )}
@@ -327,15 +327,15 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
                     <div className="text-right">
                       <div
-                        className={`text-sm font-bold tracking-tight font-mono ${
+                        className={`text-base font-black tracking-tight font-mono ${
                           tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
                         }`}
                       >
                         {formatSignedVND(tx.amount, tx.type)}
                       </div>
-                      <div className="text-[9.5px] text-neutral-500 flex items-center justify-end gap-0.5 mt-0.5">
+                      <div className="text-xs text-neutral-400 flex items-center justify-end gap-0.5 mt-0.5 font-semibold">
                         <span>Sửa</span>
-                        <ChevronRight size={10} />
+                        <ChevronRight size={12} />
                       </div>
                     </div>
                   </div>
@@ -347,13 +347,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
         {/* Bottom Bar: Add more for this date */}
         {filteredTransactions.length > 0 && (
-          <div className="p-2.5 bg-[#121212] border-t border-[#262626] shrink-0 pb-[max(env(safe-area-inset-bottom),10px)]">
+          <div className="p-3 bg-[#282c34] border-t border-[#3a3f4b] shrink-0 pb-[max(env(safe-area-inset-bottom),14px)]">
             <button
               type="button"
               onClick={() => onAddNewForDate(date, defaultAccountForNew)}
-              className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-neutral-200 border border-white/15 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 active:scale-98 transition-colors cursor-pointer"
+              className="w-full py-3 bg-white/15 hover:bg-white/25 text-white border border-white/20 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-sm"
             >
-              <Plus size={15} strokeWidth={2.5} />
+              <Plus size={18} strokeWidth={3} />
               Thêm giao dịch vào ngày {formatDateVN(date)}
             </button>
           </div>

@@ -147,9 +147,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex justify-center text-neutral-200 font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-[#181a1e] flex justify-center text-neutral-100 font-sans selection:bg-emerald-500/30">
       {/* Mobile-first centered phone container (max-w-md = 448px) */}
-      <div className="w-full max-w-md min-h-screen bg-[#0a0a0a] border-x border-[#262626]/60 flex flex-col relative shadow-2xl">
+      <div className="w-full max-w-md min-h-screen bg-[#202328] border-x border-[#333842]/60 flex flex-col relative shadow-2xl">
         {/* Header */}
         <Header
           balances={balances}

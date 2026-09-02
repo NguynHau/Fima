@@ -163,23 +163,23 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
   return (
     <div className="space-y-2.5 pb-20">
       {/* Month Selector Bar */}
-      <div className="flex items-center justify-between bg-[#121212] rounded-2xl p-2 px-3 border border-[#262626] shadow-sm">
+      <div className="flex items-center justify-between bg-[#282c34] rounded-2xl p-2.5 px-3.5 border border-[#3a3f4b] shadow-sm">
         <button
           onClick={onPrevMonth}
-          className="w-8 h-8 rounded-xl hover:bg-[#1a1a1a] text-neutral-300 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+          className="w-10 h-10 rounded-xl hover:bg-[#323640] text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
           aria-label="Tháng trước"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={22} />
         </button>
 
-        <div className="flex items-center gap-2">
-          <span className="font-extrabold text-base sm:text-lg tracking-tight text-white">
+        <div className="flex items-center gap-2.5">
+          <span className="font-black text-lg sm:text-xl tracking-tight text-white">
             {formatMonthVN(currentYear, currentMonth)}
           </span>
           {!isCurrentRealMonth && (
             <button
               onClick={onTodayMonth}
-              className="text-[11px] font-bold text-neutral-200 bg-white/10 hover:bg-white/20 border border-white/15 px-2.5 py-0.5 rounded-lg transition-colors cursor-pointer"
+              className="text-xs font-bold text-neutral-100 bg-white/15 hover:bg-white/25 border border-white/20 px-3 py-1 rounded-xl transition-colors cursor-pointer"
             >
               Hôm nay
             </button>
@@ -188,27 +188,27 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
 
         <button
           onClick={onNextMonth}
-          className="w-8 h-8 rounded-xl hover:bg-[#1a1a1a] text-neutral-300 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+          className="w-10 h-10 rounded-xl hover:bg-[#323640] text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
           aria-label="Tháng sau"
         >
-          <ChevronRight size={18} />
+          <ChevronRight size={22} />
         </button>
       </div>
 
       {/* Account Filter Segmented Control (Tất cả | Ví | Bank) */}
-      <div className="bg-[#121212] p-1.5 rounded-2xl border border-[#262626] grid grid-cols-3 gap-1.5 shadow-sm">
+      <div className="bg-[#282c34] p-1.5 rounded-2xl border border-[#3a3f4b] grid grid-cols-3 gap-2 shadow-sm">
         <button
           type="button"
           onClick={() => onAccountFilterChange('all')}
-          className={`py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+          className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
             accountFilter === 'all'
-              ? 'bg-[#242424] text-white shadow-xs border border-[#383838]'
-              : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#181818]'
+              ? 'bg-[#3d4250] text-white shadow-xs border border-[#4a5060]'
+              : 'text-neutral-300 hover:text-white hover:bg-[#323640]'
           }`}
         >
           <Layers
-            size={15}
-            className={accountFilter === 'all' ? 'text-neutral-200' : 'text-neutral-500'}
+            size={18}
+            className={accountFilter === 'all' ? 'text-white' : 'text-neutral-400'}
           />
           <span>Tất cả</span>
         </button>
@@ -216,15 +216,15 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         <button
           type="button"
           onClick={() => onAccountFilterChange('wallet')}
-          className={`py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+          className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
             accountFilter === 'wallet'
-              ? 'bg-amber-500/20 text-amber-300 shadow-xs border border-amber-500/40'
-              : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#181818]'
+              ? 'bg-amber-500/25 text-amber-300 shadow-xs border border-amber-500/50'
+              : 'text-neutral-300 hover:text-white hover:bg-[#323640]'
           }`}
         >
           <Wallet
-            size={15}
-            className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-500'}
+            size={18}
+            className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
           />
           <span>Ví</span>
         </button>
@@ -232,58 +232,58 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         <button
           type="button"
           onClick={() => onAccountFilterChange('bank')}
-          className={`py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+          className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
             accountFilter === 'bank'
-              ? 'bg-blue-500/20 text-blue-300 shadow-xs border border-blue-500/40'
-              : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#181818]'
+              ? 'bg-blue-500/25 text-blue-300 shadow-xs border border-blue-500/50'
+              : 'text-neutral-300 hover:text-white hover:bg-[#323640]'
           }`}
         >
           <Building2
-            size={15}
-            className={accountFilter === 'bank' ? 'text-blue-400' : 'text-neutral-500'}
+            size={18}
+            className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
           />
           <span>Bank</span>
         </button>
       </div>
 
       {/* Month Summary Cards */}
-      <div className="bg-[#121212] rounded-2xl p-2.5 px-3 border border-[#262626] shadow-sm">
-        <div className="grid grid-cols-3 gap-1 divide-x divide-[#262626]">
+      <div className="bg-[#282c34] rounded-2xl p-3 px-3.5 border border-[#3a3f4b] shadow-sm">
+        <div className="grid grid-cols-3 gap-1.5 divide-x divide-[#3a3f4b]">
           {/* Income */}
           <div className="pr-1.5 text-center">
-            <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center justify-center gap-1 uppercase tracking-wider">
-              <TrendingUp size={12} className="text-emerald-400" />
+            <div className="text-xs sm:text-xs font-bold text-neutral-300 flex items-center justify-center gap-1 uppercase tracking-wider">
+              <TrendingUp size={14} className="text-emerald-400" />
               <span>Thu</span>
             </div>
-            <div className="text-xs sm:text-sm font-bold text-emerald-400 mt-1 truncate font-mono">
+            <div className="text-sm sm:text-base font-bold text-emerald-400 mt-1 truncate font-mono">
               +{formatVND(monthSummary.income)}
             </div>
           </div>
 
           {/* Expense */}
           <div className="px-1.5 text-center">
-            <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center justify-center gap-1 uppercase tracking-wider">
-              <TrendingDown size={12} className="text-rose-400" />
+            <div className="text-xs sm:text-xs font-bold text-neutral-300 flex items-center justify-center gap-1 uppercase tracking-wider">
+              <TrendingDown size={14} className="text-rose-400" />
               <span>Chi</span>
             </div>
-            <div className="text-xs sm:text-sm font-bold text-rose-400 mt-1 truncate font-mono">
+            <div className="text-sm sm:text-base font-bold text-rose-400 mt-1 truncate font-mono">
               −{formatVND(monthSummary.expense)}
             </div>
           </div>
 
           {/* Net / Chênh lệch */}
           <div className="pl-1.5 text-center">
-            <div className="text-[10px] sm:text-[11px] font-semibold text-neutral-400 flex items-center justify-center gap-1 uppercase tracking-wider">
-              <Scale size={12} className="text-neutral-400" />
+            <div className="text-xs sm:text-xs font-bold text-neutral-300 flex items-center justify-center gap-1 uppercase tracking-wider">
+              <Scale size={14} className="text-neutral-300" />
               <span>Lệch</span>
             </div>
             <div
-              className={`text-xs sm:text-sm font-bold mt-1 truncate font-mono ${
+              className={`text-sm sm:text-base font-bold mt-1 truncate font-mono ${
                 monthSummary.net > 0
                   ? 'text-emerald-400'
                   : monthSummary.net < 0
                     ? 'text-rose-400'
-                    : 'text-neutral-300'
+                    : 'text-neutral-200'
               }`}
             >
               {monthSummary.net !== 0
@@ -295,14 +295,14 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-[#121212] rounded-2xl p-2.5 sm:p-3 border border-[#262626] shadow-sm">
+      <div className="bg-[#282c34] rounded-2xl p-3 sm:p-3.5 border border-[#3a3f4b] shadow-sm">
         {/* Day of week headers */}
-        <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+        <div className="grid grid-cols-7 gap-1 text-center mb-2">
           {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day, idx) => (
             <div
               key={day}
-              className={`text-[11px] sm:text-xs font-bold py-1 ${
-                idx >= 5 ? 'text-neutral-400' : 'text-neutral-500'
+              className={`text-xs sm:text-sm font-black py-1 ${
+                idx >= 5 ? 'text-neutral-300' : 'text-neutral-400'
               }`}
             >
               {day}
@@ -311,7 +311,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         </div>
 
         {/* Day Cells */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
           {calendarCells.map((cell) => {
             const hasActivity = cell.count > 0;
             const hasBoth = cell.income > 0 && cell.expense > 0;
@@ -320,23 +320,23 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
               <button
                 key={cell.dateStr}
                 onClick={() => onSelectDay(cell.dateStr)}
-                className={`min-h-[50px] sm:min-h-[56px] p-1.5 rounded-xl flex flex-col justify-between items-center transition-all relative border active:scale-95 cursor-pointer ${
+                className={`min-h-[58px] sm:min-h-[66px] p-1.5 rounded-xl flex flex-col justify-between items-center transition-all relative border active:scale-95 cursor-pointer ${
                   cell.isToday
-                    ? 'border-neutral-300 bg-neutral-800/90 font-bold shadow-xs'
+                    ? 'border-neutral-200 bg-[#3f4553] font-bold shadow-sm ring-1 ring-white/20'
                     : cell.isCurrentMonth
-                      ? 'border-[#262626] bg-[#171717] hover:bg-[#1f1f1f]'
-                      : 'border-transparent bg-transparent opacity-20 hover:opacity-40'
+                      ? 'border-[#3a3f4b] bg-[#313540] hover:bg-[#3a3f4c]'
+                      : 'border-transparent bg-transparent opacity-25 hover:opacity-50'
                 }`}
               >
                 {/* Day number badge */}
                 <div className="w-full flex items-center justify-between">
                   <span
-                    className={`text-xs sm:text-sm font-bold inline-flex items-center justify-center w-5.5 h-5.5 rounded-full ${
+                    className={`text-xs sm:text-sm font-bold inline-flex items-center justify-center w-6 h-6 rounded-full ${
                       cell.isToday
-                        ? 'bg-neutral-200 text-black font-black'
+                        ? 'bg-white text-black font-black shadow-xs'
                         : cell.isCurrentMonth
-                          ? 'text-neutral-200'
-                          : 'text-neutral-500'
+                          ? 'text-neutral-100'
+                          : 'text-neutral-400'
                     }`}
                   >
                     {cell.dayNum}
@@ -345,8 +345,8 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   {/* Dual badge dot if both income and expense exist */}
                   {hasBoth && (
                     <div className="flex items-center gap-0.5 pr-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="w-2 h-2 rounded-full bg-rose-400" />
                     </div>
                   )}
                 </div>
@@ -355,12 +355,12 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                 <div className="w-full mt-auto text-center">
                   {hasActivity ? (
                     <div
-                      className={`text-[9px] sm:text-[10px] font-bold tracking-tight px-1 py-0.5 rounded leading-tight truncate font-mono ${
+                      className={`text-[10px] sm:text-[11px] font-extrabold tracking-tight px-1 py-0.5 rounded leading-tight truncate font-mono ${
                         cell.net > 0
-                          ? 'text-emerald-400 bg-emerald-500/10'
+                          ? 'text-emerald-300 bg-emerald-500/20'
                           : cell.net < 0
-                            ? 'text-rose-400 bg-rose-500/10'
-                            : 'text-neutral-400 bg-[#222222]'
+                            ? 'text-rose-300 bg-rose-500/20'
+                            : 'text-neutral-300 bg-[#3d4250]'
                       }`}
                     >
                       {cell.net > 0
@@ -370,7 +370,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                           : `0`}
                     </div>
                   ) : (
-                    <div className="h-2.5" />
+                    <div className="h-3" />
                   )}
                 </div>
               </button>
