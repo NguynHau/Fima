@@ -311,10 +311,6 @@ export default function App() {
           }}
           allTransactions={transactions}
           onDeleteTransaction={handleDeleteTransactionFromDay}
-          onChangePhoto={(tx) => {
-            setTransactionForPhotoChange(tx);
-            setIsCameraOpen(true);
-          }}
         />
 
         {/* 4. Edit / Delete Transaction */}

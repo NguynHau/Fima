@@ -12,6 +12,7 @@ import {
   Layers,
   Trash2,
   Camera,
+  Pencil,
 } from 'lucide-react';
 import { type Transaction, type CalendarAccountFilter, type AccountType } from '../types';
 import { getTransactionsByDate, getImageBlob, deleteTransaction } from '../db/database';
@@ -28,7 +29,6 @@ interface DayDetailModalProps {
   onAddNewForDate: (date: string, defaultAccount?: AccountType) => void;
   allTransactions?: Transaction[];
   onDeleteTransaction?: (transaction: Transaction) => Promise<void> | void;
-  onChangePhoto?: (transaction: Transaction) => void;
 }
 
 interface SwipeableTransactionRowProps {
@@ -40,7 +40,6 @@ interface SwipeableTransactionRowProps {
   onSelectTransaction: (transaction: Transaction) => void;
   onSelectPhoto: (photo: { url: string; tx: Transaction }) => void;
   onDeleteClick: (tx: Transaction) => void;
-  onChangePhotoClick: (tx: Transaction) => void;
 }
 
 const ACTION_WIDTH = 84;
@@ -55,7 +54,6 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
   onSelectTransaction,
   onSelectPhoto,
   onDeleteClick,
-  onChangePhotoClick,
 }) => {
   const [offset, setOffset] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -246,16 +244,16 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
             e.stopPropagation();
             setOffset(0);
             onSwipeClose();
-            onChangePhotoClick(tx);
+            onSelectTransaction(tx);
           }}
           className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-white hover:bg-blue-700 active:scale-95 transition-all cursor-pointer select-none"
-          title={tx.imageId ? 'Sửa / Thay ảnh' : 'Chụp ảnh'}
+          title="Sửa giao dịch và ảnh"
         >
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shadow-xs">
-            <Camera size={20} strokeWidth={2.4} />
+            <Pencil size={20} strokeWidth={2.4} />
           </div>
           <span className="text-[11px] font-black tracking-tight leading-tight">
-            {tx.imageId ? 'Sửa ảnh' : 'Thêm ảnh'}
+            Sửa ảnh
           </span>
         </button>
       </div>
@@ -401,7 +399,6 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   onAddNewForDate,
   allTransactions,
   onDeleteTransaction,
-  onChangePhoto,
 }) => {
   const [dbTransactions, setDbTransactions] = useState<Transaction[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
@@ -686,13 +683,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                     setActiveSwipedId(null);
                   }
                 }}
-                onSelectTransaction={onSelectTransaction}
+                onSelectTransaction={(t) => {
+                  setActiveSwipedId(null);
+                  onSelectTransaction(t);
+                }}
                 onSelectPhoto={(photo) => setSelectedPhoto(photo)}
                 onDeleteClick={(t) => setTxToDelete(t)}
-                onChangePhotoClick={(t) => {
-                  setActiveSwipedId(null);
-                  onChangePhoto?.(t);
-                }}
               />
             ))
           )}
