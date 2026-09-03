@@ -20,51 +20,63 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
   const isInitialRender = useRef(true);
 
-  const [isPressing, setIsPressing] = useState(false);
+  const [hoverTab, setHoverTab] = useState<ActiveTab | null>(null);
+  const isPressingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const isDraggingRef = useRef(false);
 
-  // 1. Core X Position
+  // 1. Core Horizontal Position Tracking
   const blobX = useMotionValue(0);
-  const animatedX = useSpring(blobX, { stiffness: 280, damping: 28, mass: 0.8 });
+  const animatedX = useSpring(blobX, { stiffness: 420, damping: 32, mass: 0.5 });
   const velocityX = useVelocity(animatedX);
 
-  // 2. Velocity-based deformation
-  const velScaleX = useTransform(velocityX, [-1200, 0, 1200], [1.25, 1, 1.25]);
-  const velScaleY = useTransform(velocityX, [-1200, 0, 1200], [0.85, 1, 0.85]);
+  // 2. Velocity-based deformation (Dynamic fluid elongation during drag / jump)
+  const velScaleX = useTransform(velocityX, [-700, 0, 700], [1.3, 1, 1.3]);
+  const velScaleY = useTransform(velocityX, [-700, 0, 700], [0.8, 1, 0.8]);
 
-  // 3. Press-based "Swell" deformation
-  const pressScaleX = useSpring(isPressing ? 1.05 : 1, { stiffness: 400, damping: 22 });
-  const pressScaleY = useSpring(isPressing ? 1.6 : 1, { stiffness: 400, damping: 22 });
+  // 3. Press-based "Swell" deformation (Liquid Glass expands outwards and breaks past island borders)
+  const pressTargetX = useMotionValue(1);
+  const pressTargetY = useMotionValue(1);
+  const pressScaleX = useSpring(pressTargetX, { stiffness: 350, damping: 22, mass: 0.5 });
+  const pressScaleY = useSpring(pressTargetY, { stiffness: 350, damping: 22, mass: 0.5 });
 
   // 4. Combined Scale outputs
-  const finalScaleX = useMotionValue(1);
-  const finalScaleY = useMotionValue(1);
+  const finalScaleX = useTransform([pressScaleX, velScaleX], ([p, v]: number[]) => p * v);
+  const finalScaleY = useTransform([pressScaleY, velScaleY], ([p, v]: number[]) => p * v);
 
-  // Sync combined scales
-  useEffect(() => {
-    const update = () => {
-      finalScaleX.set(pressScaleX.get() * velScaleX.get());
-      finalScaleY.set(pressScaleY.get() * velScaleY.get());
-    };
-    
-    const unsub1 = pressScaleX.on('change', update);
-    const unsub2 = velScaleX.on('change', update);
-    const unsub3 = pressScaleY.on('change', update);
-    const unsub4 = velScaleY.on('change', update);
-    
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
-  }, [pressScaleX, velScaleX, pressScaleY, velScaleY, finalScaleX, finalScaleY]);
-
-  const updateBlobPosition = (tab: ActiveTab) => {
+  const getTabCenter = (tab: ActiveTab): number => {
     const el = tabsRef.current[tab];
     const navEl = navRef.current;
     if (el && navEl) {
       const rect = el.getBoundingClientRect();
       const navRect = navEl.getBoundingClientRect();
-      const centerX = rect.left - navRect.left + rect.width / 2;
-      
+      return rect.left - navRect.left + rect.width / 2;
+    }
+    return 0;
+  };
+
+  const getNearestTab = (currentX: number): ActiveTab => {
+    let nearest = activeTab;
+    let minDistance = Infinity;
+    TAB_ORDER.forEach((tab) => {
+      const center = getTabCenter(tab);
+      if (center > 0) {
+        const dist = Math.abs(center - currentX);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearest = tab;
+        }
+      }
+    });
+    return nearest;
+  };
+
+  const updateBlobPosition = (tab: ActiveTab) => {
+    const centerX = getTabCenter(tab);
+    if (centerX > 0) {
       if (isInitialRender.current) {
         blobX.set(centerX);
-        animatedX.set(centerX); // Jump instantly on mount
+        animatedX.set(centerX);
         isInitialRender.current = false;
       } else {
         blobX.set(centerX);
@@ -73,10 +85,10 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   };
 
   useEffect(() => {
-    if (!isPressing) {
+    if (!isPressingRef.current) {
       requestAnimationFrame(() => updateBlobPosition(activeTab));
     }
-  }, [activeTab, isPressing]);
+  }, [activeTab]);
 
   useEffect(() => {
     const handleResize = () => updateBlobPosition(activeTab);
@@ -86,80 +98,106 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('#nav-btn-add-transaction')) return;
-    
-    setIsPressing(true);
+
     const navEl = navRef.current;
     if (!navEl) return;
     const navRect = navEl.getBoundingClientRect();
     const touchX = e.clientX - navRect.left;
-    
-    blobX.set(touchX);
-    e.currentTarget.setPointerCapture(e.pointerId);
+
+    isPressingRef.current = true;
+    dragStartXRef.current = touchX;
+    isDraggingRef.current = false;
+
+    // SWELL: Instantly trigger spring outwards beyond Island border (1.38x horizontal, 1.95x vertical)
+    pressTargetX.set(1.38);
+    pressTargetY.set(1.95);
+
+    const touchedTab = getNearestTab(touchX);
+    setHoverTab(touchedTab);
+
+    const targetCenter = getTabCenter(touchedTab);
+    if (targetCenter > 0) {
+      blobX.set(targetCenter);
+    }
+
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isPressing) return;
+    if (!isPressingRef.current) return;
     const navEl = navRef.current;
     if (!navEl) return;
     const navRect = navEl.getBoundingClientRect();
     const touchX = e.clientX - navRect.left;
-    
-    const clampedX = Math.max(10, Math.min(navRect.width - 10, touchX));
-    blobX.set(clampedX);
+
+    if (Math.abs(touchX - dragStartXRef.current) > 3) {
+      isDraggingRef.current = true;
+    }
+
+    if (isDraggingRef.current) {
+      // Continuously glide following the finger with no stepping
+      const clampedX = Math.max(30, Math.min(navRect.width - 30, touchX));
+      blobX.set(clampedX);
+
+      const currentNearest = getNearestTab(clampedX);
+      setHoverTab(currentNearest);
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    if (!isPressing) return;
-    setIsPressing(false);
-    e.currentTarget.releasePointerCapture(e.pointerId);
-    
+    if (!isPressingRef.current) return;
+    isPressingRef.current = false;
+
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    // SPRING: Spring back to normal scale
+    pressTargetX.set(1);
+    pressTargetY.set(1);
+
     const navEl = navRef.current;
     if (!navEl) return;
     const navRect = navEl.getBoundingClientRect();
     const touchX = e.clientX - navRect.left;
-    
-    let nearestTab = activeTab;
-    let minDistance = Infinity;
-    
-    TAB_ORDER.forEach(tab => {
-      const el = tabsRef.current[tab];
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        const centerX = rect.left - navRect.left + rect.width / 2;
-        const dist = Math.abs(centerX - touchX);
-        if (dist < minDistance) {
-          minDistance = dist;
-          nearestTab = tab;
-        }
-      }
-    });
-    
-    if (nearestTab !== activeTab) {
-      onChangeTab(nearestTab);
-    } else {
-      updateBlobPosition(activeTab); // snap back
+
+    const chosenTab = getNearestTab(touchX);
+    const targetCenter = getTabCenter(chosenTab);
+    if (targetCenter > 0) {
+      blobX.set(targetCenter);
+    }
+
+    setHoverTab(null);
+
+    if (chosenTab !== activeTab) {
+      onChangeTab(chosenTab);
     }
   };
 
   const NavItem = ({ tab, Icon, label }: { tab: ActiveTab; Icon: any; label: string }) => {
-    const isActive = activeTab === tab;
+    const isCurrentActive = activeTab === tab;
+    const isHovered = hoverTab === tab;
+    const isVisuallyActive = hoverTab !== null ? isHovered : isCurrentActive;
+
     return (
       <button
         ref={(el) => { tabsRef.current[tab] = el; }}
         id={`nav-btn-${tab}`}
-        onClick={() => onChangeTab(tab)}
-        className="relative flex items-center justify-center flex-1 h-full cursor-pointer outline-none touch-manipulation z-10"
+        type="button"
+        className="relative flex items-center justify-center flex-1 h-full cursor-pointer outline-none touch-manipulation z-10 select-none"
         aria-label={label}
         title={label}
       >
         <motion.div
-          animate={{ scale: isActive ? 1.15 : 1 }}
-          transition={{ type: 'spring', bounce: 0.5, duration: 0.4 }}
+          animate={{ scale: isVisuallyActive ? 1.18 : 1 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 28 }}
           className={`p-2 transition-colors flex items-center justify-center ${
-            isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
+            isVisuallyActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
           }`}
         >
-          <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+          <Icon size={22} strokeWidth={isVisuallyActive ? 2.5 : 2} />
         </motion.div>
       </button>
     );
@@ -194,7 +232,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className="w-full border rounded-full touch-none pointer-events-auto p-1.5 transition-all flex items-center relative"
+          className="w-full border rounded-full touch-none pointer-events-auto p-1.5 transition-all flex items-center relative overflow-visible"
           style={{
             height: '82.4545px',
             backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
@@ -212,19 +250,19 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               scaleX: finalScaleX,
               scaleY: finalScaleY,
               width: 72,
-              height: 54,
+              height: 52,
               willChange: 'transform',
             }}
-            className="absolute top-1/2 left-0 -mt-[27px] -ml-[36px] rounded-full z-0 pointer-events-none"
+            className="absolute top-1/2 left-0 -mt-[26px] -ml-[36px] rounded-full z-0 pointer-events-none overflow-visible"
           >
             <div 
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.02) 100%)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                boxShadow: 'inset 0 2px 10px rgba(255,255,255,0.12), inset 0 -1px 4px rgba(255,255,255,0.04), 0 4px 10px rgba(0,0,0,0.15)',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.06) 100%)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1.5px solid rgba(255,255,255,0.32)',
+                boxShadow: 'inset 0 2px 8px rgba(255,255,255,0.40), inset 0 -2px 6px rgba(255,255,255,0.10), 0 8px 24px rgba(0,0,0,0.35), 0 0 16px rgba(255,255,255,0.12)',
               }}
             />
           </motion.div>
@@ -242,5 +280,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     </div>
   );
 };
+
 
 
