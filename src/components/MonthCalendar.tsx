@@ -279,11 +279,9 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
             </div>
             <div
               className={`text-sm sm:text-base font-bold mt-1 truncate font-mono ${
-                monthSummary.net > 0
-                  ? 'text-emerald-400'
-                  : monthSummary.net < 0
-                    ? 'text-rose-400'
-                    : 'text-neutral-200'
+                monthSummary.net !== 0
+                  ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400'
+                  : 'text-neutral-200'
               }`}
             >
               {monthSummary.net !== 0
@@ -356,18 +354,18 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   {hasActivity ? (
                     <div
                       className={`text-[10px] sm:text-[11px] font-extrabold tracking-tight px-1 py-0.5 rounded leading-tight truncate font-mono ${
-                        cell.net > 0
-                          ? 'text-emerald-300 bg-emerald-500/20'
-                          : cell.net < 0
-                            ? 'text-rose-300 bg-rose-500/20'
-                            : 'text-neutral-300 bg-neutral-800'
+                        cell.net !== 0
+                          ? 'bg-fuchsia-500/20'
+                          : 'text-neutral-300 bg-neutral-800'
                       }`}
                     >
-                      {cell.net > 0
-                        ? `+${formatCompactVND(cell.net)}`
-                        : cell.net < 0
-                          ? `−${formatCompactVND(Math.abs(cell.net))}`
-                          : `0`}
+                      {cell.net !== 0 ? (
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+                          {cell.net > 0 ? '+' : '−'}{formatCompactVND(Math.abs(cell.net))}
+                        </span>
+                      ) : (
+                        `0`
+                      )}
                     </div>
                   ) : (
                     <div className="h-3" />

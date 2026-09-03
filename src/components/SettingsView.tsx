@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Smartphone,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
 import { exportBackupZip, importBackupZip, triggerBlobDownload } from '../services/backupService';
@@ -31,7 +32,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const checkForUpdate = async () => {
+    if (!('serviceWorker' in navigator)) {
+      setStatusMessage({ type: 'error', text: 'Trình duyệt không hỗ trợ Service Worker' });
+      return;
+    }
+    
+    setUpdateStatus('checking');
+    
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      
+      const updateFoundPromise = new Promise((resolve) => {
+        const onUpdateFound = () => {
+          resolve(true);
+          registration.removeEventListener('updatefound', onUpdateFound);
+        };
+        registration.addEventListener('updatefound', onUpdateFound);
+        
+        setTimeout(() => {
+          resolve(false);
+          registration.removeEventListener('updatefound', onUpdateFound);
+        }, 3000);
+      });
+
+      await registration.update();
+      const hasUpdate = await updateFoundPromise;
+      
+      if (hasUpdate || registration.waiting) {
+         setUpdateStatus('available');
+      } else {
+         setUpdateStatus('latest');
+         setTimeout(() => setUpdateStatus('idle'), 3000);
+      }
+    } catch (error) {
+      console.error('Lỗi kiểm tra cập nhật:', error);
+      setStatusMessage({ type: 'error', text: 'Không thể kiểm tra cập nhật' });
+      setUpdateStatus('idle');
+    }
+  };
 
   // Load initial balances on mount
   useEffect(() => {
@@ -246,27 +288,67 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* 3. SECTION: ỨNG DỤNG */}
-      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white/10 text-white border border-white/20 flex items-center justify-center shrink-0">
-            <Smartphone size={20} />
-          </div>
-          <div>
-            <div className="text-xs sm:text-sm font-bold text-white">
-              Cài đặt Màn hình chính (PWA)
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-4">
+        {/* PWA Install */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 text-white border border-white/20 flex items-center justify-center shrink-0">
+              <Smartphone size={20} />
             </div>
-            <div className="text-xs text-neutral-400 font-medium">
-              Dùng như ứng dụng native trên iPhone & Android
+            <div>
+              <div className="text-xs sm:text-sm font-bold text-white">
+                Cài đặt Màn hình chính (PWA)
+              </div>
+              <div className="text-xs text-neutral-400 font-medium">
+                Dùng như ứng dụng native trên iPhone & Android
+              </div>
             </div>
           </div>
+
+          <button
+            onClick={onOpenInstallGuide}
+            className="px-3.5 py-2 rounded-xl bg-white text-black text-xs sm:text-sm font-extrabold hover:bg-neutral-200 active:scale-95 transition-all shrink-0 ml-2 cursor-pointer shadow-md"
+          >
+            Hướng dẫn
+          </button>
         </div>
 
-        <button
-          onClick={onOpenInstallGuide}
-          className="px-3.5 py-2 rounded-xl bg-white text-black text-xs sm:text-sm font-extrabold hover:bg-neutral-200 active:scale-95 transition-all shrink-0 ml-2 cursor-pointer shadow-md"
-        >
-          Hướng dẫn
-        </button>
+        {/* Update Checker */}
+        <div className="pt-4 border-t border-neutral-800 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 flex items-center justify-center shrink-0">
+              <RefreshCw size={20} className={updateStatus === 'checking' ? 'animate-spin' : ''} />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs sm:text-sm font-bold text-white">
+                Phiên bản ứng dụng
+              </div>
+              <div className="text-xs font-medium mt-0.5">
+                {updateStatus === 'idle' && <span className="text-neutral-400">Kiểm tra bản cập nhật mới nhất</span>}
+                {updateStatus === 'checking' && <span className="text-neutral-400">Đang kiểm tra...</span>}
+                {updateStatus === 'latest' && <span className="text-emerald-400">Bạn đang sử dụng phiên bản mới nhất</span>}
+                {updateStatus === 'available' && <span className="text-amber-400 font-bold">Có phiên bản mới!</span>}
+              </div>
+            </div>
+          </div>
+
+          {updateStatus === 'available' ? (
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-md"
+            >
+              Cập nhật ngay
+            </button>
+          ) : (
+            <button
+              onClick={checkForUpdate}
+              disabled={updateStatus === 'checking'}
+              className="w-full py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer border border-neutral-800 disabled:opacity-50"
+            >
+              Kiểm tra cập nhật
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 4. PRIVACY */}

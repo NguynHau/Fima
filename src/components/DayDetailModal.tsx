@@ -192,11 +192,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </div>
               <div
                 className={`text-lg font-black tracking-tight mt-0.5 font-mono ${
-                  dayNet > 0
-                    ? 'text-emerald-400'
-                    : dayNet < 0
-                      ? 'text-rose-400'
-                      : 'text-neutral-200'
+                  dayNet !== 0
+                    ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400'
+                    : 'text-neutral-200'
                 }`}
               >
                 {dayNet !== 0 ? formatSignedVND(Math.abs(dayNet), dayNet > 0 ? 'income' : 'expense') : '0 ₫'}

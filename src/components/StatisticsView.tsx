@@ -85,17 +85,21 @@ const CustomChartTooltip = ({ active, payload, label }: any) => {
       <div className="bg-[#181a1e]/95 backdrop-blur-md border border-[#3a3f4b] p-3 rounded-2xl shadow-xl text-xs sm:text-sm text-neutral-100 min-w-[140px] z-50">
         {label && <p className="font-extrabold text-neutral-300 pb-1.5 mb-1.5 border-b border-[#3a3f4b]">{label}</p>}
         <div className="space-y-1">
-          {payload.map((entry: any, index: number) => (
-            <div key={`item-${index}`} className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 font-bold" style={{ color: entry.color || entry.fill }}>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
-                {entry.name || 'Giá trị'}:
-              </span>
-              <span className="font-mono font-extrabold text-white">
-                {typeof entry.value === 'number' ? formatVND(entry.value) : entry.value}
-              </span>
-            </div>
-          ))}
+          {payload.map((entry: any, index: number) => {
+            const isNet = entry.name === 'Dòng tiền ròng';
+            const itemColor = isNet ? '#c084fc' : (entry.color || entry.fill);
+            return (
+              <div key={`item-${index}`} className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 font-bold" style={{ color: itemColor }}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: itemColor }} />
+                  {entry.name || 'Giá trị'}:
+                </span>
+                <span className="font-mono font-extrabold text-white">
+                  {typeof entry.value === 'number' ? formatVND(entry.value) : entry.value}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -688,10 +692,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           </div>
           <div
             className={`text-sm sm:text-lg font-black mt-1.5 truncate font-mono ${
-              currentKPI.net > 0
-                ? 'text-emerald-400'
-                : currentKPI.net < 0
-                ? 'text-rose-400'
+              currentKPI.net !== 0
+                ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400'
                 : 'text-neutral-200'
             }`}
           >
@@ -791,6 +793,12 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             <div className="h-48 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={timeBucketsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="netGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#c084fc" />
+                      <stop offset="100%" stopColor="#f472b6" />
+                    </linearGradient>
+                  </defs>
                   <XAxis dataKey="label" stroke="#94a3b8" fontSize={10} tickLine={false} />
                   <YAxis
                     stroke="#94a3b8"
@@ -803,7 +811,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                     {timeBucketsData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={entry.net > 0 ? '#10b981' : entry.net < 0 ? '#f43f5e' : '#64748b'}
+                        fill={entry.net !== 0 ? 'url(#netGradient)' : '#64748b'}
                       />
                     ))}
                   </Bar>
@@ -1074,7 +1082,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
                 <div>
                   <div className="text-xs font-bold text-neutral-300">Chênh lệch kỳ này</div>
-                  <div className="text-sm font-black text-white font-mono mt-0.5">
+                  <div className={`text-sm font-black font-mono mt-0.5 ${
+                    currentKPI.net !== 0 
+                      ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400'
+                      : 'text-white'
+                  }`}>
                     {formatSignedVND(currentKPI.net, 'net')}
                   </div>
                 </div>
