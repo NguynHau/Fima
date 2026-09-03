@@ -406,7 +406,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   onDeleteTransaction,
 }) => {
   const [dbTransactions, setDbTransactions] = useState<Transaction[]>([]);
-  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [imageAssets, setImageAssets] = useState<Record<string, { url: string; imageId: string }>>({});
   const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; tx: Transaction } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeSwipedId, setActiveSwipedId] = useState<string | null>(null);
@@ -446,35 +446,46 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     let isMounted = true;
     
     const loadImages = async () => {
-      const newUrlMap: Record<string, string> = { ...imageUrls };
+      const newAssets: Record<string, { url: string; imageId: string }> = { ...imageAssets };
       let changed = false;
 
       for (const t of transactions) {
-        if (t.imageId && !newUrlMap[t.id] && isMounted) {
-          try {
-            const blob = await getImageBlob(t.imageId);
-            if (blob && isMounted) {
-              newUrlMap[t.id] = URL.createObjectURL(blob);
-              changed = true;
+        if (t.imageId && isMounted) {
+          const existing = newAssets[t.id];
+          // Update if no asset exists yet OR if the imageId has changed
+          if (!existing || existing.imageId !== t.imageId) {
+            try {
+              const blob = await getImageBlob(t.imageId);
+              if (blob && isMounted) {
+                // Revoke old URL if updating
+                if (existing) {
+                  URL.revokeObjectURL(existing.url);
+                }
+                newAssets[t.id] = {
+                  url: URL.createObjectURL(blob),
+                  imageId: t.imageId
+                };
+                changed = true;
+              }
+            } catch (e) {
+              console.error('Lỗi khi tải ảnh cho giao dịch:', e);
             }
-          } catch (e) {
-            console.error('Lỗi khi tải ảnh cho giao dịch:', e);
           }
         }
       }
 
       // Cleanup URLs for transactions no longer present
       const currentTxIds = new Set(transactions.map(t => t.id));
-      Object.keys(newUrlMap).forEach(id => {
+      Object.keys(newAssets).forEach(id => {
         if (!currentTxIds.has(id)) {
-          URL.revokeObjectURL(newUrlMap[id]);
-          delete newUrlMap[id];
+          URL.revokeObjectURL(newAssets[id].url);
+          delete newAssets[id];
           changed = true;
         }
       });
 
       if (isMounted && changed) {
-        setImageUrls(newUrlMap);
+        setImageAssets(newAssets);
       }
     };
 
@@ -487,10 +498,10 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   // Final cleanup when modal closes or date changes
   useEffect(() => {
     return () => {
-      Object.values(imageUrls).forEach((url) => {
-        URL.revokeObjectURL(url);
+      Object.values(imageAssets).forEach((asset) => {
+        URL.revokeObjectURL(asset.url);
       });
-      setImageUrls({});
+      setImageAssets({});
     };
   }, [isOpen, date]);
 
@@ -509,8 +520,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
       } else {
         await deleteTransaction(txToDelete.id);
       }
-      if (imageUrls[txToDelete.id]) {
-        URL.revokeObjectURL(imageUrls[txToDelete.id]);
+      if (imageAssets[txToDelete.id]) {
+        URL.revokeObjectURL(imageAssets[txToDelete.id].url);
       }
       setTxToDelete(null);
       setActiveSwipedId(null);
@@ -700,7 +711,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               <SwipeableTransactionRow
                 key={tx.id}
                 tx={tx}
-                photoUrl={imageUrls[tx.id]}
+                photoUrl={imageAssets[tx.id]?.url}
                 isSwipedOpen={activeSwipedId === tx.id}
                 onSwipeOpen={() => setActiveSwipedId(tx.id)}
                 onSwipeClose={() => {
