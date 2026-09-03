@@ -32,8 +32,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const velScaleY = useTransform(velocityX, [-1200, 0, 1200], [0.85, 1, 0.85]);
 
   // 3. Press-based "Swell" deformation (swells up/down more to overflow slightly)
-  const pressScaleX = useSpring(isPressing ? 1.05 : 1, { stiffness: 400, damping: 22 });
-  const pressScaleY = useSpring(isPressing ? 1.6 : 1, { stiffness: 400, damping: 22 });
+  const pressScaleX = useSpring(isPressing ? 1.2 : 1, { stiffness: 300, damping: 20 });
+  const pressScaleY = useSpring(isPressing ? 1.65 : 1, { stiffness: 300, damping: 20 });
 
   // 4. Combined Scale outputs
   const finalScaleX = useMotionValue(1);
@@ -170,26 +170,35 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
     >
-      <nav
+      {/* Container to handle overall scale and positioning */}
+      <div 
         ref={navRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="w-full border rounded-full touch-none pointer-events-auto p-2.5 transition-all flex items-center relative"
+        className="relative flex items-center w-full touch-none pointer-events-auto transition-transform"
         style={{
           width: '541px',
           height: '88.4432px',
           maxWidth: '100%',
-          backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
-          backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
-          WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
-          borderColor: 'rgba(255, 255, 255, var(--glass-border-opacity))',
-          boxShadow: '0 15px 35px rgba(0, 0, 0, var(--glass-shadow-opacity)), inset 0 1px 1px rgba(255, 255, 255, var(--glass-inner-reflection)), 0 0 var(--glass-glow-size) var(--glass-glow-color)',
           transform: 'scale(var(--island-scale))',
+          transformOrigin: 'bottom center',
         }}
       >
-        {/* LIQUID GLASS BLOB INDICATOR */}
+        {/* 1. Island Background (with backdrop filter, etc.) */}
+        <div 
+          className="absolute inset-0 rounded-full border transition-colors"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
+            backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+            WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+            borderColor: 'rgba(255, 255, 255, var(--glass-border-opacity))',
+            boxShadow: '0 15px 35px rgba(0, 0, 0, var(--glass-shadow-opacity)), inset 0 1px 1px rgba(255, 255, 255, var(--glass-inner-reflection)), 0 0 var(--glass-glow-size) var(--glass-glow-color)',
+          }}
+        />
+
+        {/* 2. Liquid Blob (Can freely overflow the Island Background) */}
         <motion.div
           style={{
             x: animatedX,
@@ -199,21 +208,33 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             height: 60,
             willChange: 'transform',
           }}
-          className="absolute top-1/2 left-0 -mt-[30px] -ml-[38.5px] rounded-full z-0 pointer-events-none"
+          className="absolute top-1/2 left-0 -mt-[30px] -ml-[38.5px] rounded-full z-10 pointer-events-none"
         >
+          {/* Base Translucent Water Layer */}
           <div 
             className="absolute inset-0 rounded-full"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.02) 100%)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              boxShadow: 'inset 0 2px 10px rgba(255,255,255,0.15), inset 0 -1px 4px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.1)',
+              background: 'linear-gradient(135deg, rgba(180, 240, 255, 0.1) 0%, rgba(180, 240, 255, 0.01) 100%)',
+              backdropFilter: 'blur(16px) brightness(1.08) saturate(1.1)',
+              WebkitBackdropFilter: 'blur(16px) brightness(1.08) saturate(1.1)',
+              border: '0.5px solid rgba(255,255,255,0.15)',
+              borderTopColor: 'rgba(255,255,255,0.4)',
+              borderBottomColor: 'rgba(255,255,255,0.05)',
+              boxShadow: 'inset 0 4px 12px rgba(255,255,255,0.3), inset 0 -4px 10px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.15)',
             }}
+          />
+          {/* Soft Highlight / Reflection */}
+          <motion.div 
+             className="absolute inset-0 rounded-full opacity-90"
+             style={{
+               background: 'radial-gradient(ellipse 65% 40% at 50% 15%, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 100%)',
+               x: useTransform(velocityX, [-1200, 1200], [-8, 8]),
+             }}
           />
         </motion.div>
 
-        <div className="flex items-center justify-between relative px-2 w-full z-10 pointer-events-none">
+        {/* 3. Navigation Items (Must sit on top of both) */}
+        <nav className="relative z-20 flex items-center justify-between w-full px-2 p-2.5 pointer-events-none">
           <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="flow" Icon={Layers} label="Dòng tiền" /></div>
           <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="statistics" Icon={PieChart} label="Thống kê" /></div>
 
@@ -234,8 +255,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
           <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="settings" Icon={Settings} label="Cài đặt" /></div>
           <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="profile" Icon={User} label="Cá nhân" /></div>
-        </div>
-      </nav>
+        </nav>
+      </div>
     </div>
   );
 };
