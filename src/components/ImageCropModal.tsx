@@ -26,7 +26,32 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const [displaySize, setDisplaySize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+
+  // Helper to calculate display size matching natural aspect ratio
+  const calcDisplayAndScale = (imgW: number, imgH: number, contW: number) => {
+    const cropW = Math.min(contW * 0.85, 360);
+    const cropH = cropW * 1.25; // 4:5 receipt aspect ratio
+
+    const imageAspect = imgW / imgH;
+    const cropAspect = cropW / cropH;
+
+    let dispW = cropW;
+    let dispH = cropH;
+
+    if (imageAspect > cropAspect) {
+      // Landscape / wide image
+      dispH = cropH;
+      dispW = cropH * imageAspect;
+    } else {
+      // Portrait / tall image
+      dispW = cropW;
+      dispH = cropW / imageAspect;
+    }
+
+    return { dispW, dispH };
+  };
 
   // Reset state when modal opens or image changes
   useEffect(() => {
@@ -36,16 +61,15 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       const img = new Image();
       img.src = imageSrc;
       img.onload = () => {
-        setImageSize({ width: img.naturalWidth, height: img.naturalHeight });
+        const naturalW = img.naturalWidth || 800;
+        const naturalH = img.naturalHeight || 600;
+        setImageSize({ width: naturalW, height: naturalH });
+
         if (containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: rect.width, height: rect.height });
-          // Initial fit scale so image fills or fits nicely
-          const cropW = Math.min(rect.width * 0.85, 360);
-          const cropH = cropW * 1.25; // 4:5 receipt ratio
-          const initScale = Math.max(cropW / img.naturalWidth, cropH / img.naturalHeight);
-          setScale(initScale);
-          setPosition({ x: 0, y: 0 });
+          const { dispW, dispH } = calcDisplayAndScale(naturalW, naturalH, rect.width);
+          setDisplaySize({ width: dispW, height: dispH });
         }
       };
     }
@@ -54,14 +78,16 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
-      if (containerRef.current) {
+      if (containerRef.current && imageSize.width > 0) {
         const rect = containerRef.current.getBoundingClientRect();
         setContainerSize({ width: rect.width, height: rect.height });
+        const { dispW, dispH } = calcDisplayAndScale(imageSize.width, imageSize.height, rect.width);
+        setDisplaySize({ width: dispW, height: dispH });
       }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [isOpen]);
+  }, [isOpen, imageSize]);
 
   if (!isOpen) return null;
 
@@ -88,22 +114,17 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    setScale((prev) => Math.min(Math.max(prev * zoomFactor, 0.2), 5));
+    const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+    setScale((prev) => Math.min(Math.max(prev * zoomFactor, 0.4), 4));
   };
 
   const handleReset = () => {
-    if (!containerRef.current || !imageSize.width) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const cropW = Math.min(rect.width * 0.85, 360);
-    const cropH = cropW * 1.25;
-    const initScale = Math.max(cropW / imageSize.width, cropH / imageSize.height);
-    setScale(initScale);
+    setScale(1);
     setPosition({ x: 0, y: 0 });
   };
 
   const handleConfirmCrop = async () => {
-    if (!imageRef.current || !containerRef.current) return;
+    if (!imageRef.current || !containerRef.current || !displaySize.width || !imageSize.width) return;
 
     // Crop viewport dimensions in screen pixels
     const cropW = Math.min(containerSize.width * 0.85, 360);
@@ -117,20 +138,25 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     const cropLeft = centerX - cropW / 2;
     const cropTop = centerY - cropH / 2;
 
-    // Image top-left in container coordinates
-    // Image is centered initially, then offset by position, and scaled around its center or top-left depending on styling.
-    // In our render: image has style transform translate(position.x, position.y) scale(scale).
-    // Let's calculate exact source rectangle on the original image.
-    const imgNaturalW = imageSize.width;
-    const imgNaturalH = imageSize.height;
+    // Current rendered image dimensions and position
+    const renderedW = displaySize.width * scale;
+    const renderedH = displaySize.height * scale;
+    const renderedLeft = centerX - renderedW / 2 + position.x;
+    const renderedTop = centerY - renderedH / 2 + position.y;
 
-    // Current rendered image width and height on screen before transform scale
-    // Or we can use an offscreen canvas.
+    // Scale factor from rendered screen image to natural image dimensions
+    const scaleFactor = imageSize.width / renderedW;
+
+    const sourceX = (cropLeft - renderedLeft) * scaleFactor;
+    const sourceY = (cropTop - renderedTop) * scaleFactor;
+    const sourceW = cropW * scaleFactor;
+    const sourceH = cropH * scaleFactor;
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Output resolution proportional to crop box at high quality
+    // High quality canvas output
     const outputWidth = 1200;
     const outputHeight = Math.round(outputWidth * (cropH / cropW));
     canvas.width = outputWidth;
@@ -142,20 +168,6 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     await new Promise((resolve) => {
       img.onload = resolve;
     });
-
-    // Calculate mapping from crop box to natural image coordinates
-    // Image element center relative to container center is position.x, position.y
-    // Rendered image rect in container:
-    const renderedW = imgNaturalW * scale;
-    const renderedH = imgNaturalH * scale;
-    const renderedLeft = centerX - renderedW / 2 + position.x;
-    const renderedTop = centerY - renderedH / 2 + position.y;
-
-    // Intersection of crop box and rendered image
-    const sourceX = ((cropLeft - renderedLeft) / scale);
-    const sourceY = ((cropTop - renderedTop) / scale);
-    const sourceW = (cropW / scale);
-    const sourceH = (cropH / scale);
 
     ctx.drawImage(
       img,
@@ -224,8 +236,10 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       >
         {/* Draggable & Zoomable Image */}
         <div
-          className="absolute transition-transform duration-75 ease-out cursor-grab active:cursor-grabbing"
+          className="absolute transition-transform duration-75 ease-out cursor-grab active:cursor-grabbing flex items-center justify-center"
           style={{
+            width: displaySize.width ? `${displaySize.width}px` : 'auto',
+            height: displaySize.height ? `${displaySize.height}px` : 'auto',
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
             transformOrigin: 'center center',
           }}
@@ -235,8 +249,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             src={imageSrc}
             alt="Crop target"
             draggable={false}
-            className="max-none block select-none pointer-events-none"
-            style={{ width: imageSize.width ? `${imageSize.width}px` : 'auto', height: imageSize.height ? `${imageSize.height}px` : 'auto' }}
+            className="w-full h-full block object-contain max-w-none max-h-none select-none pointer-events-none"
           />
         </div>
 

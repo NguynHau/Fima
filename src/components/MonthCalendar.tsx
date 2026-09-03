@@ -311,8 +311,8 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         {/* Day Cells */}
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
           {calendarCells.map((cell) => {
-            const hasActivity = cell.count > 0;
-            const hasBoth = cell.income > 0 && cell.expense > 0;
+            const hasIncome = cell.income > 0;
+            const hasExpense = cell.expense > 0;
 
             return (
               <button
@@ -339,36 +339,21 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   >
                     {cell.dayNum}
                   </span>
-
-                  {/* Dual badge dot if both income and expense exist */}
-                  {hasBoth && (
-                    <div className="flex items-center gap-0.5 pr-0.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <span className="w-2 h-2 rounded-full bg-rose-400" />
-                    </div>
-                  )}
                 </div>
 
-                {/* Money Badge (Daily total) */}
-                <div className="w-full mt-auto text-center">
-                  {hasActivity ? (
-                    <div
-                      className={`text-[10px] sm:text-[11px] font-extrabold tracking-tight px-1 py-0.5 rounded leading-tight truncate font-mono ${
-                        cell.net !== 0
-                          ? 'bg-fuchsia-500/20'
-                          : 'text-neutral-300 bg-neutral-800'
-                      }`}
-                    >
-                      {cell.net !== 0 ? (
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
-                          {cell.net > 0 ? '+' : '−'}{formatCompactVND(Math.abs(cell.net))}
-                        </span>
-                      ) : (
-                        `0`
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-3" />
+                {/* Status dots: Green for Income, Red for Expense */}
+                <div className="w-full mt-auto mb-1 flex items-center justify-center gap-1.5 min-h-[8px]">
+                  {hasIncome && (
+                    <span
+                      className="w-2 h-2 rounded-full bg-emerald-400 shadow-xs"
+                      title="Có giao dịch thu"
+                    />
+                  )}
+                  {hasExpense && (
+                    <span
+                      className="w-2 h-2 rounded-full bg-rose-400 shadow-xs"
+                      title="Có giao dịch chi"
+                    />
                   )}
                 </div>
               </button>

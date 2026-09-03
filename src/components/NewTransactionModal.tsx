@@ -11,6 +11,8 @@ import {
   ChevronDown,
   Pencil,
   X,
+  Image as ImageIcon,
+  Trash2,
 } from 'lucide-react';
 import {
   type AccountType,
@@ -21,6 +23,8 @@ import { createTransaction } from '../db/database';
 import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
+import { ImageCropModal } from './ImageCropModal';
+import { compressImageWithQuality } from '../utils/imageCompressor';
 import { defaultReceiptRecognizer } from '../services/receiptRecognition';
 import { useCategories } from '../hooks/useCategories';
 
@@ -64,7 +68,60 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const libraryInputRef = useRef<HTMLInputElement>(null);
   const userEditedRef = useRef(false);
+  const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
+
+  const handleLibraryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setCropModalImageSrc(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    if (libraryInputRef.current) {
+      libraryInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCropModalImageSrc(null);
+    try {
+      const activeQuality: PhotoQuality = photoQuality || 'low';
+      const compressed = await compressImageWithQuality(croppedBlob, activeQuality);
+      setPhotoBlob(compressed);
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+      const url = URL.createObjectURL(compressed);
+      setPhotoPreviewUrl(url);
+
+      // Trigger AI OCR recognition for new library image
+      setIsAnalyzing(true);
+      defaultReceiptRecognizer
+        .recognize(compressed)
+        .then((result) => {
+          if (!userEditedRef.current) {
+            if (result.amount) setAmountStr(result.amount.toString());
+            if (result.date) setDate(result.date);
+            if (result.type) setType(result.type);
+            if (result.category) setCategory(result.category);
+            if (result.note) setNote(result.note);
+          }
+        })
+        .catch((err) => {
+          console.warn('Receipt recognition notice:', err);
+        })
+        .finally(() => {
+          setIsAnalyzing(false);
+        });
+    } catch (err) {
+      console.error('Lỗi khi nén ảnh chọn từ thư viện:', err);
+    }
+  };
 
   const { categories } = useCategories();
   const activeCategories = categories.filter((c) => c.type === type);
@@ -387,43 +444,88 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
         </div>
       </div>
 
+      {/* Hidden file input for Photo Library selection */}
+      <input
+        type="file"
+        ref={libraryInputRef}
+        onChange={handleLibraryFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* 7. Action Area at the Bottom */}
-      <div className="w-full max-w-md mx-auto px-6 py-3 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-between shrink-0 border-t border-neutral-800/80">
-        {/* Left: Chụp lại */}
+      <div className="w-full max-w-md mx-auto px-2 sm:px-4 py-3 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-between shrink-0 border-t border-neutral-800/80 gap-1 sm:gap-2">
+        {/* 1. Camera */}
         <button
           type="button"
           onClick={onRetakePhoto}
-          className="flex flex-col items-center gap-1 text-neutral-300 hover:text-white active:scale-90 transition-all cursor-pointer group"
+          className="flex flex-col items-center gap-1 text-neutral-300 hover:text-white active:scale-90 transition-all cursor-pointer group flex-1"
         >
-          <div className="w-12 h-12 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
-            <Camera size={22} />
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
+            <Camera size={20} className="sm:w-[22px] sm:h-[22px]" />
           </div>
-          <span className="text-xs font-bold text-neutral-300 group-hover:text-white">
-            Chụp lại
+          <span className="text-[10px] sm:text-[11px] font-bold text-neutral-300 group-hover:text-white truncate">
+            Camera
           </span>
         </button>
 
-        {/* Center: Large Confirm Checkmark Button */}
+        {/* 2. Thư viện */}
+        <button
+          type="button"
+          onClick={() => libraryInputRef.current?.click()}
+          className="flex flex-col items-center gap-1 text-neutral-300 hover:text-white active:scale-90 transition-all cursor-pointer group flex-1"
+        >
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
+            <ImageIcon size={20} className="sm:w-[22px] sm:h-[22px]" />
+          </div>
+          <span className="text-[10px] sm:text-[11px] font-bold text-neutral-300 group-hover:text-white truncate">
+            Thư viện
+          </span>
+        </button>
+
+        {/* 3. Center: Confirm Checkmark Button */}
         <button
           id="btn-confirm-save"
           type="button"
           onClick={() => handleSubmit()}
           disabled={isSaving || numericAmount <= 0 || !photoBlob}
-          className="w-16 h-16 rounded-full bg-white hover:bg-neutral-200 disabled:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed text-black flex items-center justify-center shadow-xl border-4 border-black active:scale-95 transition-all cursor-pointer"
+          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white hover:bg-neutral-200 disabled:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed text-black flex items-center justify-center shadow-xl border-4 border-black active:scale-95 transition-all cursor-pointer shrink-0 mx-0.5"
           title="Xác nhận lưu giao dịch"
         >
           {isSaving ? (
-            <div className="w-7 h-7 border-3 border-black border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 sm:w-7 sm:h-7 border-3 border-black border-t-transparent rounded-full animate-spin" />
           ) : (
-            <Check size={32} strokeWidth={3.5} />
+            <Check size={28} strokeWidth={3.5} className="sm:w-[32px] sm:h-[32px]" />
           )}
         </button>
 
-        {/* Right: Balanced Spacer */}
-        <div className="w-12 flex flex-col items-center opacity-0 pointer-events-none">
-          <div className="w-12 h-12" />
-          <span className="text-xs">Xác nhận</span>
-        </div>
+        {/* 4. Chọn ngày */}
+        <button
+          type="button"
+          onClick={() => setIsDatePickerOpen(true)}
+          className="flex flex-col items-center gap-1 text-neutral-300 hover:text-white active:scale-90 transition-all cursor-pointer group flex-1"
+        >
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
+            <CalendarIcon size={20} className="sm:w-[22px] sm:h-[22px]" />
+          </div>
+          <span className="text-[10px] sm:text-[11px] font-bold text-neutral-300 group-hover:text-white truncate">
+            Chọn ngày
+          </span>
+        </button>
+
+        {/* 5. Xóa */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex flex-col items-center gap-1 text-rose-400 hover:text-rose-300 active:scale-90 transition-all cursor-pointer group flex-1"
+        >
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 group-hover:border-rose-500/60 flex items-center justify-center text-rose-300 group-hover:text-rose-200 transition-all shadow-md">
+            <Trash2 size={20} className="sm:w-[22px] sm:h-[22px]" />
+          </div>
+          <span className="text-[10px] sm:text-[11px] font-bold text-rose-300 group-hover:text-rose-200 truncate">
+            Xóa
+          </span>
+        </button>
       </div>
 
       {/* Category Picker Sheet */}
@@ -548,6 +650,14 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           setDate(newDate);
         }}
         onClose={() => setIsDatePickerOpen(false)}
+      />
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={Boolean(cropModalImageSrc)}
+        imageSrc={cropModalImageSrc || ''}
+        photoQuality={photoQuality}
+        onClose={() => setCropModalImageSrc(null)}
+        onCropComplete={handleCropComplete}
       />
     </div>
   );
