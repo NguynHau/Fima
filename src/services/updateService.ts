@@ -111,18 +111,46 @@ export function isNewerBuild(remote: AppBuildInfo, current: AppBuildInfo): boole
 }
 
 /**
+ * Helper to fetch with timeout
+ */
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 5000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
+/**
  * Fetches version.json directly from GitHub Pages or hosting server with no-store cache busting,
  * asks Service Worker to check for updates, and returns whether a new version is available.
  */
 export async function checkForRemoteUpdate(): Promise<UpdateCheckResult> {
+  // If navigator is explicitly offline, don't even try to fetch to avoid hanging
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return {
+      hasUpdate: false,
+      currentBuild: getCurrentBuildInfo(),
+      remoteBuild: null,
+    };
+  }
+
   const currentBuild = getCurrentBuildInfo();
   let remoteBuild: AppBuildInfo | null = null;
   let fetchError: string | undefined;
 
-  // 1. Fetch remote version.json with strict cache busting
+  // 1. Fetch remote version.json with strict cache busting and timeout
   try {
     const url = getVersionUrl();
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       cache: 'no-store',
       headers: {
@@ -130,7 +158,7 @@ export async function checkForRemoteUpdate(): Promise<UpdateCheckResult> {
         'Pragma': 'no-cache',
         'Expires': '0',
       },
-    });
+    }, 4000); // 4s timeout for version check
 
     if (res.ok) {
       remoteBuild = (await res.json()) as AppBuildInfo;
@@ -139,7 +167,7 @@ export async function checkForRemoteUpdate(): Promise<UpdateCheckResult> {
       console.warn(`[UpdateService] Failed to fetch version.json: HTTP ${res.status}`);
     }
   } catch (err: any) {
-    fetchError = err?.message || 'Network error';
+    fetchError = err?.name === 'AbortError' ? 'Network Timeout' : (err?.message || 'Network error');
     console.warn('[UpdateService] Network error fetching version.json:', err);
   }
 

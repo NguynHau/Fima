@@ -444,35 +444,55 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     if (!isOpen || !date) return;
 
     let isMounted = true;
-    const urlMap: Record<string, string> = {};
-
+    
     const loadImages = async () => {
+      const newUrlMap: Record<string, string> = { ...imageUrls };
+      let changed = false;
+
       for (const t of transactions) {
-        if (t.imageId && isMounted) {
+        if (t.imageId && !newUrlMap[t.id] && isMounted) {
           try {
             const blob = await getImageBlob(t.imageId);
             if (blob && isMounted) {
-              urlMap[t.id] = URL.createObjectURL(blob);
+              newUrlMap[t.id] = URL.createObjectURL(blob);
+              changed = true;
             }
           } catch (e) {
             console.error('Lỗi khi tải ảnh cho giao dịch:', e);
           }
         }
       }
-      if (isMounted) {
-        setImageUrls(urlMap);
+
+      // Cleanup URLs for transactions no longer present
+      const currentTxIds = new Set(transactions.map(t => t.id));
+      Object.keys(newUrlMap).forEach(id => {
+        if (!currentTxIds.has(id)) {
+          URL.revokeObjectURL(newUrlMap[id]);
+          delete newUrlMap[id];
+          changed = true;
+        }
+      });
+
+      if (isMounted && changed) {
+        setImageUrls(newUrlMap);
       }
     };
 
     loadImages();
 
+    // We only revoke everything when the modal closes or date changes SIGNIFICANTLY
+    // This effect handles the delta. The final cleanup happens in the unmount of the component or a dedicated effect.
+  }, [isOpen, date, transactions]);
+
+  // Final cleanup when modal closes or date changes
+  useEffect(() => {
     return () => {
-      isMounted = false;
-      Object.values(urlMap).forEach((url) => {
+      Object.values(imageUrls).forEach((url) => {
         URL.revokeObjectURL(url);
       });
+      setImageUrls({});
     };
-  }, [isOpen, date, transactions]);
+  }, [isOpen, date]);
 
   // Filter transactions based on active accountFilter
   const filteredTransactions = useMemo(() => {

@@ -49,17 +49,48 @@ export class LocalTesseractRecognizer implements ReceiptRecognizer {
 }
 
 /**
+ * Helper to fetch with timeout
+ */
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 10000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
+/**
  * Server-side Gemini Vision AI Recognizer with retry mechanism
  */
 export class ApiGeminiRecognizer implements ReceiptRecognizer {
   async recognize(imageBlob: Blob): Promise<ReceiptRecognitionResult> {
+    // If explicitly offline, don't even try the API
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error('Offline');
+    }
+
     const base64Data = await blobToBase64(imageBlob);
 
     // Attempt 1
     try {
       return await this.callApi(base64Data, imageBlob.type || 'image/jpeg', 1);
     } catch (firstErr) {
+      // If it was a timeout or explicit offline during call, maybe don't retry or retry once more
       console.warn('Gemini AI API Attempt 1 failed, retrying Attempt 2 with stronger focus...', firstErr);
+      
+      // If offline now, abort
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        throw new Error('Offline');
+      }
+
       // Attempt 2 Retry
       try {
         return await this.callApi(base64Data, imageBlob.type || 'image/jpeg', 2);
@@ -71,7 +102,7 @@ export class ApiGeminiRecognizer implements ReceiptRecognizer {
   }
 
   private async callApi(imageBase64: string, mimeType: string, attempt: number): Promise<ReceiptRecognitionResult> {
-    const response = await fetch('/api/receipt/analyze', {
+    const response = await fetchWithTimeout('/api/receipt/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +112,7 @@ export class ApiGeminiRecognizer implements ReceiptRecognizer {
         mimeType,
         attempt,
       }),
-    });
+    }, 12000); // 12s timeout for AI analysis
 
     if (!response.ok) {
       throw new Error(`API response status ${response.status}`);

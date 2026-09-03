@@ -81,14 +81,14 @@ export default defineConfig(() => {
       versionMetadataPlugin(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.png', 'logo.jpg'],
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'logo.png', 'logo.jpg', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
           id: './',
           name: 'Fima - Quản Lý Thu Chi',
           short_name: 'Fima',
           description: 'Fima - Ứng dụng quản lý thu chi cá nhân hàng ngày kèm ảnh chứng từ',
-          theme_color: '#0a0a0a',
-          background_color: '#0a0a0a',
+          theme_color: '#000000',
+          background_color: '#000000',
           display: 'standalone',
           orientation: 'portrait',
           start_url: './',
@@ -115,11 +115,12 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          globIgnores: ['**/version.json', '**/server.cjs', '**/*.map'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json}'],
+          globIgnores: ['**/server.cjs', '**/*.map'],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
+          navigateFallback: 'index.html',
           runtimeCaching: [
             {
               urlPattern: /.*version\.json.*/i,
@@ -147,6 +148,21 @@ export default defineConfig(() => {
                 expiration: {
                   maxEntries: 10,
                   maxAgeSeconds: 60 * 60 * 24 * 365,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            // Cache Tesseract.js assets (worker, core, lang data)
+            {
+              urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'external-libs-cache',
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
                 },
                 cacheableResponse: {
                   statuses: [0, 200],
