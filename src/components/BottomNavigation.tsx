@@ -148,7 +148,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         ref={(el) => { tabsRef.current[tab] = el; }}
         id={`nav-btn-${tab}`}
         onClick={() => onChangeTab(tab)}
-        className="relative flex items-center justify-center flex-1 h-12 cursor-pointer outline-none touch-manipulation z-10"
+        className="relative flex items-center justify-center flex-1 h-full cursor-pointer outline-none touch-manipulation z-10"
         aria-label={label}
         title={label}
       >
@@ -211,11 +211,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               x: animatedX,
               scaleX: finalScaleX,
               scaleY: finalScaleY,
-              width: 60,
-              height: 44,
+              width: 72,
+              height: 54,
               willChange: 'transform',
             }}
-            className="absolute top-1/2 left-0 -mt-[22px] -ml-[30px] rounded-full z-0 pointer-events-none"
+            className="absolute top-1/2 left-0 -mt-[27px] -ml-[36px] rounded-full z-0 pointer-events-none"
           >
             <div 
               className="absolute inset-0 rounded-full"

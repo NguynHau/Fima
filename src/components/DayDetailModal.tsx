@@ -282,13 +282,13 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
         </button>
       </div>
 
-      {/* 3. FOREGROUND TRANSACTION CARD */}
+      {/* 3. FOREGROUND TRANSACTION CARD (NOW PURE IMAGE + OVERLAY) */}
       <div
         style={{
           transform: `translateX(${offset}px)`,
           transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)',
         }}
-        className="bg-[#1a1a1a] rounded-2xl p-3 border border-neutral-800 shadow-sm hover:border-neutral-500 transition-colors active:scale-[0.99] cursor-pointer relative z-10 w-full"
+        className="relative z-10 w-full transition-transform active:scale-[0.99] cursor-pointer"
         onClick={handleCardClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -296,95 +296,98 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
         onTouchCancel={handleTouchCancel}
         onMouseDown={handleMouseDown}
       >
-        {/* Photo Thumbnail if available */}
-        {photoUrl && (
-          <div
-            className="relative rounded-2xl overflow-hidden h-36 w-full bg-[#121212] border border-neutral-800 mb-2.5 group cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (hasSwipedRef.current || offset !== 0) {
-                setOffset(0);
-                onSwipeClose();
-                return;
-              }
-              onSelectPhoto({ url: photoUrl, tx });
-            }}
-          >
+        {/* The Image Container (or Placeholder if no photo) */}
+        <div className="relative rounded-2xl overflow-hidden h-40 w-full bg-[#1a1a1a] border border-neutral-800 group">
+          {photoUrl ? (
             <img
               src={photoUrl}
               alt={`Ảnh chứng từ ${tx.category}`}
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-between p-2.5">
-              <div className="flex justify-end">
-                <span className="text-[11px] font-bold bg-black/70 text-neutral-200 px-2.5 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1 border border-white/10 group-hover:border-white/30 transition-all">
-                  <ImageIcon size={11} /> Phóng to
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-white pt-2">
-                <span className="text-xs font-bold bg-black/70 px-2 py-0.5 rounded-lg border border-white/10 text-neutral-200">
-                  {tx.category}
-                </span>
-                <span className={`text-base font-black font-mono drop-shadow-md ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {formatSignedVND(tx.amount, tx.type)}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Transaction Details Row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <CategoryIcon
-              category={tx.category}
-              type={tx.type}
-              size={20}
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-extrabold text-white">
-                  {tx.category}
-                </span>
-                {/* Account badge */}
-                <span
-                  className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md ${
-                    tx.account === 'wallet'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                  }`}
-                >
-                  {tx.account === 'wallet' ? (
-                    <>
-                      <Wallet size={11} /> Ví
-                    </>
-                  ) : (
-                    <>
-                      <Building2 size={11} /> Bank
-                    </>
-                  )}
-                </span>
-              </div>
-              {tx.note && (
-                <p className="text-xs text-neutral-300 mt-0.5 font-medium line-clamp-1">
-                  &ldquo;{tx.note}&rdquo;
-                </p>
-              )}
-            </div>
-          </div>
-
-          {!photoUrl && (
-            <div className="text-right">
-              <div
-                className={`text-base font-black tracking-tight font-mono ${
-                  tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                }`}
-              >
-                {formatSignedVND(tx.amount, tx.type)}
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-[#1a1a1a]">
+              <div className="flex flex-col items-center gap-2 text-neutral-600">
+                <ImageIcon size={32} strokeWidth={1.5} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Không có ảnh</span>
               </div>
             </div>
           )}
+
+          {/* CONTENT OVERLAY DIRECTLY ON IMAGE */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/60 flex flex-col justify-between p-3.5">
+            {/* Top Row: Category + Account + Zoom Hint */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="bg-black/50 p-1.5 rounded-lg backdrop-blur-md border border-white/10">
+                  <CategoryIcon category={tx.category} type={tx.type} size={18} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-black text-white leading-tight drop-shadow-md">
+                    {tx.category}
+                  </span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span
+                      className={`inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-tighter ${
+                        tx.account === 'wallet'
+                          ? 'bg-amber-500/80 text-white'
+                          : 'bg-blue-500/80 text-white'
+                      }`}
+                    >
+                      {tx.account === 'wallet' ? (
+                        <Wallet size={9} strokeWidth={3} />
+                      ) : (
+                        <Building2 size={9} strokeWidth={3} />
+                      )}
+                      {tx.account === 'wallet' ? 'Ví' : 'Bank'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {photoUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (hasSwipedRef.current || offset !== 0) {
+                      setOffset(0);
+                      onSwipeClose();
+                      return;
+                    }
+                    onSelectPhoto({ url: photoUrl, tx });
+                  }}
+                  className="text-[10px] font-bold bg-white/10 hover:bg-white/20 text-neutral-200 px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1 border border-white/10 transition-all active:scale-90"
+                >
+                  <ImageIcon size={12} /> Xem ảnh
+                </button>
+              )}
+            </div>
+
+            {/* Bottom Row: Note + Amount */}
+            <div className="flex items-end justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                {tx.note ? (
+                  <p className="text-xs text-neutral-200 font-bold drop-shadow-md line-clamp-2 leading-snug italic">
+                    &ldquo;{tx.note}&rdquo;
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                    {tx.type === 'income' ? 'Khoản thu' : 'Khoản chi'}
+                  </p>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                <div
+                  className={`text-lg font-black tracking-tight font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
+                    tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                  }`}
+                >
+                  {formatSignedVND(tx.amount, tx.type)}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
