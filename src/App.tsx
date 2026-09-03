@@ -75,6 +75,7 @@ export default function App() {
   const [transactionForPhotoChange, setTransactionForPhotoChange] = useState<Transaction | null>(null);
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [showInitialSetup, setShowInitialSetup] = useState(false);
+  const [isCategoryManagementOpen, setIsCategoryManagementOpen] = useState(false);
 
   // Track if camera has auto-opened on app launch
   const hasAutoOpenedCameraRef = useRef(false);
@@ -286,6 +287,8 @@ export default function App() {
             <SettingsView
               onDataChanged={refreshData}
               onOpenInstallGuide={() => setIsInstallGuideOpen(true)}
+              isCategoryModalOpen={isCategoryManagementOpen}
+              onSetCategoryModalOpen={setIsCategoryManagementOpen}
             />
           ) : (
             <ProfileView
@@ -298,11 +301,13 @@ export default function App() {
         </main>
 
         {/* Bottom Navigation */}
-        <BottomNavigation
-          activeTab={activeTab}
-          onChangeTab={(tab) => setActiveTab(tab)}
-          onOpenAddTransaction={handleAddClick}
-        />
+        {!isCategoryManagementOpen && (
+          <BottomNavigation
+            activeTab={activeTab}
+            onChangeTab={(tab) => setActiveTab(tab)}
+            onOpenAddTransaction={handleAddClick}
+          />
+        )}
 
         {/* --- MODALS & WORKFLOWS --- */}
 

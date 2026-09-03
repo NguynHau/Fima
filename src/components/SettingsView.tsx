@@ -29,11 +29,15 @@ import { CategoryIcon } from './CategoryIcon';
 interface SettingsViewProps {
   onDataChanged: () => void;
   onOpenInstallGuide: () => void;
+  isCategoryModalOpen: boolean;
+  onSetCategoryModalOpen: (open: boolean) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onDataChanged,
   onOpenInstallGuide,
+  isCategoryModalOpen,
+  onSetCategoryModalOpen,
 }) => {
   const [walletStr, setWalletStr] = useState('');
   const [bankStr, setBankStr] = useState('');
@@ -41,7 +45,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [isSavingBalances, setIsSavingBalances] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { categories, expenseCategories, incomeCategories } = useCategories();
@@ -265,7 +268,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <button
           type="button"
-          onClick={() => setIsCategoryModalOpen(true)}
+          onClick={() => onSetCategoryModalOpen(true)}
           className="w-full p-3.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-98 group"
         >
           <div className="flex items-center gap-3">
@@ -477,7 +480,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Category Management Modal */}
       <CategoryManagementModal
         isOpen={isCategoryModalOpen}
-        onClose={() => setIsCategoryModalOpen(false)}
+        onClose={() => onSetCategoryModalOpen(false)}
         onDataChanged={onDataChanged}
       />
     </div>

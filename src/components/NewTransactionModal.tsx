@@ -13,6 +13,7 @@ import {
   X,
   Image as ImageIcon,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 import {
   type AccountType,
@@ -27,6 +28,7 @@ import { ImageCropModal } from './ImageCropModal';
 import { compressImageWithQuality } from '../utils/imageCompressor';
 import { defaultReceiptRecognizer } from '../services/receiptRecognition';
 import { useCategories } from '../hooks/useCategories';
+import { AIManager } from '../services/ai/AIManager';
 
 interface NewTransactionModalProps {
   isOpen: boolean;
@@ -61,6 +63,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [aiInput, setAiInput] = useState('');
 
   // Selector modal states
   const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
@@ -71,6 +74,26 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const libraryInputRef = useRef<HTMLInputElement>(null);
   const userEditedRef = useRef(false);
   const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
+
+  const handleAiTextProcess = async () => {
+    if (!aiInput.trim()) return;
+    setIsAnalyzing(true);
+    setErrorMessage(null);
+    try {
+      const result = await AIManager.processText(aiInput);
+      if (result.amount) setAmountStr(result.amount.toString());
+      if (result.date) setDate(result.date);
+      if (result.transactionType) setType(result.transactionType === 'income' ? 'income' : 'expense');
+      if (result.categorySuggestion) setCategory(result.categorySuggestion);
+      if (result.description || result.merchant) setNote(result.description || result.merchant);
+      setAiInput('');
+    } catch (err) {
+      console.error('AI Text processing error:', err);
+      setErrorMessage('AI không thể hiểu nội dung này. Vui lòng thử lại với cách diễn đạt khác.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleLibraryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -273,9 +296,34 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
         {isAnalyzing && (
           <div className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all duration-300 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 border border-pink-300/40 animate-pulse">
             <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-            <span className="tracking-wide">Đang nhận diện...</span>
+            <span className="tracking-wide">Đang phân tích...</span>
           </div>
         )}
+      </div>
+
+      {/* AI Smart Input */}
+      <div className="px-4 mb-2 shrink-0">
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <Sparkles size={16} className="text-purple-400 group-focus-within:text-purple-300 transition-colors" />
+          </div>
+          <input
+            type="text"
+            placeholder="Nhập nhanh: 'ăn phở 50k', 'đổ xăng 100k'..."
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAiTextProcess()}
+            className="w-full bg-[#2a2e36]/50 border border-[#3e4350] rounded-2xl py-3 pl-11 pr-12 text-sm font-medium placeholder:text-neutral-500 focus:bg-[#2a2e36] focus:border-purple-500/50 outline-none transition-all shadow-inner"
+          />
+          <button
+            type="button"
+            onClick={handleAiTextProcess}
+            disabled={!aiInput.trim() || isAnalyzing}
+            className="absolute right-2 top-1.5 bottom-1.5 px-3 bg-purple-600 hover:bg-purple-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg"
+          >
+            GỬI
+          </button>
+        </div>
       </div>
 
       {/* Main Container */}

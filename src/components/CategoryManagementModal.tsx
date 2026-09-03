@@ -87,7 +87,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
   return (
     <div
       id="category-management-screen"
-      className="fixed inset-0 z-40 bg-neutral-950 flex flex-col text-neutral-100 overflow-hidden animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-neutral-950 flex flex-col text-neutral-100 overflow-hidden animate-in fade-in duration-200"
     >
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top,0px),16px)] pb-3.5 border-b border-neutral-800/80 bg-neutral-900/60 backdrop-blur-md shrink-0">
@@ -108,15 +108,6 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
             <p className="text-xs text-neutral-400">Tùy chỉnh danh mục Thu và Chi của bạn</p>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={handleOpenAdd}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-white text-black rounded-xl font-bold text-xs hover:bg-neutral-200 transition-all shadow-sm"
-        >
-          <Plus size={16} strokeWidth={2.5} />
-          <span>Thêm danh mục</span>
-        </button>
       </div>
 
       {/* Tabs: Danh mục chi & Danh mục thu */}
@@ -228,13 +219,13 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
       </div>
 
       {/* Floating Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(env(safe-area-inset-bottom),16px)] bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent border-t border-neutral-900/50 backdrop-blur-xs flex justify-center">
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(env(safe-area-inset-bottom),20px)] bg-neutral-950 border-t border-neutral-800 flex justify-center shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
         <button
           type="button"
           onClick={handleOpenAdd}
-          className="w-full max-w-md py-3.5 bg-white hover:bg-neutral-200 text-black font-extrabold text-sm rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-98"
+          className="w-full max-w-md py-4 bg-white hover:bg-neutral-200 text-black font-black text-sm rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95"
         >
-          <Plus size={18} strokeWidth={2.5} />
+          <Plus size={20} strokeWidth={3} />
           <span>Thêm danh mục mới</span>
         </button>
       </div>

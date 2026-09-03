@@ -1,6 +1,7 @@
 import { createWorker } from 'tesseract.js';
 import { ReceiptRecognitionResult, ReceiptRecognizer } from './ReceiptTypes';
 import { parseReceiptText } from './ReceiptParser';
+import { AIManager } from '../ai/AIManager';
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -49,97 +50,28 @@ export class LocalTesseractRecognizer implements ReceiptRecognizer {
 }
 
 /**
- * Helper to fetch with timeout
- */
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 10000): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(id);
-    return response;
-  } catch (error) {
-    clearTimeout(id);
-    throw error;
-  }
-}
-
-/**
- * Server-side Gemini Vision AI Recognizer with retry mechanism
+ * Enhanced Gemini Vision AI Recognizer with new Financial Engine
  */
 export class ApiGeminiRecognizer implements ReceiptRecognizer {
   async recognize(imageBlob: Blob): Promise<ReceiptRecognitionResult> {
-    // If explicitly offline, don't even try the API
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      throw new Error('Offline');
-    }
-
-    const base64Data = await blobToBase64(imageBlob);
-
-    // Attempt 1
     try {
-      return await this.callApi(base64Data, imageBlob.type || 'image/jpeg', 1);
-    } catch (firstErr) {
-      // If it was a timeout or explicit offline during call, maybe don't retry or retry once more
-      console.warn('Gemini AI API Attempt 1 failed, retrying Attempt 2 with stronger focus...', firstErr);
-      
-      // If offline now, abort
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        throw new Error('Offline');
-      }
+      const data = await AIManager.analyzeReceipt(imageBlob);
+      const amount = data.financials?.grandTotal || data.financials?.amountDue || data.financials?.subtotal || 0;
 
-      // Attempt 2 Retry
-      try {
-        return await this.callApi(base64Data, imageBlob.type || 'image/jpeg', 2);
-      } catch (secondErr) {
-        console.error('Gemini AI API Attempt 2 failed:', secondErr);
-        throw secondErr;
-      }
+      return {
+        amount: amount || undefined,
+        date: data.date || undefined,
+        merchant: data.merchant || undefined,
+        category: data.categorySuggestion || undefined,
+        type: data.transactionType === 'income' ? 'income' : 'expense',
+        note: data.merchant || data.description || (data.items?.[0]?.name) || undefined,
+        confidence: data.confidence,
+        rawText: JSON.stringify(data, null, 2)
+      };
+    } catch (err) {
+      console.error('AI Engine error, falling back:', err);
+      throw err;
     }
-  }
-
-  private async callApi(imageBase64: string, mimeType: string, attempt: number): Promise<ReceiptRecognitionResult> {
-    const response = await fetchWithTimeout('/api/receipt/analyze', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        imageBase64,
-        mimeType,
-        attempt,
-      }),
-    }, 12000); // 12s timeout for AI analysis
-
-    if (!response.ok) {
-      throw new Error(`API response status ${response.status}`);
-    }
-
-    const resJson = await response.json();
-    if (!resJson.success || !resJson.data) {
-      throw new Error(resJson.error || 'Failed to analyze receipt via AI API');
-    }
-
-    const d = resJson.data;
-
-    return {
-      amount: typeof d.amount === 'number' && d.amount > 0 ? d.amount : undefined,
-      date: d.date && typeof d.date === 'string' && d.date.length >= 8 ? d.date : undefined,
-      merchant: d.merchant && typeof d.merchant === 'string' ? d.merchant : undefined,
-      category: d.category && typeof d.category === 'string' ? d.category : 'Khác',
-      type: d.type === 'income' ? 'income' : 'expense',
-      note: d.note && typeof d.note === 'string' ? d.note : (d.merchant || undefined),
-      confidence: d.confidence || {
-        amount: d.amount ? 0.9 : 0.4,
-        category: 0.85,
-        merchant: d.merchant ? 0.9 : 0.4,
-        date: d.date ? 0.9 : 0.4,
-        type: 0.95,
-      },
-    };
   }
 }
 

@@ -110,6 +110,95 @@ const CustomChartTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+import { AIManager } from '../services/ai/AIManager';
+
+// AI Assistant Component
+const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transactions }) => {
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleAsk = async (q?: string) => {
+    const finalQuestion = q || question;
+    if (!finalQuestion.trim()) return;
+    
+    setIsLoading(true);
+    setAnswer(null);
+    try {
+      const response = await AIManager.askAssistant(finalQuestion, transactions);
+      setAnswer(response);
+      setQuestion('');
+    } catch (err) {
+      console.error('AI Assistant Error:', err);
+      setAnswer('Rất tiếc, AI gặp lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const suggestions = [
+    'Tháng này tôi tiêu bao nhiêu?',
+    'Khoản chi nào lớn nhất?',
+    'Xu hướng chi tiêu của tôi?',
+    'Tôi có thể tiết kiệm thêm không?'
+  ];
+
+  return (
+    <div className="bg-gradient-to-br from-purple-900/40 via-[#121212] to-pink-900/20 rounded-3xl p-5 border border-purple-500/30 shadow-xl space-y-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+          <Sparkles size={22} className="animate-pulse" />
+        </div>
+        <div>
+          <h3 className="text-sm sm:text-base font-black text-white">Trợ lý Tài chính AI</h3>
+          <p className="text-[10px] text-purple-200/60 font-bold uppercase tracking-wider">Financial Reasoning Engine</p>
+        </div>
+      </div>
+
+      {answer && (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-xs sm:text-sm text-neutral-200 leading-relaxed animate-in zoom-in-95 duration-300">
+          <div className="flex items-start gap-2 mb-2">
+            <Sparkles size={14} className="text-purple-400 mt-0.5 shrink-0" />
+            <span className="font-extrabold text-purple-300">Phản hồi từ Fima AI:</span>
+          </div>
+          {answer}
+        </div>
+      )}
+
+      <div className="relative group">
+        <input
+          type="text"
+          placeholder="Hỏi AI về tài chính của bạn..."
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
+          className="w-full bg-black/40 border border-purple-500/30 rounded-2xl py-3.5 pl-4 pr-12 text-sm font-medium placeholder:text-neutral-500 focus:border-purple-400 outline-none transition-all"
+        />
+        <button
+          onClick={() => handleAsk()}
+          disabled={isLoading || !question.trim()}
+          className="absolute right-2 top-2 bottom-2 px-3 bg-purple-600 hover:bg-purple-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg flex items-center justify-center"
+        >
+          {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'HỎI'}
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2 pt-1">
+        {suggestions.map((s) => (
+          <button
+            key={s}
+            onClick={() => handleAsk(s)}
+            disabled={isLoading}
+            className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const StatisticsView: React.FC<StatisticsViewProps> = ({
   transactions,
   balances,
@@ -618,6 +707,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           <span>Bank</span>
         </button>
       </div>
+
+      {/* AI ASSISTANT SECTION */}
+      <AIAssistantSection transactions={transactions} />
 
       {/* 3. TIME FILTER & NAVIGATION */}
       <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">

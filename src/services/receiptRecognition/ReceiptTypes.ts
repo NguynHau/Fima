@@ -22,8 +22,12 @@ export interface ReceiptRecognizer {
 
 export interface RawReceiptExtraction {
   documentType?: 'receipt' | 'invoice' | 'bill' | 'unknown' | null;
+  transactionType?: 'expense' | 'income' | 'transfer' | 'debt' | 'unknown' | null;
   merchant?: string | null;
   date?: string | null;
+  time?: string | null;
+  address?: string | null;
+  invoiceCode?: string | null;
   currency?: string | null;
   items?: Array<{
     name?: string | null;
@@ -35,21 +39,22 @@ export interface RawReceiptExtraction {
     subtotal?: number | null;
     discount?: number | null;
     tax?: number | null;
-    serviceCharge?: number | null;
+    serviceFee?: number | null;
     grandTotal?: number | null;
     amountDue?: number | null;
     cashReceived?: number | null;
     change?: number | null;
   } | null;
   paymentMethod?: string | null;
-  rawCandidates?: Array<{
-    label?: string | null;
-    value?: number | null;
-    location?: 'top' | 'middle' | 'bottom' | 'unknown' | null;
-  }> | null;
-  categoryEvidence?: Array<{
-    text?: string | null;
-    type?: 'merchant' | 'item' | 'keyword' | null;
-    confidence?: number | null;
-  }> | null;
+  categorySuggestion?: string | null;
+  description?: string | null;
+  confidence?: {
+    amount?: number;
+    date?: number;
+    merchant?: number;
+    category?: number;
+    paymentMethod?: number;
+    transactionType?: number;
+  };
+  warnings?: string[];
 }
