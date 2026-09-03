@@ -19,7 +19,7 @@ export const IOSInstallGuide: React.FC<IOSInstallGuideProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-60 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 text-neutral-100 overflow-y-auto">
+    <div className="fixed inset-0 z-60 bg-black/85 backdrop-blur-md flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)] text-neutral-100 overflow-y-auto">
       <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 my-auto">
         <div className="flex items-center justify-between mb-3.5 pb-3 border-b border-neutral-800">
           <div className="flex items-center gap-2.5">

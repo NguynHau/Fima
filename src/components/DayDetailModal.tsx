@@ -99,7 +99,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     accountFilter === 'wallet' || accountFilter === 'bank' ? accountFilter : undefined;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden text-neutral-100">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-0 text-neutral-100">
       <div className="w-full max-w-lg bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
         {/* Header */}
         <div className="px-4.5 py-3 bg-[#121212] border-b border-neutral-800 shrink-0 space-y-2.5">
@@ -371,7 +371,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         {/* Full Screen Photo Viewer Modal */}
         {selectedPhoto && (
           <div
-            className="fixed inset-0 z-70 bg-black/95 flex flex-col justify-between p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-70 bg-black/95 flex flex-col justify-between px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)] animate-in fade-in duration-200"
             onClick={() => setSelectedPhoto(null)}
           >
             <div className="flex justify-between items-center pt-2 px-2">

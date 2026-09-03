@@ -110,7 +110,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   const weekHeaders = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
   return (
-    <div className="fixed inset-0 z-70 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150 text-neutral-100">
+    <div className="fixed inset-0 z-70 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(env(safe-area-inset-top,0px),16px)] animate-in fade-in duration-150 text-neutral-100">
       <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">

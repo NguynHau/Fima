@@ -127,7 +127,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex justify-center items-end sm:items-center overflow-y-auto text-neutral-100">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex justify-center items-end sm:items-center overflow-y-auto pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-0 text-neutral-100">
       <div className="w-full max-w-lg bg-[#202328] border border-[#3a3f4b] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 bg-[#282c34] border-b border-[#3a3f4b] shrink-0">
@@ -329,7 +329,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Clear Data Confirmation Modal */}
         {showClearConfirm && (
-          <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
             <div className="w-full max-w-xs bg-[#282c34] border border-[#3a3f4b] rounded-3xl p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150">
               <div className="w-14 h-14 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center mx-auto mb-3.5">
                 <AlertTriangle size={28} />

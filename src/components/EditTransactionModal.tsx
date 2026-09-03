@@ -22,6 +22,7 @@ import {
 } from '../types';
 import { updateTransaction, deleteTransaction, getImageBlob } from '../db/database';
 import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
+import { compressImage } from '../utils/imageCompressor';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
 
@@ -61,6 +62,13 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
   const amountInputRef = useRef<HTMLInputElement>(null);
 
+  // Inline Camera State
+  const [isInlineCameraActive, setIsInlineCameraActive] = useState(false);
+  const [inlineStream, setInlineStream] = useState<MediaStream | null>(null);
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+  const [inlineNewPhotoBlob, setInlineNewPhotoBlob] = useState<Blob | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   useEffect(() => {
     if (!transaction) return;
 
@@ -76,7 +84,10 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     setErrorMessage(null);
 
     // Load existing image if no newPhotoBlob provided yet
-    if (newPhotoBlob) {
+    if (inlineNewPhotoBlob) {
+      const url = URL.createObjectURL(inlineNewPhotoBlob);
+      setPhotoUrl(url);
+    } else if (newPhotoBlob) {
       const url = URL.createObjectURL(newPhotoBlob);
       setPhotoUrl(url);
     } else if (transaction.imageId) {
@@ -87,9 +98,98 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         }
       });
     }
-  }, [transaction, newPhotoBlob, isOpen]);
+  }, [transaction, newPhotoBlob, inlineNewPhotoBlob, isOpen]);
 
   if (!isOpen || !transaction) return null;
+
+  const stopInlineCamera = () => {
+    if (inlineStream) {
+      inlineStream.getTracks().forEach((track) => track.stop());
+      setInlineStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsInlineCameraActive(false);
+  };
+
+  const startInlineCamera = async () => {
+    stopInlineCamera();
+    setErrorMessage(null);
+    setIsInlineCameraActive(true);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Trình duyệt không hỗ trợ camera');
+      }
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      });
+      setInlineStream(newStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = newStream;
+      }
+    } catch (err: any) {
+      console.warn('Camera error:', err);
+      setErrorMessage('Không thể mở camera. Vui lòng cấp quyền.');
+      setIsInlineCameraActive(false);
+    }
+  };
+
+  const captureInlinePhoto = (): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      if (!videoRef.current || isProcessingPhoto) return resolve(null);
+      setIsProcessingPhoto(true);
+      try {
+        const video = videoRef.current;
+        const vWidth = video.videoWidth || 1280;
+        const vHeight = video.videoHeight || 720;
+        
+        const squareSize = Math.min(vWidth, vHeight);
+        const startX = (vWidth - squareSize) / 2;
+        const startY = (vHeight - squareSize) / 2;
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = squareSize;
+        canvas.height = squareSize;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Cannot create canvas');
+        
+        ctx.drawImage(video, startX, startY, squareSize, squareSize, 0, 0, squareSize, squareSize);
+        
+        canvas.toBlob(
+          async (blob) => {
+            if (blob) {
+              const compressed = await compressImage(blob);
+              setInlineNewPhotoBlob(compressed);
+              stopInlineCamera();
+              resolve(compressed);
+            } else {
+              setErrorMessage('Lỗi khi chụp ảnh');
+              resolve(null);
+            }
+            setIsProcessingPhoto(false);
+          },
+          'image/jpeg',
+          0.88
+        );
+      } catch (e) {
+        console.error(e);
+        setErrorMessage('Lỗi khi chụp ảnh');
+        setIsProcessingPhoto(false);
+        resolve(null);
+      }
+    });
+  };
+
+  // Cleanup on unmount or close
+  useEffect(() => {
+    if (!isOpen) {
+      stopInlineCamera();
+      setInlineNewPhotoBlob(null);
+    }
+    return () => stopInlineCamera();
+  }, [isOpen]);
 
   const numericAmount = parseInt(amountStr.replace(/[^0-9]/g, '') || '0', 10);
 
@@ -116,6 +216,18 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
     try {
       setIsSaving(true);
+      let finalBlob = inlineNewPhotoBlob || newPhotoBlob || undefined;
+      
+      if (isInlineCameraActive) {
+        const captured = await captureInlinePhoto();
+        if (captured) {
+          finalBlob = captured;
+        } else {
+          setIsSaving(false);
+          return;
+        }
+      }
+
       await updateTransaction(transaction.id, {
         date,
         type,
@@ -123,7 +235,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         category,
         note: note.trim(),
         account,
-        newImageBlob: newPhotoBlob || undefined,
+        newImageBlob: finalBlob,
       });
 
       onSuccess();
@@ -179,16 +291,35 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
         {/* 2 & 3. Central Square Photo with Transparent Overlay inside */}
         <div className="w-full relative rounded-[2.5rem] border border-[#3a3f4b] bg-[#282c34] overflow-hidden shadow-2xl flex items-center justify-center aspect-square max-h-[46vh] shrink-0 my-auto">
-          {photoUrl ? (
+          {isInlineCameraActive ? (
+            <div className="w-full h-full relative" onClick={captureInlinePhoto}>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="flex flex-col items-center gap-2 pointer-events-auto cursor-pointer animate-pulse">
+                  <div className="w-16 h-16 rounded-full border-4 border-white/50 bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Camera size={24} className="text-white" />
+                  </div>
+                  <span className="text-white font-bold text-sm drop-shadow-md">Chạm để chụp</span>
+                </div>
+              </div>
+            </div>
+          ) : photoUrl ? (
             <img
               src={photoUrl}
               alt="Ảnh chứng từ giao dịch"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer"
+              onClick={startInlineCamera}
             />
           ) : (
             <button
               type="button"
-              onClick={onRequestChangePhoto}
+              onClick={startInlineCamera}
               className="w-full h-full flex flex-col items-center justify-center gap-3 text-neutral-300 hover:text-emerald-300 cursor-pointer p-4"
             >
               <Camera size={48} className="text-neutral-400" />
@@ -335,7 +466,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         {/* Left: Chụp lại / Đổi ảnh */}
         <button
           type="button"
-          onClick={onRequestChangePhoto}
+          onClick={startInlineCamera}
           className="flex flex-col items-center gap-1 text-neutral-300 hover:text-white active:scale-90 transition-all cursor-pointer group"
         >
           <div className="w-12 h-12 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
@@ -379,7 +510,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
       {/* Category Picker Sheet */}
       {isCategorySheetOpen && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-4 animate-in fade-in duration-150">
           <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[75vh]">
             <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
               <h3 className="text-base font-extrabold text-white">
@@ -423,7 +554,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
       {/* Account Picker Sheet */}
       {isAccountSheetOpen && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-4 animate-in fade-in duration-150">
           <div className="w-full max-w-xs bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col">
             <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
               <h3 className="text-base font-extrabold text-white">Chọn nguồn tiền</h3>
@@ -491,7 +622,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-70 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-70 bg-black/80 backdrop-blur-md flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
           <div className="w-full max-w-xs bg-[#282c34] border border-[#3a3f4b] rounded-3xl p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150">
             <div className="w-14 h-14 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 flex items-center justify-center mx-auto mb-3.5">
               <Trash2 size={26} />

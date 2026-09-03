@@ -43,7 +43,7 @@ export const InitialSetupModal: React.FC<InitialSetupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 text-neutral-100 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)] text-neutral-100 overflow-y-auto">
       <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 my-auto">
         <div className="flex flex-col items-center justify-center mx-auto mb-3 text-center">
           <img

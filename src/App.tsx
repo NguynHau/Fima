@@ -138,7 +138,12 @@ export default function App() {
   const handlePhotoCaptured = (blob: Blob) => {
     setCapturedPhotoBlob(blob);
     setIsCameraOpen(false);
-    setIsNewTxOpen(true);
+    
+    // Only open the NewTransactionModal if we are NOT editing a transaction.
+    // If we are editing, the EditTransactionModal is already open and waiting for the photo.
+    if (!editingTransaction) {
+      setIsNewTxOpen(true);
+    }
   };
 
   const handleRetakePhoto = () => {
@@ -174,7 +179,7 @@ export default function App() {
         )}
 
         {/* Main Content Area */}
-        <main className={`flex-1 px-3.5 sm:px-4 ${activeTab === 'flow' ? 'pt-3' : 'pt-5'}`}>
+        <main className={`flex-1 px-3.5 sm:px-4 ${activeTab === 'flow' ? 'pt-3' : 'pt-[max(env(safe-area-inset-top,0px),20px)]'}`}>
           {isLoading ? (
             <div className="py-24 flex flex-col items-center justify-center gap-3 text-neutral-500">
               <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -264,12 +269,18 @@ export default function App() {
         <EditTransactionModal
           isOpen={!!editingTransaction}
           transaction={editingTransaction}
-          onClose={() => setEditingTransaction(null)}
+          onClose={() => {
+            setEditingTransaction(null);
+            setCapturedPhotoBlob(null);
+          }}
           onRequestChangePhoto={() => {
             setIsCameraOpen(true);
           }}
           newPhotoBlob={capturedPhotoBlob}
-          onSuccess={handleEditTxSuccess}
+          onSuccess={() => {
+            handleEditTxSuccess();
+            setCapturedPhotoBlob(null);
+          }}
         />
 
         {/* 5. Initial Setup Onboarding for First-Time Use */}

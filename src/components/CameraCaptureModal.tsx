@@ -162,7 +162,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between overflow-hidden">
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col justify-between overflow-hidden">
       {/* Hidden fallback file input */}
       <input
         ref={fileInputRef}
@@ -174,7 +174,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
       />
 
       {/* Top action bar */}
-      <div className="relative z-20 flex items-center justify-between px-5 pt-4 pb-2 text-white">
+      <div className="relative z-20 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top,0px),16px)] pb-2 text-white">
         <button
           onClick={() => {
             stopCamera();

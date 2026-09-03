@@ -380,7 +380,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Clear Data Confirmation Modal */}
       {showClearConfirm && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
           <div className="w-full max-w-xs bg-[#121212] border border-neutral-800 rounded-3xl p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150">
             <div className="w-14 h-14 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center mx-auto mb-3.5">
               <AlertTriangle size={28} />

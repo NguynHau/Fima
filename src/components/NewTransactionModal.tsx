@@ -226,7 +226,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             <img
               src={photoPreviewUrl}
               alt="Ảnh chứng từ"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer" onClick={onRetakePhoto}
             />
           ) : (
             <button
@@ -418,7 +418,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
 
       {/* Category Picker Sheet */}
       {isCategorySheetOpen && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-4 animate-in fade-in duration-150">
           <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[75vh]">
             <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
               <h3 className="text-base font-extrabold text-white">
@@ -463,7 +463,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
 
       {/* Account Picker Sheet */}
       {isAccountSheetOpen && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-4 animate-in fade-in duration-150">
           <div className="w-full max-w-xs bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col">
             <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
               <h3 className="text-base font-extrabold text-white">Chọn nguồn tiền</h3>
