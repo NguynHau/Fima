@@ -3,6 +3,7 @@ import {
   type Transaction,
   type TransactionImage,
   type UserSettings,
+  type Category,
   type BalancesSummary,
   type AccountType,
   type TransactionType,
@@ -13,6 +14,7 @@ export class FinanceDatabase extends Dexie {
   transactions!: Table<Transaction, string>;
   images!: Table<TransactionImage, string>;
   settings!: Table<UserSettings, string>;
+  categories!: Table<Category, string>;
 
   constructor() {
     super('FinanceJournalDB');
@@ -20,6 +22,12 @@ export class FinanceDatabase extends Dexie {
       transactions: 'id, date, type, account, category, createdAt, [date+type]',
       images: 'id, createdAt',
       settings: 'id',
+    });
+    this.version(2).stores({
+      transactions: 'id, date, type, account, category, categoryId, createdAt, [date+type]',
+      images: 'id, createdAt',
+      settings: 'id',
+      categories: 'id, name, type, order, isDefault, createdAt',
     });
   }
 }
@@ -133,6 +141,7 @@ export async function createTransaction(params: {
   type: TransactionType;
   amount: number;
   category: string;
+  categoryId?: string;
   note: string;
   account: AccountType;
   imageBlob: Blob;
@@ -159,6 +168,7 @@ export async function createTransaction(params: {
       type: params.type,
       amount: Math.abs(params.amount),
       category: params.category,
+      categoryId: params.categoryId,
       note: params.note || '',
       account: params.account,
       imageId,
@@ -179,6 +189,7 @@ export async function updateTransaction(
     type: TransactionType;
     amount: number;
     category: string;
+    categoryId?: string;
     note: string;
     account: AccountType;
     newImageBlob?: Blob;
@@ -214,6 +225,7 @@ export async function updateTransaction(
       type: params.type,
       amount: Math.abs(params.amount),
       category: params.category,
+      categoryId: params.categoryId || existing.categoryId,
       note: params.note || '',
       account: params.account,
       imageId,

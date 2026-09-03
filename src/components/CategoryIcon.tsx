@@ -1,22 +1,8 @@
 import React from 'react';
-import {
-  UtensilsCrossed,
-  Car,
-  ShoppingBag,
-  Receipt,
-  Gamepad2,
-  HeartPulse,
-  GraduationCap,
-  Home,
-  MoreHorizontal,
-  Briefcase,
-  Award,
-  Laptop,
-  Gift,
-  Store,
-  TrendingUp,
-} from 'lucide-react';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, type CategoryInfo } from '../types';
+import { MoreHorizontal } from 'lucide-react';
+import { type CategoryInfo, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../types';
+import { findCategoryInCache } from '../services/categoryService';
+import { CATEGORY_ICON_MAP } from '../utils/categoryIcons';
 
 interface CategoryIconProps {
   category: string;
@@ -26,21 +12,59 @@ interface CategoryIconProps {
   showBackground?: boolean;
 }
 
-export const getCategoryInfo = (categoryName: string, type?: 'income' | 'expense'): CategoryInfo => {
-  const pool = type === 'income' 
-    ? INCOME_CATEGORIES 
-    : type === 'expense' 
-      ? EXPENSE_CATEGORIES 
-      : [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+export const getCategoryInfo = (categoryNameOrId: string, type?: 'income' | 'expense'): CategoryInfo => {
+  if (!categoryNameOrId) {
+    return {
+      name: 'Khác',
+      iconName: 'MoreHorizontal',
+      color: '#64748b',
+      bgColor: 'rgba(100, 116, 139, 0.25)',
+    };
+  }
 
-  const found = pool.find((c) => c.name.toLowerCase() === categoryName.toLowerCase());
-  if (found) return found;
+  // 1. Try dynamic cache (user custom categories + defaults)
+  const cached = findCategoryInCache(categoryNameOrId, type);
+  if (cached) {
+    return {
+      id: cached.id,
+      name: cached.name,
+      type: cached.type,
+      iconName: cached.iconName,
+      color: cached.color,
+      bgColor: cached.bgColor || `${cached.color}33`,
+      isDefault: cached.isDefault,
+      order: cached.order,
+    };
+  }
+
+  // 2. Fallback to default lists
+  const pool =
+    type === 'income'
+      ? DEFAULT_INCOME_CATEGORIES
+      : type === 'expense'
+      ? DEFAULT_EXPENSE_CATEGORIES
+      : [...DEFAULT_EXPENSE_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES];
+
+  const target = categoryNameOrId.trim().toLowerCase();
+  const found = pool.find((c) => c.name.toLowerCase() === target || c.id === categoryNameOrId);
+  if (found) {
+    return {
+      id: found.id,
+      name: found.name,
+      type: found.type,
+      iconName: found.iconName,
+      color: found.color,
+      bgColor: found.bgColor,
+      isDefault: true,
+      order: found.order,
+    };
+  }
 
   return {
-    name: categoryName,
+    name: categoryNameOrId,
     iconName: 'MoreHorizontal',
     color: '#64748b',
-    bgColor: '#f1f5f9',
+    bgColor: 'rgba(100, 116, 139, 0.25)',
   };
 };
 
@@ -52,53 +76,31 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
   showBackground = true,
 }) => {
   const info = getCategoryInfo(category, type);
+  const IconComponent = CATEGORY_ICON_MAP[info.iconName] || MoreHorizontal;
 
-  const renderIcon = () => {
-    const iconProps = { size, color: info.color, strokeWidth: 2.2 };
-    switch (info.iconName) {
-      case 'UtensilsCrossed':
-        return <UtensilsCrossed {...iconProps} />;
-      case 'Car':
-        return <Car {...iconProps} />;
-      case 'ShoppingBag':
-        return <ShoppingBag {...iconProps} />;
-      case 'Receipt':
-        return <Receipt {...iconProps} />;
-      case 'Gamepad2':
-        return <Gamepad2 {...iconProps} />;
-      case 'HeartPulse':
-        return <HeartPulse {...iconProps} />;
-      case 'GraduationCap':
-        return <GraduationCap {...iconProps} />;
-      case 'Home':
-        return <Home {...iconProps} />;
-      case 'Briefcase':
-        return <Briefcase {...iconProps} />;
-      case 'Award':
-        return <Award {...iconProps} />;
-      case 'Laptop':
-        return <Laptop {...iconProps} />;
-      case 'Gift':
-        return <Gift {...iconProps} />;
-      case 'Store':
-        return <Store {...iconProps} />;
-      case 'TrendingUp':
-        return <TrendingUp {...iconProps} />;
-      default:
-        return <MoreHorizontal {...iconProps} />;
-    }
+  // Render the icon with white color (#ffffff) per requirement 6
+  const renderIcon = (iconSize: number) => {
+    return <IconComponent size={iconSize} color="#ffffff" strokeWidth={2.2} className="shrink-0" />;
   };
 
   if (!showBackground) {
-    return <span className={`inline-flex items-center justify-center ${className}`}>{renderIcon()}</span>;
+    // Compact colored pill badge with white icon
+    return (
+      <div
+        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-xs ${className}`}
+        style={{ backgroundColor: info.color }}
+      >
+        {renderIcon(size > 16 ? 16 : size)}
+      </div>
+    );
   }
 
   return (
     <div
-      className={`inline-flex items-center justify-center rounded-xl p-2.5 shrink-0 ${className}`}
-      style={{ backgroundColor: info.bgColor }}
+      className={`inline-flex items-center justify-center rounded-2xl p-2.5 shrink-0 shadow-xs transition-transform ${className}`}
+      style={{ backgroundColor: info.color }}
     >
-      {renderIcon()}
+      {renderIcon(size)}
     </div>
   );
 };

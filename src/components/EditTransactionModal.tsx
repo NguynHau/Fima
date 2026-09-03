@@ -14,8 +14,6 @@ import {
   X,
 } from 'lucide-react';
 import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
   type AccountType,
   type Transaction,
   type TransactionType,
@@ -26,6 +24,7 @@ import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
 import { compressImageWithQuality } from '../utils/imageCompressor';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
+import { useCategories } from '../hooks/useCategories';
 
 interface EditTransactionModalProps {
   isOpen: boolean;
@@ -64,6 +63,9 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
+
+  const { categories } = useCategories();
+  const activeCategories = categories.filter((c) => c.type === type);
 
   // Inline Camera State
   const [isInlineCameraActive, setIsInlineCameraActive] = useState(false);
@@ -255,11 +257,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         }
       }
 
+      const matchedCat = activeCategories.find((c) => c.name === category);
+
       await updateTransaction(transaction.id, {
         date,
         type,
         amount: numericAmount,
         category,
+        categoryId: matchedCat?.id,
         note: note.trim(),
         account,
         newImageBlob: finalBlob,
@@ -287,7 +292,6 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     }
   };
 
-  const activeCategories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
   const isToday = date === getTodayString();
   const dateDisplayText = isToday ? 'Hôm nay' : formatDateVN(date);
 

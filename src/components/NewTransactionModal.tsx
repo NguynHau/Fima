@@ -13,8 +13,6 @@ import {
   X,
 } from 'lucide-react';
 import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
   type AccountType,
   type TransactionType,
   type PhotoQuality,
@@ -24,6 +22,7 @@ import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
 import { defaultReceiptRecognizer } from '../services/receiptRecognition';
+import { useCategories } from '../hooks/useCategories';
 
 interface NewTransactionModalProps {
   isOpen: boolean;
@@ -66,6 +65,9 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
 
   const amountInputRef = useRef<HTMLInputElement>(null);
   const userEditedRef = useRef(false);
+
+  const { categories } = useCategories();
+  const activeCategories = categories.filter((c) => c.type === type);
 
   useEffect(() => {
     if (isOpen) {
@@ -124,14 +126,15 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
     }
   }, [initialPhotoBlob]);
 
-  // Sync default category on type switch
+  // Sync default category on type switch or when active categories change
   useEffect(() => {
-    if (type === 'expense') {
-      setCategory('Ăn uống');
-    } else {
-      setCategory('Lương');
+    if (activeCategories.length > 0) {
+      const exists = activeCategories.some((c) => c.name === category);
+      if (!exists) {
+        setCategory(activeCategories[0].name);
+      }
     }
-  }, [type]);
+  }, [type, activeCategories, category]);
 
   if (!isOpen) return null;
 
@@ -171,11 +174,14 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
 
     try {
       setIsSaving(true);
+      const matchedCat = activeCategories.find((c) => c.name === category);
+
       await createTransaction({
         date,
         type,
         amount: numericAmount,
         category,
+        categoryId: matchedCat?.id,
         note: note.trim(),
         account,
         imageBlob: photoBlob,
@@ -191,7 +197,6 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
     }
   };
 
-  const activeCategories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
   const isToday = date === getTodayString();
   const dateDisplayText = isToday ? 'Hôm nay' : formatDateVN(date);
 
@@ -207,23 +212,13 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           Hủy
         </button>
 
-        {/* AI status card: purple-to-pink gradient during active recognition, emerald for normal */}
-        <div
-          className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all duration-300 ${
-            isAnalyzing
-              ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 border border-pink-300/40 animate-pulse'
-              : 'bg-emerald-500/20 border border-emerald-500/35 text-emerald-300'
-          }`}
-        >
-          {isAnalyzing ? (
-            <>
-              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-              <span className="tracking-wide">Đang nhận diện...</span>
-            </>
-          ) : (
-            <span>Giao dịch mới</span>
-          )}
-        </div>
+        {/* AI status card: purple-to-pink gradient during active recognition */}
+        {isAnalyzing && (
+          <div className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all duration-300 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 border border-pink-300/40 animate-pulse">
+            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+            <span className="tracking-wide">Đang nhận diện...</span>
+          </div>
+        )}
       </div>
 
       {/* Main Container */}

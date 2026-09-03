@@ -1,6 +1,13 @@
 import JSZip from 'jszip';
 import { db, getUserSettings } from '../db/database';
-import { type Transaction, type TransactionImage, type UserSettings, type PhotoQuality } from '../types';
+import {
+  type Transaction,
+  type TransactionImage,
+  type UserSettings,
+  type Category,
+  type PhotoQuality,
+} from '../types';
+import { ensureDefaultCategories } from './categoryService';
 
 export interface BackupImageMeta {
   id: string;
@@ -15,6 +22,7 @@ export interface BackupData {
   exportedAt: string;
   settings: UserSettings;
   transactions: Transaction[];
+  categories?: Category[];
   imagesCount?: number;
   images?: BackupImageMeta[];
 }
@@ -48,13 +56,14 @@ async function toArrayBuffer(data: unknown): Promise<ArrayBuffer | null> {
 }
 
 /**
- * Exports all database records and images into a downloadable zip file
+ * Exports all database records, categories and images into a downloadable zip file
  */
 export async function exportBackupZip(): Promise<Blob> {
-  const [settings, transactions, dbImages] = await Promise.all([
+  const [settings, transactions, dbImages, categories] = await Promise.all([
     getUserSettings(),
     db.transactions.toArray(),
     db.images.toArray(),
+    db.categories.toArray(),
   ]);
 
   // Index images from db.images
@@ -114,10 +123,11 @@ export async function exportBackupZip(): Promise<Blob> {
   }
 
   const backupData: BackupData = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     settings,
     transactions,
+    categories,
     imagesCount: imageMetadataList.length,
     images: imageMetadataList,
   };
@@ -135,7 +145,7 @@ export async function exportBackupZip(): Promise<Blob> {
 }
 
 /**
- * Imports and restores all database records and images from a backup zip file
+ * Imports and restores all database records, categories and images from a backup zip file
  */
 export async function importBackupZip(file: File): Promise<{
   importedTransactionsCount: number;
@@ -213,8 +223,15 @@ export async function importBackupZip(file: File): Promise<{
 
   let importedImagesCount = 0;
 
-  await db.transaction('rw', db.transactions, db.images, db.settings, async () => {
-    // 1. Restore Settings (merge with existing settings)
+  await db.transaction('rw', db.transactions, db.images, db.settings, db.categories, async () => {
+    // 1. Restore Categories (if present in backup, otherwise ensure defaults)
+    if (backupData.categories && Array.isArray(backupData.categories)) {
+      for (const cat of backupData.categories) {
+        await db.categories.put(cat);
+      }
+    }
+
+    // 2. Restore Settings (merge with existing settings)
     if (backupData.settings) {
       const current = await getUserSettings();
       await db.settings.put({
@@ -227,7 +244,7 @@ export async function importBackupZip(file: File): Promise<{
       });
     }
 
-    // 2. Restore Photos into db.images (preserving any other existing images)
+    // 3. Restore Photos into db.images (preserving any other existing images)
     const savedCleanIds = new Set<string>();
     for (const [key, item] of imagesFromZip.entries()) {
       const cleanId = key.replace(/\.[^/.]+$/, '');
@@ -249,7 +266,14 @@ export async function importBackupZip(file: File): Promise<{
       importedImagesCount++;
     }
 
-    // 3. Restore Transactions (preserving any other existing transactions)
+    // Prepare category map for resolving categoryId if missing
+    const currentCats = await db.categories.toArray();
+    const catMap = new Map<string, string>();
+    for (const c of currentCats) {
+      catMap.set(c.name.trim().toLowerCase(), c.id);
+    }
+
+    // 4. Restore Transactions
     for (const t of backupData.transactions) {
       let imageId = t.imageId;
       if (imageId) {
@@ -259,12 +283,15 @@ export async function importBackupZip(file: File): Promise<{
         }
       }
 
+      const resolvedCategoryId = t.categoryId || (t.category ? catMap.get(t.category.trim().toLowerCase()) : undefined);
+
       await db.transactions.put({
         id: t.id || crypto.randomUUID(),
         date: t.date,
         type: t.type,
         amount: Math.abs(t.amount),
         category: t.category,
+        categoryId: resolvedCategoryId,
         note: t.note || '',
         account: t.account,
         imageId,
@@ -273,6 +300,9 @@ export async function importBackupZip(file: File): Promise<{
       });
     }
   });
+
+  // Re-synchronize category cache
+  await ensureDefaultCategories();
 
   return {
     importedTransactionsCount: backupData.transactions.length,

@@ -10,6 +10,8 @@ import {
   Smartphone,
   ShieldCheck,
   RefreshCw,
+  Tag,
+  ChevronRight,
 } from 'lucide-react';
 import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
 import { exportBackupZip, importBackupZip, triggerBlobDownload } from '../services/backupService';
@@ -20,6 +22,9 @@ import {
   subscribeUpdateState,
 } from '../services/updateService';
 import { parseAmountInput } from '../utils/formatters';
+import { useCategories } from '../hooks/useCategories';
+import { CategoryManagementModal } from './CategoryManagementModal';
+import { CategoryIcon } from './CategoryIcon';
 
 interface SettingsViewProps {
   onDataChanged: () => void;
@@ -36,7 +41,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [isSavingBalances, setIsSavingBalances] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const { categories, expenseCategories, incomeCategories } = useCategories();
 
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>(() => {
     return isUpdateAvailable() ? 'available' : 'idle';
@@ -241,7 +249,56 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </form>
       </div>
 
-      {/* 2. SECTION: DỮ LIỆU */}
+      {/* 2. SECTION: QUẢN LÝ DANH MỤC */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Tag size={15} className="text-amber-400" />
+              Quản lý danh mục
+            </h3>
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium mt-1">
+              Tùy chỉnh toàn bộ danh mục Thu và Chi: thêm mới, đổi tên, đổi icon, màu sắc và sắp xếp.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsCategoryModalOpen(true)}
+          className="w-full p-3.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-98 group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex items-center -space-x-2 shrink-0">
+              {expenseCategories.slice(0, 2).map((c) => (
+                <div key={c.id} className="relative z-10">
+                  <CategoryIcon category={c.name} type="expense" size={14} showBackground={false} />
+                </div>
+              ))}
+              {incomeCategories.slice(0, 1).map((c) => (
+                <div key={c.id} className="relative z-0">
+                  <CategoryIcon category={c.name} type="income" size={14} showBackground={false} />
+                </div>
+              ))}
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+                Danh mục Thu & Chi
+              </div>
+              <div className="text-[11px] text-neutral-400">
+                {expenseCategories.length} khoản chi • {incomeCategories.length} khoản thu
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-neutral-400 group-hover:text-white transition-colors">
+            <span className="text-xs font-semibold">Chỉnh sửa</span>
+            <ChevronRight size={16} />
+          </div>
+        </button>
+      </div>
+
+      {/* 3. SECTION: DỮ LIỆU */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
           Sao lưu & Khôi phục Dữ liệu
@@ -416,6 +473,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Category Management Modal */}
+      <CategoryManagementModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onDataChanged={onDataChanged}
+      />
     </div>
   );
 };
