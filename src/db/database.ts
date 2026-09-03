@@ -6,6 +6,7 @@ import {
   type BalancesSummary,
   type AccountType,
   type TransactionType,
+  type PhotoQuality,
 } from '../types';
 
 export class FinanceDatabase extends Dexie {
@@ -86,8 +87,45 @@ export async function getTransactionById(id: string): Promise<Transaction | unde
 
 export async function getImageBlob(imageId: string): Promise<Blob | undefined> {
   if (!imageId) return undefined;
-  const item = await db.images.get(imageId);
-  return item?.blob;
+  
+  let item = await db.images.get(imageId);
+  if (!item) {
+    const clean = imageId.replace(/\.[^/.]+$/, '');
+    item = await db.images.get(clean);
+  }
+  if (!item) {
+    item = await db.images.get(`${imageId}.jpg`);
+  }
+  if (!item || !item.blob) return undefined;
+
+  if (item.blob instanceof Blob) {
+    return item.blob;
+  }
+
+  // Handle ArrayBuffer, Uint8Array or serialized data
+  try {
+    const raw: any = item.blob;
+    if (raw instanceof ArrayBuffer) {
+      return new Blob([raw], { type: item.mimeType || 'image/jpeg' });
+    }
+    if (ArrayBuffer.isView(raw)) {
+      return new Blob([raw.buffer as ArrayBuffer], { type: item.mimeType || 'image/jpeg' });
+    }
+    if (typeof raw === 'string' && raw.startsWith('data:')) {
+      const parts = raw.split(',');
+      const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+      const bstr = atob(parts[1]);
+      const u8arr = new Uint8Array(bstr.length);
+      for (let i = 0; i < bstr.length; i++) {
+        u8arr[i] = bstr.charCodeAt(i);
+      }
+      return new Blob([u8arr], { type: mime });
+    }
+  } catch (err) {
+    console.error('Error parsing blob in getImageBlob:', err);
+  }
+
+  return undefined;
 }
 
 export async function createTransaction(params: {
@@ -98,6 +136,7 @@ export async function createTransaction(params: {
   note: string;
   account: AccountType;
   imageBlob: Blob;
+  photoQuality?: PhotoQuality;
 }): Promise<Transaction> {
   const id = crypto.randomUUID();
   const imageId = crypto.randomUUID();
@@ -110,6 +149,7 @@ export async function createTransaction(params: {
       blob: params.imageBlob,
       mimeType: params.imageBlob.type || 'image/jpeg',
       createdAt: now,
+      quality: params.photoQuality || 'low',
     });
 
     // 2. Save Transaction Record
@@ -142,6 +182,7 @@ export async function updateTransaction(
     note: string;
     account: AccountType;
     newImageBlob?: Blob;
+    photoQuality?: PhotoQuality;
   }
 ): Promise<Transaction> {
   const existing = await db.transactions.get(id);
@@ -163,6 +204,7 @@ export async function updateTransaction(
         blob: params.newImageBlob,
         mimeType: params.newImageBlob.type || 'image/jpeg',
         createdAt: now,
+        quality: params.photoQuality || 'low',
       });
     }
 

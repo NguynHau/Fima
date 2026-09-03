@@ -6,6 +6,7 @@ import {
   type CalendarAccountFilter,
   type AccountType,
   type ActiveTab,
+  type PhotoQuality,
 } from './types';
 import {
   calculateBalances,
@@ -56,6 +57,7 @@ export default function App() {
   // Modals & Navigation state
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [capturedPhotoBlob, setCapturedPhotoBlob] = useState<Blob | null>(null);
+  const [capturedPhotoQuality, setCapturedPhotoQuality] = useState<PhotoQuality>('low');
   const [isNewTxOpen, setIsNewTxOpen] = useState(false);
   const [newTxDefaultDate, setNewTxDefaultDate] = useState<string>(getTodayString());
   const [newTxDefaultAccount, setNewTxDefaultAccount] = useState<AccountType | undefined>(undefined);
@@ -135,8 +137,9 @@ export default function App() {
     setIsCameraOpen(true);
   };
 
-  const handlePhotoCaptured = (blob: Blob) => {
+  const handlePhotoCaptured = (blob: Blob, quality: PhotoQuality = 'low') => {
     setCapturedPhotoBlob(blob);
+    setCapturedPhotoQuality(quality);
     setIsCameraOpen(false);
     
     // Only open the NewTransactionModal if we are NOT editing a transaction.
@@ -240,6 +243,7 @@ export default function App() {
         <NewTransactionModal
           isOpen={isNewTxOpen}
           initialPhotoBlob={capturedPhotoBlob}
+          photoQuality={capturedPhotoQuality}
           defaultDate={newTxDefaultDate}
           defaultAccount={newTxDefaultAccount}
           onClose={() => {
@@ -263,6 +267,7 @@ export default function App() {
             setSelectedDayDate(null);
             handleOpenAddTransaction(d, acc);
           }}
+          allTransactions={transactions}
         />
 
         {/* 4. Edit / Delete Transaction */}
@@ -277,6 +282,7 @@ export default function App() {
             setIsCameraOpen(true);
           }}
           newPhotoBlob={capturedPhotoBlob}
+          photoQuality={capturedPhotoQuality}
           onSuccess={() => {
             handleEditTxSuccess();
             setCapturedPhotoBlob(null);

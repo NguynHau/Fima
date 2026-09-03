@@ -1,6 +1,23 @@
+import { type PhotoQuality } from '../types';
+
+export const QUALITY_PRESETS: Record<PhotoQuality, { maxWidth: number; maxHeight: number; quality: number }> = {
+  // "Thấp" — mặc định. Nén/resize hợp lý để giảm đáng kể dung lượng lưu trữ, ưu tiên tiết kiệm bộ nhớ thiết bị.
+  low: {
+    maxWidth: 800,
+    maxHeight: 800,
+    quality: 0.65,
+  },
+  // "Cao" — Giữ chất lượng và độ phân giải cao hơn.
+  high: {
+    maxWidth: 1600,
+    maxHeight: 1600,
+    quality: 0.88,
+  },
+};
+
 /**
  * Compresses an image file or blob to an optimized JPEG blob
- * Resizes down to max dimensions (1280x1280) while maintaining aspect ratio
+ * Resizes down to max dimensions while maintaining aspect ratio
  */
 export async function compressImage(
   source: Blob | File,
@@ -65,6 +82,19 @@ export async function compressImage(
 
     reader.readAsDataURL(source);
   });
+}
+
+/**
+ * Compresses an image using predefined quality presets:
+ * - 'low' (Thấp): Max 800x800, quality 0.65 (dramatically reduced storage footprint)
+ * - 'high' (Cao): Max 1600x1600, quality 0.88 (higher resolution and details)
+ */
+export async function compressImageWithQuality(
+  source: Blob | File,
+  qualityLevel: PhotoQuality = 'low'
+): Promise<Blob> {
+  const preset = QUALITY_PRESETS[qualityLevel] || QUALITY_PRESETS.low;
+  return compressImage(source, preset.maxWidth, preset.maxHeight, preset.quality);
 }
 
 /**

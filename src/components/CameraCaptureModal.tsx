@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Camera, RefreshCw, X, Image as ImageIcon, AlertCircle } from 'lucide-react';
-import { compressImage } from '../utils/imageCompressor';
+import { compressImageWithQuality } from '../utils/imageCompressor';
+import { type PhotoQuality } from '../types';
 
 interface CameraCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPhotoCaptured: (blob: Blob) => void;
+  onPhotoCaptured: (blob: Blob, quality: PhotoQuality) => void;
 }
 
 export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
@@ -19,6 +20,25 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Photo quality state: defaults to 'low' (Thấp)
+  const [photoQuality, setPhotoQuality] = useState<PhotoQuality>(() => {
+    try {
+      const saved = localStorage.getItem('fima_photo_quality');
+      return saved === 'high' ? 'high' : 'low';
+    } catch {
+      return 'low';
+    }
+  });
+
+  const handleQualityChange = (q: PhotoQuality) => {
+    setPhotoQuality(q);
+    try {
+      localStorage.setItem('fima_photo_quality', q);
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -123,16 +143,16 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
       canvas.toBlob(
         async (blob) => {
           if (blob) {
-            const compressed = await compressImage(blob);
+            const compressed = await compressImageWithQuality(blob, photoQuality);
             stopCamera();
-            onPhotoCaptured(compressed);
+            onPhotoCaptured(compressed, photoQuality);
           } else {
             setCameraError('Không chụp được ảnh, vui lòng thử lại');
           }
           setIsProcessing(false);
         },
         'image/jpeg',
-        0.88
+        0.92
       );
     } catch (e) {
       console.error(e);
@@ -147,9 +167,9 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
       try {
         setIsProcessing(true);
         const file = files[0];
-        const compressed = await compressImage(file);
+        const compressed = await compressImageWithQuality(file, photoQuality);
         stopCamera();
-        onPhotoCaptured(compressed);
+        onPhotoCaptured(compressed, photoQuality);
       } catch (err) {
         console.error(err);
         setCameraError('Không thể nén và xử lý ảnh');
@@ -200,8 +220,8 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
         </button>
       </div>
 
-      {/* Camera Viewfinder (Square rounded window like Locket) */}
-      <div className="relative flex-1 flex items-center justify-center p-4 w-full max-w-md mx-auto overflow-hidden">
+      {/* Camera Viewfinder with outer deep gold border and clear gap */}
+      <div className="relative flex-1 flex items-center justify-center p-3 w-full max-w-md mx-auto overflow-hidden">
         {cameraError ? (
           <div className="p-6 text-center max-w-sm mx-auto text-white">
             <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4">
@@ -228,20 +248,55 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             </div>
           </div>
         ) : (
-          <div className="w-full aspect-square max-h-[48vh] relative rounded-[2.5rem] border border-[#2e2e2e] bg-[#121212] overflow-hidden shadow-2xl flex items-center justify-center">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
+          /* Outer gold border (vàng gold hơi đậm #b8860b) with a clear, distinct gap */
+          <div className="w-full aspect-square max-h-[46vh] relative flex items-center justify-center p-2 rounded-[3rem] border-2 border-[#b8860b] shadow-[0_0_20px_rgba(184,134,11,0.25)]">
+            {/* Existing camera viewfinder - preserves exact frame, border, layout and functionality */}
+            <div className="w-full h-full relative rounded-[2.5rem] border border-[#2e2e2e] bg-[#121212] overflow-hidden shadow-2xl flex items-center justify-center">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         )}
       </div>
 
+      {/* Photo Quality Selection / Picker */}
+      <div className="relative z-20 flex flex-col items-center justify-center px-4 py-1 shrink-0">
+        <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[#181a20]/90 border border-white/10 backdrop-blur-md shadow-lg">
+          <span className="text-xs font-semibold text-neutral-300">Chất lượng ảnh:</span>
+          <div className="inline-flex p-0.5 rounded-full bg-black/70 border border-white/10">
+            <button
+              type="button"
+              onClick={() => handleQualityChange('low')}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                photoQuality === 'low'
+                  ? 'bg-[#b8860b] text-white shadow-xs'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Thấp
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQualityChange('high')}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                photoQuality === 'high'
+                  ? 'bg-[#b8860b] text-white shadow-xs'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              Cao
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Bottom Shutter Controls */}
-      <div className="relative z-20 px-6 py-4 flex items-center justify-between max-w-md w-full mx-auto pb-[max(env(safe-area-inset-bottom),20px)]">
+      <div className="relative z-20 px-6 py-3 flex items-center justify-between max-w-md w-full mx-auto pb-[max(env(safe-area-inset-bottom),16px)]">
         {/* Gallery / File Picker */}
         <button
           onClick={() => fileInputRef.current?.click()}

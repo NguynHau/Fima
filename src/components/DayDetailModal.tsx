@@ -24,6 +24,7 @@ interface DayDetailModalProps {
   onClose: () => void;
   onSelectTransaction: (transaction: Transaction) => void;
   onAddNewForDate: (date: string, defaultAccount?: AccountType) => void;
+  allTransactions?: Transaction[];
 }
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({
@@ -34,49 +35,73 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   onClose,
   onSelectTransaction,
   onAddNewForDate,
+  allTransactions,
 }) => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [dbTransactions, setDbTransactions] = useState<Transaction[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; tx: Transaction } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // If allTransactions is provided by App.tsx, automatically derive day transactions
+  const transactions = useMemo(() => {
+    if (allTransactions) {
+      return allTransactions.filter((t) => t.date === date);
+    }
+    return dbTransactions;
+  }, [allTransactions, date, dbTransactions]);
+
+  // If allTransactions is not provided, fetch from DB on [isOpen, date]
   useEffect(() => {
-    if (!isOpen || !date) return;
+    if (!isOpen || !date || allTransactions) return;
 
     let isMounted = true;
     setIsLoading(true);
 
-    getTransactionsByDate(date).then(async (list) => {
+    getTransactionsByDate(date).then((list) => {
       if (!isMounted) return;
-      setTransactions(list);
-
-      // Load image URLs for each transaction
-      const urlMap: Record<string, string> = {};
-      for (const t of list) {
-        if (t.imageId) {
-          const blob = await getImageBlob(t.imageId);
-          if (blob && isMounted) {
-            urlMap[t.id] = URL.createObjectURL(blob);
-          }
-        }
-      }
-
-      if (isMounted) {
-        setImageUrls(urlMap);
-        setIsLoading(false);
-      }
+      setDbTransactions(list);
+      setIsLoading(false);
     });
 
     return () => {
       isMounted = false;
-      // Clean up object URLs
-      Object.values(imageUrls).forEach((url) => {
-        if (typeof url === 'string') {
-          URL.revokeObjectURL(url);
+    };
+  }, [isOpen, date, allTransactions]);
+
+  // Load and refresh image URLs whenever transactions change
+  useEffect(() => {
+    if (!isOpen || !date) return;
+
+    let isMounted = true;
+    const urlMap: Record<string, string> = {};
+
+    const loadImages = async () => {
+      for (const t of transactions) {
+        if (t.imageId && isMounted) {
+          try {
+            const blob = await getImageBlob(t.imageId);
+            if (blob && isMounted) {
+              urlMap[t.id] = URL.createObjectURL(blob);
+            }
+          } catch (e) {
+            console.error('Lỗi khi tải ảnh cho giao dịch:', e);
+          }
         }
+      }
+      if (isMounted) {
+        setImageUrls(urlMap);
+      }
+    };
+
+    loadImages();
+
+    return () => {
+      isMounted = false;
+      Object.values(urlMap).forEach((url) => {
+        URL.revokeObjectURL(url);
       });
     };
-  }, [isOpen, date]);
+  }, [isOpen, date, transactions]);
 
   // Filter transactions based on active accountFilter
   const filteredTransactions = useMemo(() => {

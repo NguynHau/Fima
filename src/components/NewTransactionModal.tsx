@@ -17,6 +17,7 @@ import {
   INCOME_CATEGORIES,
   type AccountType,
   type TransactionType,
+  type PhotoQuality,
 } from '../types';
 import { createTransaction } from '../db/database';
 import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
@@ -27,6 +28,7 @@ import { defaultReceiptRecognizer } from '../services/receiptRecognition';
 interface NewTransactionModalProps {
   isOpen: boolean;
   initialPhotoBlob: Blob | null;
+  photoQuality?: PhotoQuality;
   defaultDate?: string;
   defaultAccount?: AccountType;
   onClose: () => void;
@@ -37,6 +39,7 @@ interface NewTransactionModalProps {
 export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   isOpen,
   initialPhotoBlob,
+  photoQuality,
   defaultDate,
   defaultAccount,
   onClose,
@@ -176,6 +179,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
         note: note.trim(),
         account,
         imageBlob: photoBlob,
+        photoQuality: photoQuality || 'low',
       });
 
       onSuccess();
@@ -203,11 +207,22 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           Hủy
         </button>
 
-        <div className="px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/35 text-emerald-300 text-xs sm:text-sm font-extrabold flex items-center gap-1.5">
-          {isAnalyzing && (
-            <div className="w-3.5 h-3.5 border-2 border-emerald-300 border-t-transparent rounded-full animate-spin shrink-0" />
+        {/* AI status card: purple-to-pink gradient during active recognition, emerald for normal */}
+        <div
+          className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all duration-300 ${
+            isAnalyzing
+              ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 border border-pink-300/40 animate-pulse'
+              : 'bg-emerald-500/20 border border-emerald-500/35 text-emerald-300'
+          }`}
+        >
+          {isAnalyzing ? (
+            <>
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+              <span className="tracking-wide">Đang nhận diện...</span>
+            </>
+          ) : (
+            <span>Giao dịch mới</span>
           )}
-          <span>{isAnalyzing ? 'Đang nhận diện...' : 'Giao dịch mới'}</span>
         </div>
       </div>
 

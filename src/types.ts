@@ -2,6 +2,7 @@ export type TransactionType = 'income' | 'expense';
 export type AccountType = 'wallet' | 'bank';
 export type CalendarAccountFilter = 'all' | 'wallet' | 'bank';
 export type ActiveTab = 'flow' | 'statistics' | 'settings' | 'profile';
+export type PhotoQuality = 'low' | 'high';
 
 export interface Transaction {
   id: string;
@@ -21,6 +22,7 @@ export interface TransactionImage {
   blob: Blob;
   mimeType: string;
   createdAt: string;
+  quality?: PhotoQuality;
 }
 
 export interface UserSettings {

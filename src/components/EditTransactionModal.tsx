@@ -19,10 +19,11 @@ import {
   type AccountType,
   type Transaction,
   type TransactionType,
+  type PhotoQuality,
 } from '../types';
 import { updateTransaction, deleteTransaction, getImageBlob } from '../db/database';
 import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
-import { compressImage } from '../utils/imageCompressor';
+import { compressImageWithQuality } from '../utils/imageCompressor';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
 
@@ -32,6 +33,7 @@ interface EditTransactionModalProps {
   onClose: () => void;
   onRequestChangePhoto: () => void;
   newPhotoBlob?: Blob | null;
+  photoQuality?: PhotoQuality;
   onSuccess: () => void;
 }
 
@@ -41,6 +43,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   onClose,
   onRequestChangePhoto,
   newPhotoBlob,
+  photoQuality,
   onSuccess,
 }) => {
   const [date, setDate] = useState<string>('');
@@ -68,39 +71,6 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [inlineNewPhotoBlob, setInlineNewPhotoBlob] = useState<Blob | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (!transaction) return;
-
-    setDate(transaction.date);
-    setType(transaction.type);
-    setAmountStr(transaction.amount.toString());
-    setCategory(transaction.category);
-    setNote(transaction.note || '');
-    setAccount(transaction.account);
-    setShowDeleteConfirm(false);
-    setIsCategorySheetOpen(false);
-    setIsAccountSheetOpen(false);
-    setErrorMessage(null);
-
-    // Load existing image if no newPhotoBlob provided yet
-    if (inlineNewPhotoBlob) {
-      const url = URL.createObjectURL(inlineNewPhotoBlob);
-      setPhotoUrl(url);
-    } else if (newPhotoBlob) {
-      const url = URL.createObjectURL(newPhotoBlob);
-      setPhotoUrl(url);
-    } else if (transaction.imageId) {
-      getImageBlob(transaction.imageId).then((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          setPhotoUrl(url);
-        }
-      });
-    }
-  }, [transaction, newPhotoBlob, inlineNewPhotoBlob, isOpen]);
-
-  if (!isOpen || !transaction) return null;
 
   const stopInlineCamera = () => {
     if (inlineStream) {
@@ -160,7 +130,11 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         canvas.toBlob(
           async (blob) => {
             if (blob) {
-              const compressed = await compressImage(blob);
+              const activeQuality: PhotoQuality =
+                photoQuality ||
+                (localStorage.getItem('fima_photo_quality') as PhotoQuality) ||
+                'low';
+              const compressed = await compressImageWithQuality(blob, activeQuality);
               setInlineNewPhotoBlob(compressed);
               stopInlineCamera();
               resolve(compressed);
@@ -171,7 +145,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
             setIsProcessingPhoto(false);
           },
           'image/jpeg',
-          0.88
+          0.92
         );
       } catch (e) {
         console.error(e);
@@ -182,7 +156,57 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     });
   };
 
-  // Cleanup on unmount or close
+  // Sync state when transaction or isOpen changes
+  useEffect(() => {
+    if (!isOpen || !transaction) {
+      setPhotoUrl(null);
+      return;
+    }
+
+    let isMounted = true;
+    let localUrl: string | null = null;
+
+    setDate(transaction.date);
+    setType(transaction.type);
+    setAmountStr(transaction.amount.toString());
+    setCategory(transaction.category);
+    setNote(transaction.note || '');
+    setAccount(transaction.account);
+    setShowDeleteConfirm(false);
+    setIsCategorySheetOpen(false);
+    setIsAccountSheetOpen(false);
+    setErrorMessage(null);
+
+    // Load existing image if no newPhotoBlob provided yet
+    if (inlineNewPhotoBlob) {
+      localUrl = URL.createObjectURL(inlineNewPhotoBlob);
+      setPhotoUrl(localUrl);
+    } else if (newPhotoBlob) {
+      localUrl = URL.createObjectURL(newPhotoBlob);
+      setPhotoUrl(localUrl);
+    } else if (transaction.imageId) {
+      getImageBlob(transaction.imageId).then((blob) => {
+        if (!isMounted) return;
+        if (blob) {
+          localUrl = URL.createObjectURL(blob);
+          setPhotoUrl(localUrl);
+        } else {
+          setPhotoUrl(null);
+        }
+      });
+    } else {
+      setPhotoUrl(null);
+    }
+
+    return () => {
+      isMounted = false;
+      if (localUrl) {
+        URL.revokeObjectURL(localUrl);
+      }
+    };
+  }, [transaction, newPhotoBlob, inlineNewPhotoBlob, isOpen]);
+
+  // Cleanup camera and temp states on unmount or when closed
   useEffect(() => {
     if (!isOpen) {
       stopInlineCamera();
@@ -190,6 +214,9 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     }
     return () => stopInlineCamera();
   }, [isOpen]);
+
+  // Rule of Hooks: All hooks above this line. Early return only AFTER all hooks are declared.
+  if (!isOpen || !transaction) return null;
 
   const numericAmount = parseInt(amountStr.replace(/[^0-9]/g, '') || '0', 10);
 
@@ -236,6 +263,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         note: note.trim(),
         account,
         newImageBlob: finalBlob,
+        photoQuality: photoQuality || 'low',
       });
 
       onSuccess();
