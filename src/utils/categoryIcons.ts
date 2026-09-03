@@ -24,6 +24,7 @@ import {
   Sparkles,
   Sofa,
   Lightbulb,
+  Receipt,
   Car,
   Bus,
   Train,
