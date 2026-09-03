@@ -512,18 +512,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           </div>
         </div>
 
-        {/* 6. Chọn ngày (Date Selector) */}
-        <div className="flex items-center justify-center my-1.5 shrink-0 relative">
-          <button
-            type="button"
-            onClick={() => setIsDatePickerOpen(true)}
-            className="py-2.5 px-5 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-100 text-sm sm:text-base font-bold flex items-center gap-2.5 active:scale-95 transition-all cursor-pointer shadow-xs"
-          >
-            <CalendarIcon size={16} className="text-neutral-300" />
-            <span>{dateDisplayText}</span>
-            <ChevronDown size={16} className="text-neutral-300" />
-          </button>
-        </div>
+
       </div>
 
       {/* Hidden file input for Photo Library selection */}

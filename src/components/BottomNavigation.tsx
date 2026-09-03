@@ -148,21 +148,18 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         ref={(el) => { tabsRef.current[tab] = el; }}
         id={`nav-btn-${tab}`}
         onClick={() => onChangeTab(tab)}
-        className="relative flex items-center justify-center flex-1 h-11 cursor-pointer outline-none touch-manipulation z-10"
+        className="relative flex items-center justify-center flex-1 h-12 cursor-pointer outline-none touch-manipulation z-10"
         aria-label={label}
         title={label}
       >
         <motion.div
-          animate={{ scale: isActive ? 1.12 : 1 }}
+          animate={{ scale: isActive ? 1.15 : 1 }}
           transition={{ type: 'spring', bounce: 0.5, duration: 0.4 }}
-          className={`p-1.5 transition-colors flex flex-col items-center gap-0.5 ${
+          className={`p-2 transition-colors flex items-center justify-center ${
             isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
           }`}
         >
-          <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-          <span className="text-[9px] font-black tracking-tight leading-none scale-[0.95]">
-            {label}
-          </span>
+          <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
         </motion.div>
       </button>
     );
@@ -199,7 +196,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           onPointerCancel={handlePointerUp}
           className="w-full border rounded-full touch-none pointer-events-auto p-1.5 transition-all flex items-center relative"
           style={{
-            height: '74px',
+            height: '62px',
             backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
             backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
             WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
@@ -214,11 +211,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               x: animatedX,
               scaleX: finalScaleX,
               scaleY: finalScaleY,
-              width: 68,
-              height: 50,
+              width: 60,
+              height: 44,
               willChange: 'transform',
             }}
-            className="absolute top-1/2 left-0 -mt-[25px] -ml-[34px] rounded-full z-0 pointer-events-none"
+            className="absolute top-1/2 left-0 -mt-[22px] -ml-[30px] rounded-full z-0 pointer-events-none"
           >
             <div 
               className="absolute inset-0 rounded-full"
