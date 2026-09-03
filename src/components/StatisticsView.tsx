@@ -692,6 +692,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         </button>
       </div>
 
+      {/* AI ASSISTANT SECTION */}
+      <AIAssistantSection transactions={transactions} />
+
       {/* 2. ACCOUNT FILTER */}
       <div className="bg-[#121212] border border-neutral-800 p-1.5 rounded-2xl grid grid-cols-3 gap-2 shadow-sm">
         <button
@@ -728,9 +731,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           <span>Bank</span>
         </button>
       </div>
-
-      {/* AI ASSISTANT SECTION */}
-      <AIAssistantSection transactions={transactions} />
 
       {/* 3. TIME FILTER & NAVIGATION */}
       <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">

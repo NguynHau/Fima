@@ -12,7 +12,11 @@ import {
   RefreshCw,
   Tag,
   ChevronRight,
+  Server,
+  Sparkles,
+  Activity,
 } from 'lucide-react';
+import { AIManager } from '../services/ai/AIManager';
 import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
 import { exportBackupZip, importBackupZip, triggerBlobDownload } from '../services/backupService';
 import {
@@ -48,6 +52,45 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { categories, expenseCategories, incomeCategories } = useCategories();
+
+  const [backendUrl, setBackendUrl] = useState(() => AIManager.getBackendUrl());
+  const [isTestingBackend, setIsTestingBackend] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<{
+    tested: boolean;
+    ok?: boolean;
+    latency?: number;
+    message?: string;
+    server?: string;
+  } | null>(null);
+
+  const handleSaveBackendUrl = () => {
+    AIManager.setBackendUrl(backendUrl);
+    setStatusMessage({ type: 'success', text: 'Đã lưu cấu hình máy chủ AI backend!' });
+    setTimeout(() => setStatusMessage(null), 3000);
+  };
+
+  const handleTestBackend = async () => {
+    setIsTestingBackend(true);
+    setBackendStatus(null);
+    try {
+      const res = await AIManager.checkHealth(backendUrl);
+      setBackendStatus({
+        tested: true,
+        ok: res.ok,
+        latency: res.latency,
+        message: res.message,
+        server: res.server,
+      });
+    } catch (e: any) {
+      setBackendStatus({
+        tested: true,
+        ok: false,
+        message: e?.message || 'Lỗi kết nối',
+      });
+    } finally {
+      setIsTestingBackend(false);
+    }
+  };
 
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>(() => {
     return isUpdateAvailable() ? 'available' : 'idle';
@@ -412,6 +455,105 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               className="w-full py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer border border-neutral-800 disabled:opacity-50"
             >
               Kiểm tra cập nhật
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* AI BACKEND CLOUD CONFIGURATION */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 space-y-3.5 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
+            <Server size={18} />
+          </div>
+          <div>
+            <h3 className="text-xs font-black text-neutral-200 uppercase tracking-wider">
+              Máy chủ AI (Cloud Backend)
+            </h3>
+            <p className="text-[11px] text-neutral-400">
+              Kết nối backend Gemini để dùng AI trên GitHub Pages, di động & mạng 4G/5G
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-[11px] font-bold text-neutral-300">
+            URL Backend Public (HTTPS)
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={backendUrl}
+              onChange={(e) => setBackendUrl(e.target.value)}
+              placeholder="Để trống nếu chạy cùng máy chủ, hoặc https://..."
+              className="w-full bg-[#1a1a1a] border border-neutral-700 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-neutral-100 placeholder-neutral-500 outline-none transition-colors"
+            />
+          </div>
+          <p className="text-[10px] text-neutral-400 leading-relaxed">
+            • <strong className="text-neutral-300">GitHub Pages</strong>: Nhập URL máy chủ backend (Render, Railway, Cloud Run...) để mọi người dùng đều dùng được AI không cần API key riêng.<br />
+            • <strong className="text-neutral-300">Bảo mật</strong>: GEMINI_API_KEY được lưu an toàn trên máy chủ, không lộ ra mã nguồn hay trình duyệt.
+          </p>
+        </div>
+
+        {backendStatus?.tested && (
+          <div
+            className={`p-3 rounded-xl border text-xs leading-relaxed flex items-start gap-2 ${
+              backendStatus.ok
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+            }`}
+          >
+            {backendStatus.ok ? (
+              <Check size={16} className="shrink-0 mt-0.5 text-emerald-400" />
+            ) : (
+              <AlertTriangle size={16} className="shrink-0 mt-0.5 text-rose-400" />
+            )}
+            <div>
+              <div className="font-bold">
+                {backendStatus.ok ? 'Kết nối máy chủ AI thành công!' : 'Không thể kết nối máy chủ AI'}
+              </div>
+              <div className="text-[11px] opacity-90 mt-0.5">
+                {backendStatus.ok
+                  ? `Phản hồi trong ${backendStatus.latency}ms • ${backendStatus.server || 'Fima AI Server'}`
+                  : backendStatus.message}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={handleTestBackend}
+            disabled={isTestingBackend}
+            className="flex-1 py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-98 transition-colors border border-neutral-800 disabled:opacity-50 cursor-pointer"
+          >
+            <Activity size={14} className={isTestingBackend ? 'animate-spin' : ''} />
+            {isTestingBackend ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSaveBackendUrl}
+            className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 active:scale-98 transition-colors cursor-pointer shadow-md"
+          >
+            <Check size={14} />
+            Lưu URL
+          </button>
+
+          {backendUrl && (
+            <button
+              type="button"
+              onClick={() => {
+                setBackendUrl('');
+                AIManager.setBackendUrl('');
+                setBackendStatus(null);
+                setStatusMessage({ type: 'success', text: 'Đã đặt lại về URL mặc định!' });
+                setTimeout(() => setStatusMessage(null), 3000);
+              }}
+              className="px-3 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs font-medium transition-colors cursor-pointer"
+            >
+              Mặc định
             </button>
           )}
         </div>

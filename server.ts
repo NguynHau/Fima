@@ -14,6 +14,17 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // CORS middleware: allow GitHub Pages and any client to call the AI backend securely
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    next();
+  });
+
   // Body parser for JSON with base64 image payload
   app.use(express.json({ limit: '10mb' }));
 
@@ -33,8 +44,18 @@ async function startServer() {
     }
   }
 
-  // API endpoint for receipt vision analysis via Gemini AI
-  app.post('/api/receipt/analyze', async (req, res) => {
+  // Health check endpoint for connectivity tests
+  app.get('/api/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      server: 'Fima AI Backend Server',
+      timestamp: new Date().toISOString(),
+      geminiConfigured: !!process.env.GEMINI_API_KEY,
+    });
+  });
+
+  // Shared handler for receipt vision analysis via Gemini AI
+  const handleReceiptAnalyze = async (req: express.Request, res: express.Response) => {
     try {
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
@@ -178,7 +199,11 @@ RETURN ONLY VALID JSON.
         error: error.message || 'Error processing request',
       });
     }
-  });
+  };
+
+  // Support both endpoint paths for receipt analysis
+  app.post('/api/receipt/analyze', handleReceiptAnalyze);
+  app.post('/api/ai/analyze-receipt', handleReceiptAnalyze);
 
   // API endpoint for natural language text-to-transaction
   app.post('/api/ai/text-to-transaction', async (req, res) => {

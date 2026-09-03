@@ -31,6 +31,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_AI_BACKEND_URL: ${{ vars.VITE_AI_BACKEND_URL || secrets.VITE_AI_BACKEND_URL || '' }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
