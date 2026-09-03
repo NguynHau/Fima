@@ -47,14 +47,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const todayStr = getTodayString();
   const todayFormatted = formatDateVN(todayStr);
 
-  // Find the oldest transaction date
-  const oldestDateStr = transactions.length > 0
-    ? transactions.reduce((oldest, t) => t.date < oldest ? t.date : oldest, transactions[0].date)
+  // Find the furthest (latest) transaction date (could be in the future)
+  const furthestDateStr = transactions.length > 0
+    ? transactions.reduce((furthest, t) => t.date > furthest ? t.date : furthest, transactions[0].date)
     : todayStr;
-  const oldestFormatted = formatDateVN(oldestDateStr);
+  const furthestFormatted = formatDateVN(furthestDateStr);
 
   // Determine selected date based on mode
-  const selectedDateStr = reportMode === 'today' ? todayStr : oldestDateStr;
+  const selectedDateStr = reportMode === 'today' ? todayStr : furthestDateStr;
   const selectedDateFormatted = formatDateVN(selectedDateStr);
 
   // Filter transactions up to selected date (date <= selectedDateStr)
