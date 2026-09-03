@@ -30,6 +30,7 @@ import { EditTransactionModal } from './components/EditTransactionModal';
 import { DayDetailModal } from './components/DayDetailModal';
 import { InitialSetupModal } from './components/InitialSetupModal';
 import { IOSInstallGuide } from './components/IOSInstallGuide';
+import { GlobalSearchView } from './components/GlobalSearchView';
 import { usePWA } from './hooks/usePWA';
 import { initAutoUpdateChecker } from './services/updateService';
 import { getTodayString } from './utils/formatters';
@@ -76,6 +77,7 @@ export default function App() {
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [showInitialSetup, setShowInitialSetup] = useState(false);
   const [isCategoryManagementOpen, setIsCategoryManagementOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Track if camera has auto-opened on app launch
   const hasAutoOpenedCameraRef = useRef(false);
@@ -277,6 +279,7 @@ export default function App() {
               debts={debts}
               onSelectDay={(d) => setSelectedDayDate(d)}
               onSelectTransaction={(tx) => setEditingTransaction(tx)}
+              onOpenSearch={() => setIsSearchOpen(true)}
             />
           ) : activeTab === 'debts' ? (
             <DebtsView
@@ -386,6 +389,16 @@ export default function App() {
         <IOSInstallGuide
           isOpen={isInstallGuideOpen}
           onClose={() => setIsInstallGuideOpen(false)}
+        />
+
+        <GlobalSearchView
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+          transactions={transactions}
+          onSelectTransaction={(tx) => {
+            setIsSearchOpen(false);
+            setEditingTransaction(tx);
+          }}
         />
       </div>
     </div>

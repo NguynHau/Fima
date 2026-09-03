@@ -35,6 +35,7 @@ import {
   Tag,
   ArrowRight,
   Users,
+  Search,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -60,6 +61,7 @@ interface StatisticsViewProps {
   debts?: Debt[];
   onSelectDay?: (date: string) => void;
   onSelectTransaction?: (tx: Transaction) => void;
+  onOpenSearch?: () => void;
 }
 
 // Helpers for Date arithmetic
@@ -206,6 +208,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   debts = [],
   onSelectDay,
   onSelectTransaction,
+  onOpenSearch,
 }) => {
   // 1. GLOBAL FILTERS STATE
   const [accountFilter, setAccountFilter] = useState<CalendarAccountFilter>('all');
@@ -669,6 +672,14 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             Báo cáo chi tiết dòng tiền & số dư
           </p>
         </div>
+
+        <button
+          onClick={onOpenSearch}
+          className="w-10 h-10 rounded-2xl bg-[#121212] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm"
+          title="Tìm kiếm giao dịch"
+        >
+          <Search size={20} strokeWidth={2.5} />
+        </button>
       </div>
 
       {/* 2. ACCOUNT FILTER */}
