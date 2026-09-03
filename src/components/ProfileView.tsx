@@ -6,13 +6,15 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet,
+  Banknote,
+  Building2,
   Check,
   X,
   Camera,
 } from 'lucide-react';
 import { type UserSettings, type Transaction, type BalancesSummary } from '../types';
 import { updateUserSettings } from '../db/database';
-import { formatVND, formatMonthVN } from '../utils/formatters';
+import { formatVND, formatMonthVN, formatDateVN, getTodayString } from '../utils/formatters';
 
 interface ProfileViewProps {
   userSettings: UserSettings | null;
@@ -35,21 +37,43 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const nickname = userSettings?.nickname || '';
   const avatarUrl = userSettings?.avatarDataUrl;
 
-  // Today's month indicator string (e.g. "Tháng 9 2026")
+  // Today's month indicator string (e.g. "Tháng 9, 2026")
   const today = new Date();
   const currentMonthStr = formatMonthVN(today.getFullYear(), today.getMonth() + 1);
 
-  // Compute 4 global stats
-  const totalTransactionsCount = transactions.length;
+  // Today string YYYY-MM-DD
+  const todayStr = getTodayString();
+  const todayFormatted = formatDateVN(todayStr);
+
+  // Filter transactions up to today (date <= todayStr)
+  const validTransactions = transactions.filter((t) => t.date <= todayStr);
+  const validTransactionsCount = validTransactions.length;
 
   let totalIncome = 0;
   let totalExpense = 0;
-  for (const t of transactions) {
-    if (t.type === 'income') totalIncome += t.amount;
-    else totalExpense += t.amount;
+  let walletIncomeToday = 0;
+  let walletExpenseToday = 0;
+  let bankIncomeToday = 0;
+  let bankExpenseToday = 0;
+
+  for (const t of validTransactions) {
+    if (t.type === 'income') {
+      totalIncome += t.amount;
+      if (t.account === 'wallet') walletIncomeToday += t.amount;
+      else if (t.account === 'bank') bankIncomeToday += t.amount;
+    } else {
+      totalExpense += t.amount;
+      if (t.account === 'wallet') walletExpenseToday += t.amount;
+      else if (t.account === 'bank') bankExpenseToday += t.amount;
+    }
   }
 
-  const currentTotalBalance = balances.totalAssets;
+  const initialWallet = userSettings?.initialWalletBalance ?? balances.initialWallet ?? 0;
+  const initialBank = userSettings?.initialBankBalance ?? balances.initialBank ?? 0;
+
+  const currentWalletBalance = initialWallet + walletIncomeToday - walletExpenseToday;
+  const currentBankBalance = initialBank + bankIncomeToday - bankExpenseToday;
+  const currentTotalBalance = currentWalletBalance + currentBankBalance;
 
   // Handle Nickname Edit
   const handleStartEditNickname = () => {
@@ -226,15 +250,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       {/* 2. STATISTIC CARDS SECTION */}
       <div className="space-y-3">
         <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider px-1">
-          Tổng quan
+          Báo cáo
         </h3>
 
         <div className="grid grid-cols-2 gap-3">
-          {/* Card 1: Giao dịch */}
-          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-sm flex flex-col justify-between">
+          {/* HÀNG 1 */}
+          {/* Card 1: Số giao dịch */}
+          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                Giao dịch
+                Số giao dịch
               </span>
               <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/35 flex items-center justify-center shrink-0">
                 <Receipt size={16} />
@@ -242,47 +267,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </div>
             <div className="mt-3">
               <span className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight">
-                {totalTransactionsCount}
+                {validTransactionsCount}
               </span>
             </div>
           </div>
 
-          {/* Card 2: Tổng thu nhập (Dương = Xanh lá) */}
-          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                Tổng thu nhập
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 flex items-center justify-center shrink-0">
-                <TrendingUp size={16} />
-              </div>
-            </div>
-            <div className="mt-3">
-              <span className="text-base sm:text-lg font-black text-emerald-400 font-mono truncate block">
-                {formatVND(totalIncome)}
-              </span>
-            </div>
-          </div>
-
-          {/* Card 3: Tổng chi tiêu (Âm = Đỏ) */}
-          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                Tổng chi tiêu
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/35 flex items-center justify-center shrink-0">
-                <TrendingDown size={16} />
-              </div>
-            </div>
-            <div className="mt-3">
-              <span className="text-base sm:text-lg font-black text-rose-400 font-mono truncate block">
-                {formatVND(totalExpense)}
-              </span>
-            </div>
-          </div>
-
-          {/* Card 4: Số dư */}
-          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-sm flex flex-col justify-between">
+          {/* Card 2: Số dư */}
+          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                 Số dư
@@ -294,6 +285,82 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <div className="mt-3">
               <span className="text-base sm:text-lg font-black text-white font-mono truncate block">
                 {formatVND(currentTotalBalance)}
+              </span>
+            </div>
+          </div>
+
+          {/* HÀNG 2 */}
+          {/* Card 3: Tiền hiện tại trong ví */}
+          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                Tiền hiện tại trong ví
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/35 flex items-center justify-center shrink-0">
+                <Banknote size={16} />
+              </div>
+            </div>
+            <div className="mt-3">
+              <span className="text-base sm:text-lg font-black text-white font-mono truncate block">
+                {formatVND(currentWalletBalance)}
+              </span>
+            </div>
+          </div>
+
+          {/* Card 4: Tiền hiện tại trong bank */}
+          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                Tiền hiện tại trong bank
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/35 flex items-center justify-center shrink-0">
+                <Building2 size={16} />
+              </div>
+            </div>
+            <div className="mt-3">
+              <span className="text-base sm:text-lg font-black text-white font-mono truncate block">
+                {formatVND(currentBankBalance)}
+              </span>
+            </div>
+          </div>
+
+          {/* HÀNG 3 */}
+          {/* Card 5: Tổng thu */}
+          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                Tổng thu
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 flex items-center justify-center shrink-0">
+                <TrendingUp size={16} />
+              </div>
+            </div>
+            <div className="mt-3 space-y-0.5">
+              <span className="text-base sm:text-lg font-black text-emerald-400 font-mono truncate block">
+                {formatVND(totalIncome)}
+              </span>
+              <span className="text-[11px] font-medium text-neutral-400 italic block">
+                *Tính đến {todayFormatted}*
+              </span>
+            </div>
+          </div>
+
+          {/* Card 6: Tổng chi */}
+          <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-xs flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                Tổng chi
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/35 flex items-center justify-center shrink-0">
+                <TrendingDown size={16} />
+              </div>
+            </div>
+            <div className="mt-3 space-y-0.5">
+              <span className="text-base sm:text-lg font-black text-rose-400 font-mono truncate block">
+                {formatVND(totalExpense)}
+              </span>
+              <span className="text-[11px] font-medium text-neutral-400 italic block">
+                *Tính đến {todayFormatted}*
               </span>
             </div>
           </div>

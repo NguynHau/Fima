@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   type BalancesSummary,
   type Transaction,
@@ -71,6 +71,9 @@ export default function App() {
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [showInitialSetup, setShowInitialSetup] = useState(false);
 
+  // Track if camera has auto-opened on app launch
+  const hasAutoOpenedCameraRef = useRef(false);
+
   // Refresh all core data from IndexedDB
   const refreshData = useCallback(async () => {
     try {
@@ -84,8 +87,19 @@ export default function App() {
       setBalances(bal);
       setTransactions(txs);
 
-      if (!settings.isInitialSetupDone) {
+      const hasLaunchedBefore = localStorage.getItem('hasLaunchedBefore') === 'true' || settings.isInitialSetupDone;
+
+      if (!hasLaunchedBefore) {
+        // First launch ever: show initial setup, do not open camera
         setShowInitialSetup(true);
+        hasAutoOpenedCameraRef.current = true;
+      } else {
+        // From 2nd launch onwards: ensure state is saved and auto-open camera
+        localStorage.setItem('hasLaunchedBefore', 'true');
+        if (!hasAutoOpenedCameraRef.current) {
+          hasAutoOpenedCameraRef.current = true;
+          setIsCameraOpen(true);
+        }
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -336,6 +350,7 @@ export default function App() {
         <InitialSetupModal
           isOpen={showInitialSetup}
           onComplete={() => {
+            localStorage.setItem('hasLaunchedBefore', 'true');
             setShowInitialSetup(false);
             refreshData();
           }}
