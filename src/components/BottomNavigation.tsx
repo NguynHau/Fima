@@ -196,7 +196,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           onPointerCancel={handlePointerUp}
           className="w-full border rounded-full touch-none pointer-events-auto p-1.5 transition-all flex items-center relative"
           style={{
-            height: '62px',
+            height: '82.4545px',
             backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
             backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
             WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',

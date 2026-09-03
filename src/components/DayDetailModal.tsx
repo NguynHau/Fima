@@ -374,15 +374,17 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
             </div>
           </div>
 
-          <div className="text-right">
-            <div
-              className={`text-base font-black tracking-tight font-mono ${
-                tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-              }`}
-            >
-              {formatSignedVND(tx.amount, tx.type)}
+          {!photoUrl && (
+            <div className="text-right">
+              <div
+                className={`text-base font-black tracking-tight font-mono ${
+                  tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              >
+                {formatSignedVND(tx.amount, tx.type)}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
