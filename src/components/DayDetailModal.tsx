@@ -230,7 +230,6 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
       onSwipeClose();
       return;
     }
-    onSelectTransaction(tx);
   };
 
   return (
