@@ -385,10 +385,6 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
             >
               {formatSignedVND(tx.amount, tx.type)}
             </div>
-            <div className="text-xs text-neutral-400 flex items-center justify-end gap-0.5 mt-0.5 font-semibold">
-              <span>Sửa</span>
-              <ChevronRight size={12} />
-            </div>
           </div>
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
   Trash2,
   ChevronDown,
   Pencil,
+  Image as ImageIcon,
   X,
 } from 'lucide-react';
 import {
@@ -63,6 +64,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const libraryInputRef = useRef<HTMLInputElement>(null);
 
   const { categories } = useCategories();
   const activeCategories = categories.filter((c) => c.type === type);
@@ -73,6 +75,28 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [inlineNewPhotoBlob, setInlineNewPhotoBlob] = useState<Blob | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleLibraryFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      try {
+        const activeQuality: PhotoQuality =
+          photoQuality ||
+          (localStorage.getItem('fima_photo_quality') as PhotoQuality) ||
+          'low';
+        const compressed = await compressImageWithQuality(file, activeQuality);
+        setInlineNewPhotoBlob(compressed);
+        stopInlineCamera();
+      } catch (err) {
+        console.error('Lỗi chọn ảnh từ thư viện:', err);
+        setErrorMessage('Không thể xử lý ảnh từ thư viện.');
+      }
+    }
+    if (libraryInputRef.current) {
+      libraryInputRef.current.value = '';
+    }
+  };
 
   const stopInlineCamera = () => {
     if (inlineStream) {
@@ -493,9 +517,18 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         </div>
       </div>
 
+      {/* Hidden file input for Photo Library selection */}
+      <input
+        type="file"
+        ref={libraryInputRef}
+        onChange={handleLibraryFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* 7. Action Area at the Bottom */}
-      <div className="w-full max-w-md mx-auto px-6 py-3 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-between shrink-0 border-t border-neutral-800/80">
-        {/* Left: Chụp lại / Đổi ảnh */}
+      <div className="w-full max-w-md mx-auto px-4 sm:px-6 py-3 pb-[max(env(safe-area-inset-bottom),16px)] flex items-center justify-between shrink-0 border-t border-neutral-800/80 gap-2">
+        {/* Left 1: Chụp ảnh bằng camera */}
         <button
           type="button"
           onClick={startInlineCamera}
@@ -504,8 +537,22 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           <div className="w-12 h-12 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
             <Camera size={22} />
           </div>
-          <span className="text-xs font-bold text-neutral-300 group-hover:text-white">
-            Đổi ảnh
+          <span className="text-[11px] font-bold text-neutral-300 group-hover:text-white">
+            Chụp camera
+          </span>
+        </button>
+
+        {/* Left 2: Chọn ảnh từ thư viện */}
+        <button
+          type="button"
+          onClick={() => libraryInputRef.current?.click()}
+          className="flex flex-col items-center gap-1 text-neutral-300 hover:text-white active:scale-90 transition-all cursor-pointer group"
+        >
+          <div className="w-12 h-12 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 group-hover:border-neutral-400 flex items-center justify-center text-neutral-200 group-hover:text-white transition-all shadow-md">
+            <ImageIcon size={22} />
+          </div>
+          <span className="text-[11px] font-bold text-neutral-300 group-hover:text-white">
+            Chọn thư viện
           </span>
         </button>
 
