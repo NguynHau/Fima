@@ -17,6 +17,22 @@ async function startServer() {
   // Body parser for JSON with base64 image payload
   app.use(express.json({ limit: '10mb' }));
 
+  // Helper for resilient Gemini calls: uses gemini-3.1-flash-lite (fast & robust) with fallback to gemini-3.8-flash
+  async function generateWithFallback(ai: GoogleGenAI, params: any) {
+    try {
+      return await ai.models.generateContent({
+        ...params,
+        model: 'gemini-3.1-flash-lite',
+      });
+    } catch (err: any) {
+      console.warn('gemini-3.1-flash-lite failed, falling back to gemini-3.8-flash:', err?.message || err);
+      return await ai.models.generateContent({
+        ...params,
+        model: 'gemini-3.8-flash',
+      });
+    }
+  }
+
   // API endpoint for receipt vision analysis via Gemini AI
   app.post('/api/receipt/analyze', async (req, res) => {
     try {
@@ -33,7 +49,14 @@ async function startServer() {
       }
 
       const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
 
       const {
         currentDate = new Date().toISOString().split('T')[0],
@@ -111,8 +134,7 @@ RETURN ONLY VALID JSON.
         required: ['transactionType', 'amount', 'confidence'],
       };
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+      const response = await generateWithFallback(ai, {
         contents: [
           {
             inlineData: {
@@ -169,7 +191,14 @@ RETURN ONLY VALID JSON.
       const { text, context = {} } = req.body || {};
       if (!text) return res.status(400).json({ error: 'Missing text input' });
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
       const {
         currentDate = new Date().toISOString().split('T')[0],
         userCategories = [],
@@ -186,8 +215,7 @@ ${recentHistory}
 RETURN ONLY VALID JSON matching the financial schema.
 `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+      const response = await generateWithFallback(ai, {
         contents: [{ text: prompt }],
         config: {
           responseMimeType: 'application/json',
@@ -208,7 +236,7 @@ RETURN ONLY VALID JSON matching the financial schema.
 
       return res.json({
         success: true,
-        data: JSON.parse(response.text),
+        data: JSON.parse(response.text || '{}'),
       });
     } catch (error: any) {
       console.error('Text AI Error:', error);
@@ -225,7 +253,14 @@ RETURN ONLY VALID JSON matching the financial schema.
       const { question, context = {} } = req.body || {};
       if (!question) return res.status(400).json({ error: 'Missing question' });
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
       const {
         currentDate = new Date().toISOString().split('T')[0],
         transactions = [],
@@ -233,26 +268,25 @@ RETURN ONLY VALID JSON matching the financial schema.
       } = context;
 
       const prompt = `
-You are the Fima AI Financial Assistant. 
+You are the Fima AI Financial Assistant (Trợ lý tài chính cá nhân thông minh của ứng dụng Fima). 
 Answer the user's question based on their REAL transaction data below.
 Today's Date: ${currentDate}
 User's Categories: ${userCategories.join(', ')}
 
-TRANSACTION DATA (last 50):
+TRANSACTION DATA (up to last 100 transactions):
 ${JSON.stringify(transactions, null, 2)}
 
 USER QUESTION: "${question}"
 
 GUIDELINES:
-1. Be concise, friendly, and analytical.
-2. Use real numbers from the data. Do NOT guess or hallucinate.
-3. If they ask about spending, calculate exactly from the provided data.
-4. If you don't have enough data to answer, explain what's missing.
-5. Use Vietnamese for the response.
+1. Be concise, friendly, analytical, and supportive in Vietnamese.
+2. Use real numbers from the data. Do NOT guess or hallucinate. Format monetary numbers nicely with 'đ' or 'VND'.
+3. If they ask about spending, breakdown by category, highest expense, or time period accurately using provided data.
+4. If there are no transactions or insufficient data, explain gently and suggest recording a few expenses to get personalized insights.
+5. Provide helpful actionable financial advice or budgeting tips when appropriate.
 `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+      const response = await generateWithFallback(ai, {
         contents: [{ text: prompt }],
         config: {
           temperature: 0.2,
@@ -265,7 +299,7 @@ GUIDELINES:
       });
     } catch (error: any) {
       console.error('AI Assistant Error:', error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message || 'Error processing AI question' });
     }
   });
 

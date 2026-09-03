@@ -40,7 +40,8 @@ export class AIManager {
     });
 
     if (!response.ok) {
-      throw new Error(`AI Analysis failed: ${response.statusText}`);
+      const errData = await response.json().catch(() => null);
+      throw new Error(errData?.error || `AI Analysis failed (${response.status})`);
     }
 
     const result = await response.json();
@@ -60,7 +61,8 @@ export class AIManager {
     });
 
     if (!response.ok) {
-      throw new Error(`Text AI failed: ${response.statusText}`);
+      const errData = await response.json().catch(() => null);
+      throw new Error(errData?.error || `Text AI failed (${response.status})`);
     }
 
     const result = await response.json();
@@ -73,7 +75,7 @@ export class AIManager {
   static async askAssistant(question: string, transactions: any[]): Promise<string> {
     const context = await this.getContext();
     // Only send the most relevant summary of transactions to keep context small
-    const dataSummary = transactions.slice(0, 50).map(t => ({
+    const dataSummary = transactions.slice(0, 100).map(t => ({
       date: t.date,
       amount: t.amount,
       type: t.type,
@@ -94,7 +96,8 @@ export class AIManager {
     });
 
     if (!response.ok) {
-      throw new Error(`AI Assistant failed: ${response.statusText}`);
+      const errData = await response.json().catch(() => null);
+      throw new Error(errData?.error || `AI Assistant failed (${response.status})`);
     }
 
     const result = await response.json();

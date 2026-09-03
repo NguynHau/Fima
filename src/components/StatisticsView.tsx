@@ -158,12 +158,22 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
       </div>
 
       {answer && (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-xs sm:text-sm text-neutral-200 leading-relaxed animate-in zoom-in-95 duration-300">
-          <div className="flex items-start gap-2 mb-2">
-            <Sparkles size={14} className="text-purple-400 mt-0.5 shrink-0" />
-            <span className="font-extrabold text-purple-300">Phản hồi từ Fima AI:</span>
+        <div className="bg-white/5 border border-purple-500/20 rounded-2xl p-4 text-xs sm:text-sm text-neutral-200 leading-relaxed animate-in zoom-in-95 duration-300">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-purple-400 shrink-0" />
+              <span className="font-extrabold text-purple-300">Phản hồi từ Fima AI:</span>
+            </div>
+            <button
+              onClick={() => setAnswer(null)}
+              className="text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
+            >
+              Đóng
+            </button>
           </div>
-          {answer}
+          <div className="whitespace-pre-line text-neutral-200 space-y-2">
+            {answer}
+          </div>
         </div>
       )}
 
