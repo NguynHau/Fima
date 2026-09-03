@@ -25,6 +25,7 @@ import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
 import { compressImageWithQuality } from '../utils/imageCompressor';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
+import { ImageCropModal } from './ImageCropModal';
 import { useCategories } from '../hooks/useCategories';
 
 interface EditTransactionModalProps {
@@ -74,27 +75,39 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const [inlineStream, setInlineStream] = useState<MediaStream | null>(null);
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
   const [inlineNewPhotoBlob, setInlineNewPhotoBlob] = useState<Blob | null>(null);
+  const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleLibraryFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      try {
-        const activeQuality: PhotoQuality =
-          photoQuality ||
-          (localStorage.getItem('fima_photo_quality') as PhotoQuality) ||
-          'low';
-        const compressed = await compressImageWithQuality(file, activeQuality);
-        setInlineNewPhotoBlob(compressed);
-        stopInlineCamera();
-      } catch (err) {
-        console.error('Lỗi chọn ảnh từ thư viện:', err);
-        setErrorMessage('Không thể xử lý ảnh từ thư viện.');
-      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setCropModalImageSrc(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+      stopInlineCamera();
     }
     if (libraryInputRef.current) {
       libraryInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCropModalImageSrc(null);
+    try {
+      const activeQuality: PhotoQuality =
+        photoQuality ||
+        (localStorage.getItem('fima_photo_quality') as PhotoQuality) ||
+        'low';
+      const compressed = await compressImageWithQuality(croppedBlob, activeQuality);
+      setInlineNewPhotoBlob(compressed);
+    } catch (err) {
+      console.error('Lỗi nén ảnh crop:', err);
+      setInlineNewPhotoBlob(croppedBlob);
     }
   };
 
@@ -741,6 +754,15 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         selectedDate={date}
         onSelectDate={(newDate) => setDate(newDate)}
         onClose={() => setIsDatePickerOpen(false)}
+      />
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={Boolean(cropModalImageSrc)}
+        imageSrc={cropModalImageSrc || ''}
+        photoQuality={photoQuality}
+        onClose={() => setCropModalImageSrc(null)}
+        onCropComplete={handleCropComplete}
       />
     </div>
   );
