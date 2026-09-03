@@ -13,6 +13,12 @@ import {
 } from 'lucide-react';
 import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
 import { exportBackupZip, importBackupZip, triggerBlobDownload } from '../services/backupService';
+import {
+  checkForRemoteUpdate,
+  applyAppUpdate,
+  isUpdateAvailable,
+  subscribeUpdateState,
+} from '../services/updateService';
 import { parseAmountInput } from '../utils/formatters';
 
 interface SettingsViewProps {
@@ -32,46 +38,46 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>('idle');
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>(() => {
+    return isUpdateAvailable() ? 'available' : 'idle';
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const checkForUpdate = async () => {
-    if (!('serviceWorker' in navigator)) {
-      setStatusMessage({ type: 'error', text: 'Trình duyệt không hỗ trợ Service Worker' });
-      return;
-    }
-    
-    setUpdateStatus('checking');
-    
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      
-      const updateFoundPromise = new Promise((resolve) => {
-        const onUpdateFound = () => {
-          resolve(true);
-          registration.removeEventListener('updatefound', onUpdateFound);
-        };
-        registration.addEventListener('updatefound', onUpdateFound);
-        
-        setTimeout(() => {
-          resolve(false);
-          registration.removeEventListener('updatefound', onUpdateFound);
-        }, 3000);
-      });
+  useEffect(() => {
+    const unsubscribe = subscribeUpdateState((hasUpdate) => {
+      if (hasUpdate) {
+        setUpdateStatus('available');
+      }
+    });
+    return unsubscribe;
+  }, []);
 
-      await registration.update();
-      const hasUpdate = await updateFoundPromise;
-      
-      if (hasUpdate || registration.waiting) {
-         setUpdateStatus('available');
+  const checkForUpdate = async () => {
+    setUpdateStatus('checking');
+    try {
+      const result = await checkForRemoteUpdate();
+      if (result.hasUpdate) {
+        setUpdateStatus('available');
+      } else if (result.error) {
+        setStatusMessage({ type: 'error', text: 'Không thể kiểm tra cập nhật. Vui lòng thử lại sau.' });
+        setUpdateStatus('idle');
       } else {
-         setUpdateStatus('latest');
-         setTimeout(() => setUpdateStatus('idle'), 3000);
+        setUpdateStatus('latest');
+        setTimeout(() => setUpdateStatus('idle'), 3000);
       }
     } catch (error) {
       console.error('Lỗi kiểm tra cập nhật:', error);
       setStatusMessage({ type: 'error', text: 'Không thể kiểm tra cập nhật' });
       setUpdateStatus('idle');
+    }
+  };
+
+  const handleApplyUpdate = async () => {
+    try {
+      await applyAppUpdate();
+    } catch (err) {
+      console.error('Lỗi khi cập nhật:', err);
+      window.location.reload();
     }
   };
 
@@ -334,7 +340,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {updateStatus === 'available' ? (
             <button
-              onClick={() => window.location.reload()}
+              onClick={handleApplyUpdate}
               className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-md"
             >
               Cập nhật ngay

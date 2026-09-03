@@ -12,6 +12,8 @@ import {
   calculateBalances,
   getUserSettings,
   getTransactions,
+  updateTransaction,
+  deleteTransaction,
 } from './db/database';
 import { Header } from './components/Header';
 import { BottomNavigation } from './components/BottomNavigation';
@@ -26,6 +28,7 @@ import { DayDetailModal } from './components/DayDetailModal';
 import { InitialSetupModal } from './components/InitialSetupModal';
 import { IOSInstallGuide } from './components/IOSInstallGuide';
 import { usePWA } from './hooks/usePWA';
+import { initAutoUpdateChecker } from './services/updateService';
 import { getTodayString } from './utils/formatters';
 
 export default function App() {
@@ -64,6 +67,7 @@ export default function App() {
 
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [transactionForPhotoChange, setTransactionForPhotoChange] = useState<Transaction | null>(null);
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [showInitialSetup, setShowInitialSetup] = useState(false);
 
@@ -93,6 +97,9 @@ export default function App() {
   useEffect(() => {
     refreshData();
 
+    // Start background update checker for long-running PWA
+    const cleanupUpdateChecker = initAutoUpdateChecker();
+
     // Check if opening on web for the first time (not standalone mode)
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
@@ -103,6 +110,10 @@ export default function App() {
     if (!isStandalone && !hasSeenGuide) {
       setIsInstallGuideOpen(true);
     }
+
+    return () => {
+      cleanupUpdateChecker();
+    };
   }, [refreshData]);
 
   // Handle month navigation
@@ -137,7 +148,30 @@ export default function App() {
     setIsCameraOpen(true);
   };
 
-  const handlePhotoCaptured = (blob: Blob, quality: PhotoQuality = 'low') => {
+  const handlePhotoCaptured = async (blob: Blob, quality: PhotoQuality = 'low') => {
+    // Direct photo update from DayDetailModal swipe action (Vuốt sang phải -> Sửa ảnh)
+    if (transactionForPhotoChange) {
+      const tx = transactionForPhotoChange;
+      setTransactionForPhotoChange(null);
+      setIsCameraOpen(false);
+      try {
+        await updateTransaction(tx.id, {
+          date: tx.date,
+          type: tx.type,
+          amount: tx.amount,
+          category: tx.category,
+          note: tx.note || '',
+          account: tx.account,
+          newImageBlob: blob,
+          photoQuality: quality,
+        });
+        await refreshData();
+      } catch (err) {
+        console.error('Lỗi khi cập nhật ảnh giao dịch:', err);
+      }
+      return;
+    }
+
     setCapturedPhotoBlob(blob);
     setCapturedPhotoQuality(quality);
     setIsCameraOpen(false);
@@ -147,6 +181,11 @@ export default function App() {
     if (!editingTransaction) {
       setIsNewTxOpen(true);
     }
+  };
+
+  const handleDeleteTransactionFromDay = async (tx: Transaction) => {
+    await deleteTransaction(tx.id);
+    await refreshData();
   };
 
   const handleRetakePhoto = () => {
@@ -235,7 +274,10 @@ export default function App() {
         {/* 1. Camera Capture View */}
         <CameraCaptureModal
           isOpen={isCameraOpen}
-          onClose={() => setIsCameraOpen(false)}
+          onClose={() => {
+            setIsCameraOpen(false);
+            setTransactionForPhotoChange(null);
+          }}
           onPhotoCaptured={handlePhotoCaptured}
         />
 
@@ -268,6 +310,11 @@ export default function App() {
             handleOpenAddTransaction(d, acc);
           }}
           allTransactions={transactions}
+          onDeleteTransaction={handleDeleteTransactionFromDay}
+          onChangePhoto={(tx) => {
+            setTransactionForPhotoChange(tx);
+            setIsCameraOpen(true);
+          }}
         />
 
         {/* 4. Edit / Delete Transaction */}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   X,
   Plus,
@@ -10,9 +10,11 @@ import {
   TrendingUp,
   Image as ImageIcon,
   Layers,
+  Trash2,
+  Camera,
 } from 'lucide-react';
 import { type Transaction, type CalendarAccountFilter, type AccountType } from '../types';
-import { getTransactionsByDate, getImageBlob } from '../db/database';
+import { getTransactionsByDate, getImageBlob, deleteTransaction } from '../db/database';
 import { formatDateVN, formatFullDateVN, formatSignedVND, formatVND } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 
@@ -25,7 +27,374 @@ interface DayDetailModalProps {
   onSelectTransaction: (transaction: Transaction) => void;
   onAddNewForDate: (date: string, defaultAccount?: AccountType) => void;
   allTransactions?: Transaction[];
+  onDeleteTransaction?: (transaction: Transaction) => Promise<void> | void;
+  onChangePhoto?: (transaction: Transaction) => void;
 }
+
+interface SwipeableTransactionRowProps {
+  tx: Transaction;
+  photoUrl?: string;
+  isSwipedOpen: boolean;
+  onSwipeOpen: (direction: 'left' | 'right') => void;
+  onSwipeClose: () => void;
+  onSelectTransaction: (transaction: Transaction) => void;
+  onSelectPhoto: (photo: { url: string; tx: Transaction }) => void;
+  onDeleteClick: (tx: Transaction) => void;
+  onChangePhotoClick: (tx: Transaction) => void;
+}
+
+const ACTION_WIDTH = 84;
+const SWIPE_THRESHOLD = 36;
+
+export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = ({
+  tx,
+  photoUrl,
+  isSwipedOpen,
+  onSwipeOpen,
+  onSwipeClose,
+  onSelectTransaction,
+  onSelectPhoto,
+  onDeleteClick,
+  onChangePhotoClick,
+}) => {
+  const [offset, setOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const mouseStartRef = useRef<{ x: number; y: number } | null>(null);
+  const initialOffsetRef = useRef<number>(0);
+  const gestureTypeRef = useRef<'horizontal' | 'vertical' | null>(null);
+  const hasSwipedRef = useRef<boolean>(false);
+
+  // Close this item when another item is swiped open
+  useEffect(() => {
+    if (!isSwipedOpen && offset !== 0 && !isDragging) {
+      setOffset(0);
+    }
+  }, [isSwipedOpen, offset, isDragging]);
+
+  // Touch Handlers for Mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    initialOffsetRef.current = offset;
+    gestureTypeRef.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+
+    if (gestureTypeRef.current === null) {
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      if (absX < 8 && absY < 8) return;
+      if (absY >= absX) {
+        // Vertical scroll: do not interfere with natural list scrolling
+        gestureTypeRef.current = 'vertical';
+        return;
+      } else {
+        // Horizontal swipe: activate drag
+        gestureTypeRef.current = 'horizontal';
+        setIsDragging(true);
+      }
+    }
+
+    if (gestureTypeRef.current === 'vertical') return;
+
+    // Calculate next offset with damping beyond action width
+    let nextX = initialOffsetRef.current + deltaX;
+    if (nextX > ACTION_WIDTH) {
+      nextX = ACTION_WIDTH + (nextX - ACTION_WIDTH) * 0.25;
+    } else if (nextX < -ACTION_WIDTH) {
+      nextX = -ACTION_WIDTH + (nextX - (-ACTION_WIDTH)) * 0.25;
+    }
+
+    setOffset(nextX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartRef.current) return;
+
+    if (gestureTypeRef.current === 'horizontal') {
+      setIsDragging(false);
+      hasSwipedRef.current = true;
+      setTimeout(() => {
+        hasSwipedRef.current = false;
+      }, 250);
+
+      if (offset < -SWIPE_THRESHOLD) {
+        setOffset(-ACTION_WIDTH);
+        onSwipeOpen('left');
+      } else if (offset > SWIPE_THRESHOLD) {
+        setOffset(ACTION_WIDTH);
+        onSwipeOpen('right');
+      } else {
+        setOffset(0);
+        onSwipeClose();
+      }
+    }
+
+    touchStartRef.current = null;
+    gestureTypeRef.current = null;
+  };
+
+  const handleTouchCancel = () => {
+    setIsDragging(false);
+    setOffset(0);
+    onSwipeClose();
+    touchStartRef.current = null;
+    gestureTypeRef.current = null;
+  };
+
+  // Mouse Handlers for Desktop Testing
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    mouseStartRef.current = { x: e.clientX, y: e.clientY };
+    initialOffsetRef.current = offset;
+    gestureTypeRef.current = null;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!mouseStartRef.current) return;
+      const deltaX = moveEvent.clientX - mouseStartRef.current.x;
+      const deltaY = moveEvent.clientY - mouseStartRef.current.y;
+
+      if (gestureTypeRef.current === null) {
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+        if (absX < 6 && absY < 6) return;
+        if (absY >= absX) {
+          gestureTypeRef.current = 'vertical';
+          return;
+        } else {
+          gestureTypeRef.current = 'horizontal';
+          setIsDragging(true);
+        }
+      }
+
+      if (gestureTypeRef.current === 'horizontal') {
+        let nextX = initialOffsetRef.current + deltaX;
+        if (nextX > ACTION_WIDTH) {
+          nextX = ACTION_WIDTH + (nextX - ACTION_WIDTH) * 0.25;
+        } else if (nextX < -ACTION_WIDTH) {
+          nextX = -ACTION_WIDTH + (nextX - (-ACTION_WIDTH)) * 0.25;
+        }
+        setOffset(nextX);
+      }
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+
+      if (gestureTypeRef.current === 'horizontal') {
+        setIsDragging(false);
+        hasSwipedRef.current = true;
+        setTimeout(() => {
+          hasSwipedRef.current = false;
+        }, 250);
+
+        setOffset((cur) => {
+          if (cur < -SWIPE_THRESHOLD) {
+            onSwipeOpen('left');
+            return -ACTION_WIDTH;
+          } else if (cur > SWIPE_THRESHOLD) {
+            onSwipeOpen('right');
+            return ACTION_WIDTH;
+          } else {
+            onSwipeClose();
+            return 0;
+          }
+        });
+      }
+
+      mouseStartRef.current = null;
+      gestureTypeRef.current = null;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (hasSwipedRef.current) {
+      e.stopPropagation();
+      return;
+    }
+    if (offset !== 0) {
+      e.stopPropagation();
+      setOffset(0);
+      onSwipeClose();
+      return;
+    }
+    onSelectTransaction(tx);
+  };
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden select-none touch-pan-y">
+      {/* 1. LEFT ACTION: Sửa / Thay ảnh (Xanh dương) - Chỉ xuất hiện khi kéo sang phải (offset > 0) */}
+      <div
+        className={`absolute inset-y-0 left-0 w-[84px] bg-blue-600 rounded-l-2xl flex items-center justify-center transition-opacity duration-150 ${
+          offset > 0 ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOffset(0);
+            onSwipeClose();
+            onChangePhotoClick(tx);
+          }}
+          className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-white hover:bg-blue-700 active:scale-95 transition-all cursor-pointer select-none"
+          title={tx.imageId ? 'Sửa / Thay ảnh' : 'Chụp ảnh'}
+        >
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shadow-xs">
+            <Camera size={20} strokeWidth={2.4} />
+          </div>
+          <span className="text-[11px] font-black tracking-tight leading-tight">
+            {tx.imageId ? 'Sửa ảnh' : 'Thêm ảnh'}
+          </span>
+        </button>
+      </div>
+
+      {/* 2. RIGHT ACTION: Xóa (Đỏ) - Chỉ xuất hiện khi kéo sang trái (offset < 0) */}
+      <div
+        className={`absolute inset-y-0 right-0 w-[84px] bg-rose-600 rounded-r-2xl flex items-center justify-center transition-opacity duration-150 ${
+          offset < 0 ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOffset(0);
+            onSwipeClose();
+            onDeleteClick(tx);
+          }}
+          className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-white hover:bg-rose-700 active:scale-95 transition-all cursor-pointer select-none"
+          title="Xóa giao dịch"
+        >
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shadow-xs">
+            <Trash2 size={20} strokeWidth={2.4} />
+          </div>
+          <span className="text-[11px] font-black tracking-tight leading-tight">Xóa</span>
+        </button>
+      </div>
+
+      {/* 3. FOREGROUND TRANSACTION CARD */}
+      <div
+        style={{
+          transform: `translateX(${offset}px)`,
+          transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)',
+        }}
+        className="bg-[#1a1a1a] rounded-2xl p-3 border border-neutral-800 shadow-sm hover:border-neutral-500 transition-colors active:scale-[0.99] cursor-pointer relative z-10 w-full"
+        onClick={handleCardClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
+        onMouseDown={handleMouseDown}
+      >
+        {/* Photo Thumbnail if available */}
+        {photoUrl && (
+          <div
+            className="relative rounded-2xl overflow-hidden h-36 w-full bg-[#121212] border border-neutral-800 mb-2.5 group cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (hasSwipedRef.current || offset !== 0) {
+                setOffset(0);
+                onSwipeClose();
+                return;
+              }
+              onSelectPhoto({ url: photoUrl, tx });
+            }}
+          >
+            <img
+              src={photoUrl}
+              alt={`Ảnh chứng từ ${tx.category}`}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-between p-2.5">
+              <div className="flex justify-end">
+                <span className="text-[11px] font-bold bg-black/70 text-neutral-200 px-2.5 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1 border border-white/10 group-hover:border-white/30 transition-all">
+                  <ImageIcon size={11} /> Phóng to
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-white pt-2">
+                <span className="text-xs font-bold bg-black/70 px-2 py-0.5 rounded-lg border border-white/10 text-neutral-200">
+                  {tx.category}
+                </span>
+                <span className={`text-base font-black font-mono drop-shadow-md ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {formatSignedVND(tx.amount, tx.type)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction Details Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <CategoryIcon
+              category={tx.category}
+              type={tx.type}
+              size={20}
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-extrabold text-white">
+                  {tx.category}
+                </span>
+                {/* Account badge */}
+                <span
+                  className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md ${
+                    tx.account === 'wallet'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                  }`}
+                >
+                  {tx.account === 'wallet' ? (
+                    <>
+                      <Wallet size={11} /> Ví
+                    </>
+                  ) : (
+                    <>
+                      <Building2 size={11} /> Bank
+                    </>
+                  )}
+                </span>
+              </div>
+              {tx.note && (
+                <p className="text-xs text-neutral-300 mt-0.5 font-medium line-clamp-1">
+                  &ldquo;{tx.note}&rdquo;
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="text-right">
+            <div
+              className={`text-base font-black tracking-tight font-mono ${
+                tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+              }`}
+            >
+              {formatSignedVND(tx.amount, tx.type)}
+            </div>
+            <div className="text-xs text-neutral-400 flex items-center justify-end gap-0.5 mt-0.5 font-semibold">
+              <span>Sửa</span>
+              <ChevronRight size={12} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   isOpen,
@@ -36,11 +405,16 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   onSelectTransaction,
   onAddNewForDate,
   allTransactions,
+  onDeleteTransaction,
+  onChangePhoto,
 }) => {
   const [dbTransactions, setDbTransactions] = useState<Transaction[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; tx: Transaction } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeSwipedId, setActiveSwipedId] = useState<string | null>(null);
+  const [txToDelete, setTxToDelete] = useState<Transaction | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // If allTransactions is provided by App.tsx, automatically derive day transactions
   const transactions = useMemo(() => {
@@ -108,6 +482,27 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     if (!accountFilter || accountFilter === 'all') return transactions;
     return transactions.filter((t) => t.account === accountFilter);
   }, [transactions, accountFilter]);
+
+  const handleConfirmDelete = async () => {
+    if (!txToDelete) return;
+    setIsDeleting(true);
+    try {
+      if (onDeleteTransaction) {
+        await onDeleteTransaction(txToDelete);
+      } else {
+        await deleteTransaction(txToDelete.id);
+      }
+      if (imageUrls[txToDelete.id]) {
+        URL.revokeObjectURL(imageUrls[txToDelete.id]);
+      }
+      setTxToDelete(null);
+      setActiveSwipedId(null);
+    } catch (err) {
+      console.error('Lỗi khi xóa giao dịch:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -249,7 +644,14 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         </div>
 
         {/* Transaction List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div
+          className="flex-1 overflow-y-auto p-4 space-y-3"
+          onScroll={() => {
+            if (activeSwipedId) {
+              setActiveSwipedId(null);
+            }
+          }}
+        >
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center text-neutral-400 gap-2">
               <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -277,105 +679,27 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </button>
             </div>
           ) : (
-            filteredTransactions.map((tx) => {
-              const photoUrl = imageUrls[tx.id];
-              return (
-                <div
-                  key={tx.id}
-                  onClick={() => onSelectTransaction(tx)}
-                  className="bg-[#1a1a1a] rounded-2xl p-3 border border-neutral-800 shadow-sm hover:border-neutral-500 transition-all active:scale-[0.99] cursor-pointer"
-                >
-                  {/* Visual Proof Photo Preview */}
-                  {photoUrl && (
-                    <div
-                      className="relative rounded-2xl overflow-hidden h-36 w-full bg-[#121212] border border-neutral-800 mb-2.5 group cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedPhoto({ url: photoUrl, tx });
-                      }}
-                    >
-                      <img
-                        src={photoUrl}
-                        alt={`Ảnh chứng từ ${tx.category}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      {/* Gradient Overlay with Amount & Phóng to */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-between p-2.5">
-                        <div className="flex justify-end">
-                          <span className="text-[11px] font-bold bg-black/70 text-neutral-200 px-2.5 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1 border border-white/10 group-hover:border-white/30 transition-all">
-                            <ImageIcon size={11} /> Phóng to
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-white pt-2">
-                          <span className="text-xs font-bold bg-black/70 px-2 py-0.5 rounded-lg border border-white/10 text-neutral-200">
-                            {tx.category}
-                          </span>
-                          <span className={`text-base font-black font-mono drop-shadow-md ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {formatSignedVND(tx.amount, tx.type)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Transaction Details Row */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <CategoryIcon
-                        category={tx.category}
-                        type={tx.type}
-                        size={20}
-                      />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-extrabold text-white">
-                            {tx.category}
-                          </span>
-                          {/* Account badge */}
-                          <span
-                            className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md ${
-                              tx.account === 'wallet'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                                : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                            }`}
-                          >
-                            {tx.account === 'wallet' ? (
-                              <>
-                                <Wallet size={11} /> Ví
-                              </>
-                            ) : (
-                              <>
-                                <Building2 size={11} /> Bank
-                              </>
-                            )}
-                          </span>
-                        </div>
-                        {tx.note && (
-                          <p className="text-xs text-neutral-300 mt-0.5 font-medium line-clamp-1">
-                            &ldquo;{tx.note}&rdquo;
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div
-                        className={`text-base font-black tracking-tight font-mono ${
-                          tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                        }`}
-                      >
-                        {formatSignedVND(tx.amount, tx.type)}
-                      </div>
-                      <div className="text-xs text-neutral-400 flex items-center justify-end gap-0.5 mt-0.5 font-semibold">
-                        <span>Sửa</span>
-                        <ChevronRight size={12} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            filteredTransactions.map((tx) => (
+              <SwipeableTransactionRow
+                key={tx.id}
+                tx={tx}
+                photoUrl={imageUrls[tx.id]}
+                isSwipedOpen={activeSwipedId === tx.id}
+                onSwipeOpen={() => setActiveSwipedId(tx.id)}
+                onSwipeClose={() => {
+                  if (activeSwipedId === tx.id) {
+                    setActiveSwipedId(null);
+                  }
+                }}
+                onSelectTransaction={onSelectTransaction}
+                onSelectPhoto={(photo) => setSelectedPhoto(photo)}
+                onDeleteClick={(t) => setTxToDelete(t)}
+                onChangePhotoClick={(t) => {
+                  setActiveSwipedId(null);
+                  onChangePhoto?.(t);
+                }}
+              />
+            ))
           )}
         </div>
 
@@ -451,6 +775,58 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
             <div className="text-center text-xs text-neutral-400 pb-2 font-medium">
               Chạm vào màn hình để đóng
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        {txToDelete && (
+          <div
+            className="fixed inset-0 z-70 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+            onClick={() => setTxToDelete(null)}
+          >
+            <div
+              className="bg-[#1a1a1a] border border-neutral-800 rounded-2xl p-5 max-w-xs w-full space-y-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Xóa giao dịch?</h3>
+                  <p className="text-xs text-neutral-400 font-medium">
+                    {txToDelete.category} ({formatSignedVND(txToDelete.amount, txToDelete.type)})
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-neutral-300 leading-relaxed">
+                Bạn có chắc chắn muốn xóa giao dịch này? Hành động này không thể hoàn tác.
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setTxToDelete(null)}
+                  className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl text-xs font-bold active:scale-95 transition-all cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      <span>Xóa</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
