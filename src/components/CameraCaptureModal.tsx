@@ -267,7 +267,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover"
+                className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
               />
             </div>
           </div>

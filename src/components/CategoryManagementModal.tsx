@@ -90,7 +90,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
       className="fixed inset-0 z-40 bg-neutral-950 flex flex-col text-neutral-100 overflow-hidden animate-in fade-in duration-200"
     >
       {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-800/80 bg-neutral-900/60 backdrop-blur-md shrink-0">
+      <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top,0px),16px)] pb-3.5 border-b border-neutral-800/80 bg-neutral-900/60 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -228,7 +228,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
       </div>
 
       {/* Floating Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent border-t border-neutral-900/50 backdrop-blur-xs flex justify-center">
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(env(safe-area-inset-bottom),16px)] bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent border-t border-neutral-900/50 backdrop-blur-xs flex justify-center">
         <button
           type="button"
           onClick={handleOpenAdd}
