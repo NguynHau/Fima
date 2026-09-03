@@ -56,27 +56,59 @@ export class ApiGeminiRecognizer implements ReceiptRecognizer {
   async recognize(imageBlob: Blob): Promise<ReceiptRecognitionResult> {
     try {
       const data = await AIManager.analyzeReceipt(imageBlob);
-      const amount = data.financials?.grandTotal || data.financials?.amountDue || data.financials?.subtotal || 0;
+      if (!data) return {};
+
+      // Robust resolution of total amount:
+      // Priority: data.amount (from backend Vision) -> financials.grandTotal -> financials.total -> amountDue -> subtotal
+      const rawAmount = (typeof (data as any).amount === 'number' && (data as any).amount > 0)
+        ? (data as any).amount
+        : (data.financials?.grandTotal || (data.financials as any)?.total || data.financials?.amountDue || data.financials?.subtotal || 0);
+
+      const amount = (typeof rawAmount === 'number' && rawAmount > 0) ? Math.round(rawAmount) : undefined;
+
+      // Meaningful, clean note construction without OCR garbage
+      let cleanMerchant = data.merchant?.trim();
+      if (cleanMerchant && (cleanMerchant.toLowerCase() === 'unknown' || cleanMerchant.length < 2)) {
+        cleanMerchant = undefined;
+      }
+
+      let note = cleanMerchant || '';
+      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        const itemNames = data.items
+          .map((i) => i.name?.trim())
+          .filter((name): name is string => Boolean(name && name.length > 1 && !/^[0-9\W]+$/.test(name)));
+        
+        if (itemNames.length > 0) {
+          const itemSummary = itemNames.slice(0, 3).join(', ');
+          note = note ? `${note} (${itemSummary})` : itemSummary;
+        }
+      }
+
+      if (!note && data.description && data.description.trim().length > 2) {
+        note = data.description.trim();
+      }
+
+      const isValidDate = data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date);
 
       return {
-        amount: amount || undefined,
-        date: data.date || undefined,
-        merchant: data.merchant || undefined,
-        category: data.categorySuggestion || undefined,
+        amount,
+        date: isValidDate ? data.date! : undefined,
+        merchant: cleanMerchant,
+        category: data.categorySuggestion?.trim() || undefined,
         type: data.transactionType === 'income' ? 'income' : 'expense',
-        note: data.merchant || data.description || (data.items?.[0]?.name) || undefined,
+        note: note || undefined,
         confidence: data.confidence,
         rawText: JSON.stringify(data, null, 2)
       };
     } catch (err) {
-      console.error('AI Engine error, falling back:', err);
+      console.error('Gemini AI Vision error, falling back:', err);
       throw err;
     }
   }
 }
 
 /**
- * Hybrid Recognizer: Tries Gemini AI Vision API (with 1 retry); if fails or low reliability, falls back to local Tesseract OCR.
+ * Hybrid Recognizer: Tries Gemini AI Vision API; if fails or low reliability, falls back to local Tesseract OCR.
  */
 export class HybridReceiptRecognizer implements ReceiptRecognizer {
   private apiRecognizer = new ApiGeminiRecognizer();
@@ -85,15 +117,22 @@ export class HybridReceiptRecognizer implements ReceiptRecognizer {
   async recognize(imageBlob: Blob): Promise<ReceiptRecognitionResult> {
     try {
       const result = await this.apiRecognizer.recognize(imageBlob);
-      if (result.amount || result.merchant || result.category) {
+      // If Gemini returned amount or merchant, return high quality Vision result
+      if (result.amount || result.merchant) {
         return result;
       }
-    } catch {
-      console.warn('Gemini AI endpoint unavailable or error returned -> Falling back to local OCR');
+      console.warn('Gemini AI Vision returned empty key fields -> Falling back to local OCR');
+    } catch (err) {
+      console.warn('Gemini AI endpoint unavailable or error returned -> Falling back to local OCR:', err);
     }
 
     // Fallback to local OCR
-    return this.localRecognizer.recognize(imageBlob);
+    try {
+      return await this.localRecognizer.recognize(imageBlob);
+    } catch (ocrErr) {
+      console.warn('Local OCR fallback notice:', ocrErr);
+      return {};
+    }
   }
 }
 

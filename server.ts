@@ -85,33 +85,102 @@ async function startServer() {
         recentHistory = '',
       } = context;
 
+      // Standard default Vietnamese categories in Fima
+      const defaultCategories = ['Ăn uống', 'Di chuyển', 'Mua sắm', 'Hóa đơn', 'Giải trí', 'Sức khỏe', 'Giáo dục', 'Nhà cửa', 'Khác'];
+      const userCatList: string[] = Array.isArray(userCategories) && userCategories.length > 0 ? userCategories : defaultCategories;
+      const allowedCategories = Array.from(new Set([...userCatList, ...defaultCategories]));
+
       const prompt = `
-You are a highly advanced Financial Reasoning AI Engine for Fima.
-Today's Date: ${currentDate}
-User's Categories: ${userCategories.join(', ')}
-Recent Pattern Context:
-${recentHistory}
+You are the world-class Financial Document Vision AI for Fima personal finance app.
+Your task is to analyze the provided image of a receipt, invoice, bill, or ticket directly from pixels.
 
-Analyze the receipt image carefully.
-STAGE 1: Visual extraction of ALL text.
-STAGE 2: Semantic understanding (distinguish Total vs Subtotal vs Cash Given).
-STAGE 3: Financial extraction with validation.
-STAGE 4: Category reasoning based on merchant, items, and user history.
+TODAY'S DATE (Context): ${currentDate}
+ALLOWED USER CATEGORIES (You MUST choose categorySuggestion ONLY from this list):
+${allowedCategories.join(', ')}
 
-RETURN ONLY VALID JSON.
+RECENT USER PATTERNS (For contextual reference):
+${recentHistory || 'No prior history available'}
+
+=== CRITICAL EXTRACTION RULES ===
+
+1. DIRECT VISUAL INSPECTION:
+- Scan the image visually from top to bottom and left to right.
+- Account for angled, tilted, thermal-printed, wrinkled, or unevenly lit receipts.
+- Detect store logo, header, printed text, tables, and total sections.
+- If the image is NOT a receipt/bill (e.g. a selfie, scenery, random object, blank), set documentType="unknown", amount=null, confidence.amount=0, and add warning "Hình ảnh không phải hóa đơn hoặc chứng từ thanh toán".
+
+2. EXACT MONETARY AMOUNTS (NO HALLUCINATION):
+- NEVER guess, invent, or truncate numbers.
+- In Vietnam (VND), periods or commas are used as thousand separators (e.g., "190.000đ", "190.000", "190,000 VND" all mean 190000).
+- "50k" or "50K" means 50000.
+- Convert strictly to raw integer numbers. For example:
+  "190.000đ" -> 190000 (NEVER 19000, 1900000, or 190).
+  "45.000" -> 45000.
+  "1.250.000" -> 1250000.
+- Accurately distinguish these separate figures:
+  * subtotal: sum of items before discounts/tax (tiền hàng, tổng tiền hàng)
+  * discount: discount, voucher, promotion deduction (giảm giá, chiết khấu, khuyến mãi)
+  * tax: VAT or sales tax (thuế GTGT, VAT)
+  * serviceFee: service charge (phí dịch vụ)
+  * grandTotal: final payable total (TỔNG CỘNG, TỔNG TIỀN THANH TOÁN, CẦN THANH TOÁN, AMOUNT DUE, TOTAL)
+  * cashReceived: cash given by customer (tiền khách đưa, tiền mặt)
+  * change: change returned to customer (tiền thối lại, tiền thừa trả khách)
+- The root 'amount' field MUST be the final grandTotal (the actual amount spent by the user).
+  DO NOT use cashReceived as the amount.
+  DO NOT use change as the amount.
+- If you cannot clearly read the final total due to severe blur or cutoff, set amount=null and confidence.amount=0. DO NOT guess.
+
+3. MERCHANT / STORE NAME:
+- Extract the clean, official store or business name (e.g., "Highlands Coffee", "WinMart+", "Circle K", "Nhà sách Fahasa", "Phúc Long").
+- Do NOT include full address, tax code, phone number, slogan, or header noise in merchant.
+- If the store name is unreadable, set merchant=null. DO NOT output garbled text.
+
+4. TRANSACTION DATE & TIME:
+- Look for date stamps on the receipt (DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY).
+- Format strictly as YYYY-MM-DD.
+- If year is 2 digits (e.g. 25, 26), convert to 4 digits (2025, 2026).
+- If no date is found on the receipt, return null or fallback to ${currentDate} with low confidence (0.3).
+
+5. LINE ITEMS:
+- Extract line items if clearly visible: name, quantity, unitPrice, totalPrice.
+- Filter out garbage rows. Verify that quantity * unitPrice ~ totalPrice.
+
+6. CATEGORY CLASSIFICATION:
+- Analyze the entire receipt context (merchant + items + services).
+- Examples:
+  * "TH true milk", coffee, food, restaurant, cafe -> "Ăn uống"
+  * Grab, Be, taxi, petrol/gasoline (xăng dầu), parking -> "Di chuyển"
+  * Supermarket (WinMart, Co.opmart, Bách Hóa Xanh), clothing, personal care, cosmetics, electronics -> "Mua sắm"
+  * Electricity, water, internet, phone card/viễn thông -> "Hóa đơn"
+  * Cinema (CGV, Lotte), games, karaoke -> "Giải trí"
+  * Pharmacy, medicine, clinic, hospital -> "Sức khỏe"
+  * Books, stationery (vở, bút), school fees -> "Giáo dục"
+  * Furniture, home repairs, rent -> "Nhà cửa"
+- You MUST select categorySuggestion strictly from: [${allowedCategories.join(', ')}].
+- If unclear or doesn't fit specific categories, select "Khác".
+
+7. TEXT HYGIENE:
+- Strictly NO hallucinated OCR garbage (e.g. random strings like "TKI 1909 303 422").
+- If a detail is missing or unreadable, output null.
+
+8. PAYMENT METHOD:
+- Identify if printed: "Tiền mặt" (Cash), "Thẻ" (Card/Visa/Master), "Chuyển khoản" (Bank Transfer/QR), "Ví điện tử" (MoMo, ZaloPay, ShopeePay).
+
+RETURN ONLY PURE JSON matching the response schema.
 `;
 
       const responseSchema = {
         type: Type.OBJECT,
         properties: {
+          documentType: { type: Type.STRING, enum: ['receipt', 'invoice', 'bill', 'ticket', 'unknown'] },
           transactionType: { type: Type.STRING, enum: ['expense', 'income', 'transfer', 'debt', 'unknown'] },
-          amount: { type: Type.NUMBER },
+          amount: { type: Type.NUMBER, description: 'Final payable grand total in integer VND or currency units' },
           merchant: { type: Type.STRING },
           date: { type: Type.STRING, description: 'YYYY-MM-DD' },
           time: { type: Type.STRING, description: 'HH:mm:ss' },
           address: { type: Type.STRING },
           invoiceCode: { type: Type.STRING },
-          currency: { type: Type.STRING },
+          currency: { type: Type.STRING, description: 'VND, USD, etc.' },
           items: {
             type: Type.ARRAY,
             items: {
@@ -131,6 +200,8 @@ RETURN ONLY VALID JSON.
               discount: { type: Type.NUMBER },
               tax: { type: Type.NUMBER },
               serviceFee: { type: Type.NUMBER },
+              grandTotal: { type: Type.NUMBER },
+              amountDue: { type: Type.NUMBER },
               total: { type: Type.NUMBER },
               cashReceived: { type: Type.NUMBER },
               change: { type: Type.NUMBER },
@@ -152,7 +223,7 @@ RETURN ONLY VALID JSON.
           },
           warnings: { type: Type.ARRAY, items: { type: Type.STRING } },
         },
-        required: ['transactionType', 'amount', 'confidence'],
+        required: ['transactionType', 'confidence'],
       };
 
       const response = await generateWithFallback(ai, {
@@ -179,13 +250,152 @@ RETURN ONLY VALID JSON.
 
       const result = JSON.parse(responseText);
 
-      // Final Backend Validation logic
+      // 1. FINANCIAL EXTRACTION & TOTAL RESOLUTION
+      const fin = result.financials || {};
+      const resolvedTotal = (typeof fin.grandTotal === 'number' && fin.grandTotal > 0)
+        ? fin.grandTotal
+        : (typeof fin.amountDue === 'number' && fin.amountDue > 0)
+        ? fin.amountDue
+        : (typeof fin.total === 'number' && fin.total > 0)
+        ? fin.total
+        : (typeof result.amount === 'number' && result.amount > 0)
+        ? result.amount
+        : (typeof fin.subtotal === 'number' && fin.subtotal > 0)
+        ? fin.subtotal
+        : null;
+
+      if (resolvedTotal !== null) {
+        fin.grandTotal = resolvedTotal;
+        fin.total = resolvedTotal;
+        if (result.amount === undefined || result.amount === null || result.amount <= 0) {
+          result.amount = resolvedTotal;
+        }
+      }
+
+      // Guard against cashReceived being misidentified as payable amount
+      if (typeof fin.cashReceived === 'number' && typeof fin.grandTotal === 'number' && fin.cashReceived > fin.grandTotal) {
+        if (result.amount === fin.cashReceived) {
+          result.amount = fin.grandTotal;
+        }
+      }
+
+      // Integer rounding for VND currency
+      if (typeof result.amount === 'number' && (!result.currency || result.currency.toUpperCase() === 'VND')) {
+        result.amount = Math.round(result.amount);
+      }
+
+      result.financials = fin;
+
+      // 2. CATEGORY STRICT NORMALIZATION
+      if (result.categorySuggestion) {
+        const norm = result.categorySuggestion.trim().toLowerCase();
+        const exact = allowedCategories.find((c) => c.toLowerCase() === norm);
+        if (exact) {
+          result.categorySuggestion = exact;
+        } else {
+          // Robust synonyms mapping to Vietnamese categories
+          const categoryMap: Record<string, string> = {
+            'food': 'Ăn uống',
+            'beverage': 'Ăn uống',
+            'dining': 'Ăn uống',
+            'restaurant': 'Ăn uống',
+            'groceries': 'Ăn uống',
+            'cafe': 'Ăn uống',
+            'coffee': 'Ăn uống',
+            'ẩm thực': 'Ăn uống',
+            'cà phê': 'Ăn uống',
+            'ăn': 'Ăn uống',
+            'uống': 'Ăn uống',
+            'transport': 'Di chuyển',
+            'transportation': 'Di chuyển',
+            'taxi': 'Di chuyển',
+            'grab': 'Di chuyển',
+            'xăng': 'Di chuyển',
+            'xe': 'Di chuyển',
+            'shopping': 'Mua sắm',
+            'retail': 'Mua sắm',
+            'siêu thị': 'Mua sắm',
+            'mart': 'Mua sắm',
+            'bills': 'Hóa đơn',
+            'utilities': 'Hóa đơn',
+            'điện': 'Hóa đơn',
+            'nước': 'Hóa đơn',
+            'entertainment': 'Giải trí',
+            'cinema': 'Giải trí',
+            'game': 'Giải trí',
+            'health': 'Sức khỏe',
+            'medical': 'Sức khỏe',
+            'pharmacy': 'Sức khỏe',
+            'thuốc': 'Sức khỏe',
+            'education': 'Giáo dục',
+            'school': 'Giáo dục',
+            'sách': 'Giáo dục',
+            'housing': 'Nhà cửa',
+            'rent': 'Nhà cửa',
+            'home': 'Nhà cửa',
+            'other': 'Khác',
+          };
+          let mapped = '';
+          for (const [key, target] of Object.entries(categoryMap)) {
+            if (norm.includes(key)) {
+              mapped = target;
+              break;
+            }
+          }
+          if (mapped && allowedCategories.includes(mapped)) {
+            result.categorySuggestion = mapped;
+          } else if (allowedCategories.includes('Khác')) {
+            result.categorySuggestion = 'Khác';
+          } else if (allowedCategories.length > 0) {
+            result.categorySuggestion = allowedCategories[0];
+          }
+        }
+      } else {
+        result.categorySuggestion = allowedCategories.includes('Khác') ? 'Khác' : (allowedCategories[0] || 'Khác');
+      }
+
+      // 3. DATE NORMALIZATION
+      if (result.date) {
+        const dateStr = String(result.date).trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          result.date = dateStr;
+        } else {
+          const dmy = dateStr.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+          if (dmy) {
+            const day = dmy[1].padStart(2, '0');
+            const month = dmy[2].padStart(2, '0');
+            const year = dmy[3];
+            result.date = `${year}-${month}-${day}`;
+          } else {
+            result.date = null;
+          }
+        }
+      }
+
+      // 4. GARBAGE TEXT SANITIZATION
+      if (result.merchant) {
+        const m = result.merchant.trim();
+        if (m.length < 2 || /^[^a-zA-Z0-9\u00C0-\u1EF9]+$/.test(m) || m.toLowerCase() === 'unknown' || m.toLowerCase() === 'null') {
+          result.merchant = null;
+        }
+      }
+
+      if (result.description) {
+        const d = result.description.trim();
+        if (d.length < 2 || d.toLowerCase() === 'unknown' || d.toLowerCase() === 'null') {
+          result.description = null;
+        }
+      }
+
+      // 5. FINANCIAL VALIDATION WARNING
       if (result.financials) {
-        const { subtotal = 0, tax = 0, serviceFee = 0, discount = 0, total = 0 } = result.financials;
-        const expectedTotal = (subtotal || 0) + (tax || 0) + (serviceFee || 0) - (discount || 0);
-        if (total > 0 && Math.abs(expectedTotal - total) > 100) {
-          result.warnings = result.warnings || [];
-          result.warnings.push(`Amount mismatch: Subtotal(${subtotal}) + Tax(${tax}) + Fee(${serviceFee}) - Discount(${discount}) = ${expectedTotal}, but Total is ${total}`);
+        const { subtotal = 0, tax = 0, serviceFee = 0, discount = 0, grandTotal = 0 } = result.financials;
+        if (subtotal > 0 && grandTotal > 0) {
+          const expected = (subtotal || 0) + (tax || 0) + (serviceFee || 0) - (discount || 0);
+          if (Math.abs(expected - grandTotal) > 100) {
+            result.warnings = result.warnings || [];
+            result.warnings.push(`Cảnh báo lệch số tiền: Tiền hàng(${subtotal}) + Thuế(${tax}) + Phí(${serviceFee}) - Giảm giá(${discount}) = ${expected}, nhưng Tổng cộng là ${grandTotal}`);
+          }
         }
       }
 
@@ -194,7 +404,7 @@ RETURN ONLY VALID JSON.
         data: result,
       });
     } catch (error: any) {
-      console.error('Gemini AI Analysis Error:', error);
+      console.error('Gemini AI Vision Analysis Error:', error);
       return res.status(500).json({
         error: error.message || 'Error processing request',
       });

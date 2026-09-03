@@ -1,6 +1,6 @@
 
 import { db } from '../../db/database';
-import { Transaction } from '../../types';
+import { Transaction, DEFAULT_EXPENSE_CATEGORIES } from '../../types';
 
 export class LocalHistoryLearner {
   /**
@@ -37,15 +37,18 @@ export class LocalHistoryLearner {
   }
 
   /**
-   * Gets a list of all custom categories created by the user
+   * Gets a list of all categories available to the user (database + defaults)
    */
   static async getUserCategories(): Promise<string[]> {
     try {
       const categories = await db.categories.toArray();
-      return categories.map(c => c.name);
+      const names = categories.map(c => c.name).filter(Boolean);
+      const defaults = DEFAULT_EXPENSE_CATEGORIES.map(c => c.name);
+      const combined = Array.from(new Set([...names, ...defaults]));
+      return combined.length > 0 ? combined : defaults;
     } catch (error) {
       console.error('Error fetching user categories:', error);
-      return [];
+      return DEFAULT_EXPENSE_CATEGORIES.map(c => c.name);
     }
   }
 }
