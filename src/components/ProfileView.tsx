@@ -41,38 +41,48 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const today = new Date();
   const currentMonthStr = formatMonthVN(today.getFullYear(), today.getMonth() + 1);
 
+  const [reportMode, setReportMode] = useState<'today' | 'oldest'>('today');
+
   // Today string YYYY-MM-DD
   const todayStr = getTodayString();
   const todayFormatted = formatDateVN(todayStr);
 
-  // Filter transactions up to today (date <= todayStr)
-  const validTransactions = transactions.filter((t) => t.date <= todayStr);
+  // Find the oldest transaction date
+  const oldestDateStr = transactions.length > 0
+    ? transactions.reduce((oldest, t) => t.date < oldest ? t.date : oldest, transactions[0].date)
+    : todayStr;
+  const oldestFormatted = formatDateVN(oldestDateStr);
+
+  // Determine selected date based on mode
+  const selectedDateStr = reportMode === 'today' ? todayStr : oldestDateStr;
+  const selectedDateFormatted = formatDateVN(selectedDateStr);
+
+  // Filter transactions up to selected date (date <= selectedDateStr)
+  const validTransactions = transactions.filter((t) => t.date <= selectedDateStr);
   const validTransactionsCount = validTransactions.length;
 
   let totalIncome = 0;
   let totalExpense = 0;
-  let walletIncomeToday = 0;
-  let walletExpenseToday = 0;
-  let bankIncomeToday = 0;
-  let bankExpenseToday = 0;
+  let walletNetAtDate = 0;
+  let bankNetAtDate = 0;
 
   for (const t of validTransactions) {
     if (t.type === 'income') {
       totalIncome += t.amount;
-      if (t.account === 'wallet') walletIncomeToday += t.amount;
-      else if (t.account === 'bank') bankIncomeToday += t.amount;
+      if (t.account === 'wallet') walletNetAtDate += t.amount;
+      else if (t.account === 'bank') bankNetAtDate += t.amount;
     } else {
       totalExpense += t.amount;
-      if (t.account === 'wallet') walletExpenseToday += t.amount;
-      else if (t.account === 'bank') bankExpenseToday += t.amount;
+      if (t.account === 'wallet') walletNetAtDate -= t.amount;
+      else if (t.account === 'bank') bankNetAtDate -= t.amount;
     }
   }
 
   const initialWallet = userSettings?.initialWalletBalance ?? balances.initialWallet ?? 0;
   const initialBank = userSettings?.initialBankBalance ?? balances.initialBank ?? 0;
 
-  const currentWalletBalance = initialWallet + walletIncomeToday - walletExpenseToday;
-  const currentBankBalance = initialBank + bankIncomeToday - bankExpenseToday;
+  const currentWalletBalance = initialWallet + walletNetAtDate;
+  const currentBankBalance = initialBank + bankNetAtDate;
   const currentTotalBalance = currentWalletBalance + currentBankBalance;
 
   // Handle Nickname Edit
@@ -249,9 +259,37 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
       {/* 2. STATISTIC CARDS SECTION */}
       <div className="space-y-3">
-        <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider px-1">
-          Báo cáo
-        </h3>
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
+            Báo cáo
+          </h3>
+          <div className="text-[10px] font-black text-neutral-500 uppercase tracking-tight">
+            Mốc: {selectedDateFormatted}
+          </div>
+        </div>
+
+        {/* Date Picker Select */}
+        <div className="bg-[#121212] rounded-2xl p-3 border border-neutral-800 shadow-sm flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-neutral-400">
+            <div className="w-8 h-8 rounded-lg bg-neutral-800/50 flex items-center justify-center">
+              <CalendarIcon size={14} />
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-widest text-neutral-500">Thời điểm</span>
+          </div>
+          <div className="relative">
+            <select
+              value={reportMode}
+              onChange={(e) => setReportMode(e.target.value as 'today' | 'oldest')}
+              className="bg-[#1a1a1a] text-white text-[13px] font-black py-2 pl-4 pr-8 rounded-xl border border-neutral-800 outline-none focus:border-purple-500 transition-all cursor-pointer appearance-none min-w-[180px] text-right"
+            >
+              <option value="today">Hôm nay</option>
+              <option value="oldest">Ngày xa nhất</option>
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+              <Pencil size={10} className="rotate-90" />
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           {/* HÀNG 1 */}
@@ -340,7 +378,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 {formatVND(totalIncome)}
               </span>
               <span className="text-[11px] font-medium text-neutral-400 italic block">
-                *Tính đến {todayFormatted}*
+                *Tính đến {selectedDateFormatted}*
               </span>
             </div>
           </div>
@@ -360,7 +398,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 {formatVND(totalExpense)}
               </span>
               <span className="text-[11px] font-medium text-neutral-400 italic block">
-                *Tính đến {todayFormatted}*
+                *Tính đến {selectedDateFormatted}*
               </span>
             </div>
           </div>

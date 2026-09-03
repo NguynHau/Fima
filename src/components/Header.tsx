@@ -72,56 +72,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Total Net Worth & Accounts Card */}
-      <div className="rounded-2xl bg-[#121212] border border-neutral-800 p-4 sm:p-5 text-white shadow-md">
-        {/* Row 1: Total Assets (Full width on top) */}
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-xs sm:text-sm uppercase tracking-wider text-neutral-400 font-bold leading-none">
-              Tổng tài sản
-            </div>
-            <div className="text-3xl sm:text-4xl font-black tracking-tight text-white font-mono mt-2 break-all">
-              {formatVND(balances.totalAssets)}
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/20 text-neutral-100 flex items-center justify-center shrink-0">
-            <span className="font-black text-lg sm:text-xl">₫</span>
-          </div>
-        </div>
-
-        {/* Row 2: 2 boxes for Wallet and Bank underneath */}
-        <div className="grid grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-neutral-800">
-          {/* Wallet Balance Box */}
-          <div className="bg-[#1a1a1a] border border-neutral-800 rounded-xl px-3.5 py-2.5 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center shrink-0">
-              <Wallet size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs text-neutral-400 uppercase font-bold leading-none">
-                Ví
-              </div>
-              <div className="text-sm sm:text-base font-bold text-white font-mono leading-tight mt-1 truncate">
-                {formatVND(balances.walletBalance)}
-              </div>
-            </div>
-          </div>
-
-          {/* Bank Balance Box */}
-          <div className="bg-[#1a1a1a] border border-neutral-800 rounded-xl px-3.5 py-2.5 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center shrink-0">
-              <Building2 size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs text-neutral-400 uppercase font-bold leading-none">
-                Bank
-              </div>
-              <div className="text-sm sm:text-base font-bold text-white font-mono leading-tight mt-1 truncate">
-                {formatVND(balances.bankBalance)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </header>
   );
 };
