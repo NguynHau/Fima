@@ -8,6 +8,7 @@ import {
   type AccountType,
   type TransactionType,
   type PhotoQuality,
+  type Debt,
 } from '../types';
 
 export class FinanceDatabase extends Dexie {
@@ -15,6 +16,7 @@ export class FinanceDatabase extends Dexie {
   images!: Table<TransactionImage, string>;
   settings!: Table<UserSettings, string>;
   categories!: Table<Category, string>;
+  debts!: Table<Debt, string>;
 
   constructor() {
     super('FinanceJournalDB');
@@ -28,6 +30,13 @@ export class FinanceDatabase extends Dexie {
       images: 'id, createdAt',
       settings: 'id',
       categories: 'id, name, type, order, isDefault, createdAt',
+    });
+    this.version(3).stores({
+      transactions: 'id, date, type, account, category, categoryId, createdAt, [date+type]',
+      images: 'id, createdAt',
+      settings: 'id',
+      categories: 'id, name, type, order, isDefault, createdAt',
+      debts: 'id, name, amount, date, type, status, createdAt',
     });
   }
 }
@@ -295,9 +304,97 @@ export async function calculateBalances(): Promise<BalancesSummary> {
  * Clear all data for complete reset
  */
 export async function clearAllData(): Promise<void> {
-  await db.transaction('rw', db.transactions, db.images, db.settings, async () => {
+  await db.transaction('rw', db.transactions, db.images, db.settings, db.debts, async () => {
     await db.transactions.clear();
     await db.images.clear();
     await db.settings.clear();
+    if (db.debts) {
+      await db.debts.clear();
+    }
   });
+}
+
+/**
+ * Debts Database Operations
+ */
+export async function getDebts(): Promise<Debt[]> {
+  if (!db.debts) return [];
+  return await db.debts.orderBy('createdAt').reverse().toArray();
+}
+
+export async function getDebtById(id: string): Promise<Debt | undefined> {
+  if (!db.debts) return undefined;
+  return await db.debts.get(id);
+}
+
+export async function createDebt(params: {
+  name: string;
+  amount: number;
+  paidAmount: number;
+  date?: string;
+  type: 'lend' | 'borrow';
+  status: 'unpaid' | 'paid' | 'partially_paid';
+  note?: string;
+}): Promise<Debt> {
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  
+  const newDebt: Debt = {
+    id,
+    name: params.name,
+    amount: Math.abs(params.amount),
+    paidAmount: Math.abs(params.paidAmount),
+    date: params.date || new Date().toISOString().split('T')[0],
+    type: params.type,
+    status: params.status,
+    note: params.note || '',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  if (db.debts) {
+    await db.debts.put(newDebt);
+  }
+  return newDebt;
+}
+
+export async function updateDebt(
+  id: string,
+  params: Partial<Omit<Debt, 'id' | 'createdAt'>>
+): Promise<Debt> {
+  const existing = await getDebtById(id);
+  if (!existing) throw new Error('Không tìm thấy khoản nợ để cập nhật');
+
+  const now = new Date().toISOString();
+  const updated: Debt = {
+    ...existing,
+    ...params,
+    updatedAt: now,
+  };
+
+  // Re-evaluate status automatically based on paidAmount if not explicitly passed
+  if (params.paidAmount !== undefined || params.amount !== undefined) {
+    const finalAmount = params.amount !== undefined ? Math.abs(params.amount) : existing.amount;
+    const finalPaid = params.paidAmount !== undefined ? Math.abs(params.paidAmount) : existing.paidAmount;
+    
+    if (finalPaid >= finalAmount) {
+      updated.status = 'paid';
+      updated.paidAmount = finalAmount;
+    } else if (finalPaid > 0) {
+      updated.status = 'partially_paid';
+    } else {
+      updated.status = 'unpaid';
+    }
+  }
+
+  if (db.debts) {
+    await db.debts.put(updated);
+  }
+  return updated;
+}
+
+export async function deleteDebt(id: string): Promise<void> {
+  if (db.debts) {
+    await db.debts.delete(id);
+  }
 }

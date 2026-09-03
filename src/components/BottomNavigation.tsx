@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layers, PieChart, Plus, Settings, User } from 'lucide-react';
+import { Layers, PieChart, Plus, Settings, User, Users } from 'lucide-react';
 import { type ActiveTab } from '../types';
 import { motion, useMotionValue, useSpring, useVelocity, useTransform } from 'motion/react';
 
@@ -9,7 +9,7 @@ interface BottomNavigationProps {
   onOpenAddTransaction: () => void;
 }
 
-const TAB_ORDER: ActiveTab[] = ['flow', 'statistics', 'settings', 'profile'];
+const TAB_ORDER: ActiveTab[] = ['flow', 'statistics', 'profile', 'debts', 'settings'];
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   activeTab,
@@ -27,11 +27,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const animatedX = useSpring(blobX, { stiffness: 280, damping: 28, mass: 0.8 });
   const velocityX = useVelocity(animatedX);
 
-  // 2. Velocity-based deformation (stretch in direction of movement)
+  // 2. Velocity-based deformation
   const velScaleX = useTransform(velocityX, [-1200, 0, 1200], [1.25, 1, 1.25]);
   const velScaleY = useTransform(velocityX, [-1200, 0, 1200], [0.85, 1, 0.85]);
 
-  // 3. Press-based "Swell" deformation (swells up/down more to overflow slightly)
+  // 3. Press-based "Swell" deformation
   const pressScaleX = useSpring(isPressing ? 1.05 : 1, { stiffness: 400, damping: 22 });
   const pressScaleY = useSpring(isPressing ? 1.6 : 1, { stiffness: 400, damping: 22 });
 
@@ -155,11 +155,14 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         <motion.div
           animate={{ scale: isActive ? 1.12 : 1 }}
           transition={{ type: 'spring', bounce: 0.5, duration: 0.4 }}
-          className={`p-1.5 transition-colors ${
+          className={`p-1.5 transition-colors flex flex-col items-center gap-0.5 ${
             isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
           }`}
         >
-          <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+          <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+          <span className="text-[9px] font-black tracking-tight leading-none scale-[0.95]">
+            {label}
+          </span>
         </motion.div>
       </button>
     );
@@ -167,76 +170,80 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none"
+      className="fixed bottom-0 left-0 right-0 z-40 flex flex-col items-center px-4 pointer-events-none"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
     >
-      <nav
-        ref={navRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        className="w-full border rounded-full touch-none pointer-events-auto p-2.5 transition-all flex items-center relative"
-        style={{
-          width: '541px',
-          height: '88.4432px',
-          maxWidth: '100%',
-          backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
-          backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
-          WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
-          borderColor: 'rgba(255, 255, 255, var(--glass-border-opacity))',
-          boxShadow: '0 15px 35px rgba(0, 0, 0, var(--glass-shadow-opacity)), inset 0 1px 1px rgba(255, 255, 255, var(--glass-inner-reflection)), 0 0 var(--glass-glow-size) var(--glass-glow-color)',
-          transform: 'scale(var(--island-scale))',
-        }}
-      >
-        {/* LIQUID GLASS BLOB INDICATOR */}
-        <motion.div
-          style={{
-            x: animatedX,
-            scaleX: finalScaleX,
-            scaleY: finalScaleY,
-            width: 77,
-            height: 60,
-            willChange: 'transform',
-          }}
-          className="absolute top-1/2 left-0 -mt-[30px] -ml-[38.5px] rounded-full z-0 pointer-events-none"
-        >
-          <div 
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.02) 100%)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              boxShadow: 'inset 0 2px 10px rgba(255,255,255,0.15), inset 0 -1px 4px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.1)',
-            }}
-          />
-        </motion.div>
-
-        <div className="flex items-center justify-between relative px-2 w-full z-10 pointer-events-none">
-          <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="flow" Icon={Layers} label="Dòng tiền" /></div>
-          <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="statistics" Icon={PieChart} label="Thống kê" /></div>
-
-          {/* Center Prominent Add (+) Button */}
-          <div className="flex-[1.2] flex justify-center relative pointer-events-auto">
-            <motion.button
-              id="nav-btn-add-transaction"
-              onClick={onOpenAddTransaction}
-              whileTap={{ scale: 0.88 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className="w-11 h-11 rounded-full bg-white hover:bg-neutral-200 text-black shadow-[0_0_18px_rgba(255,255,255,0.2)] flex items-center justify-center cursor-pointer outline-none touch-manipulation"
-              aria-label="Thêm giao dịch mới"
-              title="Thêm giao dịch mới"
-            >
-              <Plus size={22} strokeWidth={3.5} />
-            </motion.button>
-          </div>
-
-          <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="settings" Icon={Settings} label="Cài đặt" /></div>
-          <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="profile" Icon={User} label="Cá nhân" /></div>
+      <div className="relative w-full max-w-[500px] flex flex-col items-end gap-2.5 pointer-events-none">
+        {/* Floating Add (+) Button on the top-right of the island with clear separation */}
+        <div className="pointer-events-auto pr-3">
+          <motion.button
+            id="nav-btn-add-transaction"
+            onClick={onOpenAddTransaction}
+            whileTap={{ scale: 0.88 }}
+            whileHover={{ scale: 1.08 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="w-13 h-13 rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex items-center justify-center cursor-pointer outline-none touch-manipulation border-2 border-black"
+            aria-label="Thêm mới"
+            title="Thêm mới"
+          >
+            <Plus size={24} strokeWidth={3.5} />
+          </motion.button>
         </div>
-      </nav>
+
+        {/* The 5-Tab Island Navigation */}
+        <nav
+          ref={navRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="w-full border rounded-full touch-none pointer-events-auto p-1.5 transition-all flex items-center relative"
+          style={{
+            height: '74px',
+            backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
+            backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+            WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+            borderColor: 'rgba(255, 255, 255, var(--glass-border-opacity))',
+            boxShadow: '0 15px 35px rgba(0, 0, 0, var(--glass-shadow-opacity)), inset 0 1px 1px rgba(255, 255, 255, var(--glass-inner-reflection)), 0 0 var(--glass-glow-size) var(--glass-glow-color)',
+            transform: 'scale(var(--island-scale))',
+          }}
+        >
+          {/* LIQUID GLASS BLOB INDICATOR */}
+          <motion.div
+            style={{
+              x: animatedX,
+              scaleX: finalScaleX,
+              scaleY: finalScaleY,
+              width: 68,
+              height: 50,
+              willChange: 'transform',
+            }}
+            className="absolute top-1/2 left-0 -mt-[25px] -ml-[34px] rounded-full z-0 pointer-events-none"
+          >
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                boxShadow: 'inset 0 2px 10px rgba(255,255,255,0.12), inset 0 -1px 4px rgba(255,255,255,0.04), 0 4px 10px rgba(0,0,0,0.15)',
+              }}
+            />
+          </motion.div>
+
+          {/* 5 Tabs from Left to Right: Dòng tiền -> Thống kê -> Cá nhân -> Công nợ -> Cài đặt */}
+          <div className="flex items-center justify-between relative px-1 w-full z-10 pointer-events-none">
+            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="flow" Icon={Layers} label="Dòng tiền" /></div>
+            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="statistics" Icon={PieChart} label="Thống kê" /></div>
+            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="profile" Icon={User} label="Cá nhân" /></div>
+            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="debts" Icon={Users} label="Công nợ" /></div>
+            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="settings" Icon={Settings} label="Cài đặt" /></div>
+          </div>
+        </nav>
+      </div>
     </div>
   );
 };
+
 

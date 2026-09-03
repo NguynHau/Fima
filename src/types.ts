@@ -1,8 +1,21 @@
 export type TransactionType = 'income' | 'expense';
 export type AccountType = 'wallet' | 'bank';
 export type CalendarAccountFilter = 'all' | 'wallet' | 'bank';
-export type ActiveTab = 'flow' | 'statistics' | 'settings' | 'profile';
+export type ActiveTab = 'flow' | 'statistics' | 'profile' | 'debts' | 'settings';
 export type PhotoQuality = 'low' | 'high';
+
+export interface Debt {
+  id: string;
+  name: string;
+  amount: number;
+  paidAmount: number;
+  date?: string; // YYYY-MM-DD
+  type: 'lend' | 'borrow'; // lend = người khác nợ mình (cho vay), borrow = mình nợ người khác (đi vay)
+  status: 'unpaid' | 'paid' | 'partially_paid';
+  note?: string;
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+}
 
 export interface Transaction {
   id: string;

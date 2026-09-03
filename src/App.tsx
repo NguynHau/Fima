@@ -7,6 +7,7 @@ import {
   type AccountType,
   type ActiveTab,
   type PhotoQuality,
+  type Debt,
 } from './types';
 import {
   calculateBalances,
@@ -14,6 +15,7 @@ import {
   getTransactions,
   updateTransaction,
   deleteTransaction,
+  getDebts,
 } from './db/database';
 import { Header } from './components/Header';
 import { BottomNavigation } from './components/BottomNavigation';
@@ -21,6 +23,7 @@ import { MonthCalendar } from './components/MonthCalendar';
 import { StatisticsView } from './components/StatisticsView';
 import { SettingsView } from './components/SettingsView';
 import { ProfileView } from './components/ProfileView';
+import { DebtsView } from './components/DebtsView';
 import { CameraCaptureModal } from './components/CameraCaptureModal';
 import { NewTransactionModal } from './components/NewTransactionModal';
 import { EditTransactionModal } from './components/EditTransactionModal';
@@ -34,7 +37,7 @@ import { getTodayString } from './utils/formatters';
 export default function App() {
   const { isOnline } = usePWA();
 
-  // Core state - 4 tabs: flow | statistics | settings | profile
+  // Core state - 5 tabs: flow | statistics | profile | debts | settings
   const [activeTab, setActiveTab] = useState<ActiveTab>('flow');
   const [balances, setBalances] = useState<BalancesSummary>({
     initialWallet: 0,
@@ -48,6 +51,8 @@ export default function App() {
     totalAssets: 0,
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const [triggerAddDebtCount, setTriggerAddDebtCount] = useState(0);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -77,15 +82,17 @@ export default function App() {
   // Refresh all core data from IndexedDB
   const refreshData = useCallback(async () => {
     try {
-      const [settings, bal, txs] = await Promise.all([
+      const [settings, bal, txs, dbs] = await Promise.all([
         getUserSettings(),
         calculateBalances(),
         getTransactions(),
+        getDebts(),
       ]);
 
       setUserSettings(settings);
       setBalances(bal);
       setTransactions(txs);
+      setDebts(dbs);
 
       const hasLaunchedBefore = localStorage.getItem('hasLaunchedBefore') === 'true' || settings.isInitialSetupDone;
 
@@ -160,6 +167,14 @@ export default function App() {
     setNewTxDefaultDate(customDate || getTodayString());
     setNewTxDefaultAccount(customAccount || (calendarAccountFilter === 'all' ? undefined : calendarAccountFilter));
     setIsCameraOpen(true);
+  };
+
+  const handleAddClick = () => {
+    if (activeTab === 'debts') {
+      setTriggerAddDebtCount((c) => c + 1);
+    } else {
+      handleOpenAddTransaction();
+    }
   };
 
   const handlePhotoCaptured = async (blob: Blob, quality: PhotoQuality = 'low') => {
@@ -258,8 +273,14 @@ export default function App() {
               transactions={transactions}
               balances={balances}
               userSettings={userSettings}
+              debts={debts}
               onSelectDay={(d) => setSelectedDayDate(d)}
               onSelectTransaction={(tx) => setEditingTransaction(tx)}
+            />
+          ) : activeTab === 'debts' ? (
+            <DebtsView
+              triggerAddDebtCount={triggerAddDebtCount}
+              onRefreshStats={refreshData}
             />
           ) : activeTab === 'settings' ? (
             <SettingsView
@@ -280,7 +301,7 @@ export default function App() {
         <BottomNavigation
           activeTab={activeTab}
           onChangeTab={(tab) => setActiveTab(tab)}
-          onOpenAddTransaction={() => handleOpenAddTransaction()}
+          onOpenAddTransaction={handleAddClick}
         />
 
         {/* --- MODALS & WORKFLOWS --- */}

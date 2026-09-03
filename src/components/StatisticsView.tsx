@@ -4,6 +4,7 @@ import {
   type BalancesSummary,
   type UserSettings,
   type CalendarAccountFilter,
+  type Debt,
 } from '../types';
 import {
   formatVND,
@@ -33,6 +34,7 @@ import {
   DollarSign,
   Tag,
   ArrowRight,
+  Users,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -55,6 +57,7 @@ interface StatisticsViewProps {
   transactions: Transaction[];
   balances?: BalancesSummary;
   userSettings?: UserSettings | null;
+  debts?: Debt[];
   onSelectDay?: (date: string) => void;
   onSelectTransaction?: (tx: Transaction) => void;
 }
@@ -111,6 +114,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   transactions,
   balances,
   userSettings,
+  debts = [],
   onSelectDay,
   onSelectTransaction,
 }) => {
@@ -126,6 +130,45 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   const thirtyDaysAgoStr = getISOYearMonthDay(addDays(new Date(), -30));
   const [customStartDate, setCustomStartDate] = useState<string>(thirtyDaysAgoStr);
   const [customEndDate, setCustomEndDate] = useState<string>(todayStr);
+
+  // Dynamic Debt statistics (Independent)
+  const debtStats = useMemo(() => {
+    if (!debts || debts.length === 0) return null;
+    
+    let totalLendRemaining = 0; // người khác nợ mình
+    let totalBorrowRemaining = 0; // mình nợ người khác
+    let activeLendCount = 0;
+    let activeBorrowCount = 0;
+
+    debts.forEach((d) => {
+      if (d.status !== 'paid') {
+        const remaining = Math.max(0, d.amount - d.paidAmount);
+        if (d.type === 'lend') {
+          totalLendRemaining += remaining;
+          activeLendCount++;
+        } else {
+          totalBorrowRemaining += remaining;
+          activeBorrowCount++;
+        }
+      }
+    });
+
+    const grandTotalDebtRemaining = totalLendRemaining + totalBorrowRemaining;
+
+    // Calculate ratio of Lend vs Borrow
+    const lendRatio = grandTotalDebtRemaining > 0 ? (totalLendRemaining / grandTotalDebtRemaining) * 100 : 0;
+    const borrowRatio = grandTotalDebtRemaining > 0 ? (totalBorrowRemaining / grandTotalDebtRemaining) * 100 : 0;
+
+    return {
+      totalLendRemaining,
+      totalBorrowRemaining,
+      grandTotalDebtRemaining,
+      lendRatio,
+      borrowRatio,
+      activeLendCount,
+      activeBorrowCount,
+    };
+  }, [debts]);
 
   // 2. COMPUTE DATE RANGE [startDateStr, endDateStr] & PREVIOUS PERIOD RANGE [prevStartDateStr, prevEndDateStr]
   const { startDateStr, endDateStr, prevStartDateStr, prevEndDateStr, periodLabel } = useMemo(() => {
@@ -1249,6 +1292,68 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 12. DEBTS AND LOANS SUMMARY (INDEPENDENT) */}
+      {debtStats && (
+        <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
+          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-neutral-800 pb-2.5">
+            <Users size={18} className="text-[#94a3b8]" />
+            Thống kê Công nợ & Vay mượn (Độc lập)
+          </h3>
+          
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* Total Lend */}
+            <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
+              <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> Người khác nợ bạn
+              </div>
+              <div className="text-sm font-black text-[#38bdf8] font-mono mt-1">
+                {formatVND(debtStats.totalLendRemaining)}
+              </div>
+              <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
+                {debtStats.activeLendCount} khoản chưa thu hồi
+              </div>
+            </div>
+
+            {/* Total Borrow */}
+            <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
+              <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#f43f5e]" /> Bạn nợ người khác
+              </div>
+              <div className="text-sm font-black text-[#f43f5e] font-mono mt-1">
+                {formatVND(debtStats.totalBorrowRemaining)}
+              </div>
+              <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
+                {debtStats.activeBorrowCount} khoản chưa hoàn trả
+              </div>
+            </div>
+          </div>
+
+          {/* Ratio bar */}
+          {debtStats.grandTotalDebtRemaining > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-xs font-bold text-neutral-300">
+                <span>Tỷ lệ nợ ròng</span>
+                <span className="font-mono text-[10px]">
+                  {debtStats.lendRatio.toFixed(0)}% Cho vay | {debtStats.borrowRatio.toFixed(0)}% Đi vay
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-[#262626] rounded-full overflow-hidden flex border border-neutral-800">
+                <div 
+                  className="h-full bg-[#38bdf8]" 
+                  style={{ width: `${debtStats.lendRatio}%` }}
+                  title="Cho vay"
+                />
+                <div 
+                  className="h-full bg-[#f43f5e]" 
+                  style={{ width: `${debtStats.borrowRatio}%` }}
+                  title="Đi vay"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
