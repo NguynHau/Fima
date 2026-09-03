@@ -108,9 +108,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     dragStartXRef.current = touchX;
     isDraggingRef.current = false;
 
-    // SWELL: Instantly trigger spring outwards beyond Island border (1.38x horizontal, 1.95x vertical)
-    pressTargetX.set(1.38);
-    pressTargetY.set(1.95);
+    // SWELL: Instantly trigger spring outwards beyond Island border (1.35x horizontal, 1.85x vertical)
+    pressTargetX.set(1.35);
+    pressTargetY.set(1.85);
 
     const touchedTab = getNearestTab(touchX);
     setHoverTab(touchedTab);
@@ -234,7 +234,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           onPointerCancel={handlePointerUp}
           className="w-full border rounded-full touch-none pointer-events-auto p-1.5 transition-all flex items-center relative overflow-visible"
           style={{
-            height: '82.4545px',
+            height: '68px',
             backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
             backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
             WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
@@ -243,26 +243,26 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             transform: 'scale(var(--island-scale))',
           }}
         >
-          {/* LIQUID GLASS BLOB INDICATOR */}
+          {/* LIQUID WATER DROPLET INDICATOR */}
           <motion.div
             style={{
               x: animatedX,
               scaleX: finalScaleX,
               scaleY: finalScaleY,
-              width: 72,
-              height: 52,
+              width: 70,
+              height: 46,
               willChange: 'transform',
             }}
-            className="absolute top-1/2 left-0 -mt-[26px] -ml-[36px] rounded-full z-0 pointer-events-none overflow-visible"
+            className="absolute top-1/2 left-0 -mt-[23px] -ml-[35px] rounded-full z-0 pointer-events-none overflow-visible"
           >
             <div 
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.06) 100%)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1.5px solid rgba(255,255,255,0.32)',
-                boxShadow: 'inset 0 2px 8px rgba(255,255,255,0.40), inset 0 -2px 6px rgba(255,255,255,0.10), 0 8px 24px rgba(0,0,0,0.35), 0 0 16px rgba(255,255,255,0.12)',
+                background: 'radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.05) 100%)',
+                backdropFilter: 'blur(20px) saturate(190%) contrast(105%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(190%) contrast(105%)',
+                border: '0.5px solid rgba(255, 255, 255, 0.16)',
+                boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.30), inset 0 -1px 2px rgba(255, 255, 255, 0.08), inset 0 0 8px rgba(255, 255, 255, 0.02), 0 8px 20px -4px rgba(0, 0, 0, 0.30), 0 2px 5px rgba(0, 0, 0, 0.12)',
               }}
             />
           </motion.div>
