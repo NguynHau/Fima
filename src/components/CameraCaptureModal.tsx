@@ -16,6 +16,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const libraryInputRef = useRef<HTMLInputElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -193,6 +194,15 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
         className="hidden"
       />
 
+      {/* Hidden photo library input */}
+      <input
+        ref={libraryInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* Top action bar */}
       <div className="relative z-20 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top,0px),16px)] pb-2 text-white">
         <button
@@ -299,7 +309,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
       <div className="relative z-20 px-6 py-3 flex items-center justify-between max-w-md w-full mx-auto pb-[max(env(safe-area-inset-bottom),16px)]">
         {/* Gallery / File Picker */}
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => libraryInputRef.current?.click()}
           className="flex flex-col items-center gap-1.5 text-neutral-400 hover:text-white active:scale-95 transition-all cursor-pointer group"
         >
           <div className="w-12 h-12 rounded-full bg-[#1c1c1c] border border-white/10 group-hover:border-white/30 flex items-center justify-center text-neutral-300 group-hover:text-white transition-all shadow-md">
