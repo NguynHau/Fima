@@ -202,122 +202,125 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
 
   return (
     <div className="space-y-2.5 pb-20">
-      {/* Month Selector Bar */}
-      <div className="flex items-center justify-between bg-[#121212] rounded-2xl p-2.5 px-3.5 border border-neutral-800 shadow-sm">
-        <button
-          onClick={onPrevMonth}
-          className="w-10 h-10 rounded-xl hover:bg-[#1a1a1a] text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-          aria-label="Tháng trước"
+      {/* Filter & Month Navigation Container */}
+      <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm space-y-1.5">
+        {/* Account Filter Segmented Control (Tất cả | Ví | Bank) */}
+        <div
+          ref={accountControlRef}
+          onPointerDown={handleAccountPointerDown}
+          onPointerMove={handleAccountPointerMove}
+          onPointerUp={handleAccountPointerUp}
+          onPointerCancel={handleAccountPointerUp}
+          className="grid grid-cols-3 gap-2 relative touch-none select-none"
         >
-          <ChevronLeft size={22} />
-        </button>
+          <button
+            type="button"
+            onClick={() => onAccountFilterChange('all')}
+            className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+              accountFilter === 'all'
+                ? 'text-black'
+                : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+            }`}
+          >
+            {accountFilter === 'all' && (
+              <motion.div
+                layoutId="month_calendar_account_tab"
+                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                className="absolute inset-0 bg-white rounded-xl shadow-sm"
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <Layers
+                size={18}
+                className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
+              />
+              <span>Tất cả</span>
+            </span>
+          </button>
 
-        <div className="flex items-center gap-2.5">
-          <span className="font-black text-lg sm:text-xl tracking-tight text-white">
-            {formatMonthVN(currentYear, currentMonth)}
-          </span>
-          {!isCurrentRealMonth && (
-            <button
-              onClick={onTodayMonth}
-              className="text-xs font-bold text-black bg-white hover:bg-neutral-200 px-3 py-1 rounded-xl transition-colors cursor-pointer shadow-xs"
-            >
-              Hôm nay
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => onAccountFilterChange('wallet')}
+            className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+              accountFilter === 'wallet'
+                ? 'text-amber-300'
+                : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+            }`}
+          >
+            {accountFilter === 'wallet' && (
+              <motion.div
+                layoutId="month_calendar_account_tab"
+                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                className="absolute inset-0 bg-amber-500/25 rounded-xl shadow-xs border border-amber-500/50"
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <Wallet
+                size={18}
+                className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
+              />
+              <span>Ví</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onAccountFilterChange('bank')}
+            className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+              accountFilter === 'bank'
+                ? 'text-blue-300'
+                : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+            }`}
+          >
+            {accountFilter === 'bank' && (
+              <motion.div
+                layoutId="month_calendar_account_tab"
+                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                className="absolute inset-0 bg-blue-500/25 rounded-xl shadow-xs border border-blue-500/50"
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <Building2
+                size={18}
+                className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
+              />
+              <span>Bank</span>
+            </span>
+          </button>
         </div>
 
-        <button
-          onClick={onNextMonth}
-          className="w-10 h-10 rounded-xl hover:bg-[#1a1a1a] text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
-          aria-label="Tháng sau"
-        >
-          <ChevronRight size={22} />
-        </button>
-      </div>
+        {/* Month Selector Bar */}
+        <div className="flex items-center justify-between px-2 py-1">
+          <button
+            onClick={onPrevMonth}
+            className="w-10 h-10 rounded-xl hover:bg-[#1a1a1a] text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+            aria-label="Tháng trước"
+          >
+            <ChevronLeft size={22} />
+          </button>
 
-      {/* Account Filter Segmented Control (Tất cả | Ví | Bank) */}
-      <div
-        ref={accountControlRef}
-        onPointerDown={handleAccountPointerDown}
-        onPointerMove={handleAccountPointerMove}
-        onPointerUp={handleAccountPointerUp}
-        onPointerCancel={handleAccountPointerUp}
-        className="bg-[#121212] p-1.5 rounded-2xl border border-neutral-800 grid grid-cols-3 gap-2 shadow-sm relative touch-none select-none"
-      >
-        <button
-          type="button"
-          onClick={() => onAccountFilterChange('all')}
-          className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-            accountFilter === 'all'
-              ? 'text-black'
-              : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
-          }`}
-        >
-          {accountFilter === 'all' && (
-            <motion.div
-              layoutId="month_calendar_account_tab"
-              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              className="absolute inset-0 bg-white rounded-xl shadow-sm"
-            />
-          )}
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            <Layers
-              size={18}
-              className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
-            />
-            <span>Tất cả</span>
-          </span>
-        </button>
+          <div className="flex items-center gap-2.5">
+            <span className="font-black text-lg sm:text-xl tracking-tight text-white">
+              {formatMonthVN(currentYear, currentMonth)}
+            </span>
+            {!isCurrentRealMonth && (
+              <button
+                onClick={onTodayMonth}
+                className="text-xs font-bold text-black bg-white hover:bg-neutral-200 px-3 py-1 rounded-xl transition-colors cursor-pointer shadow-xs"
+              >
+                Hôm nay
+              </button>
+            )}
+          </div>
 
-        <button
-          type="button"
-          onClick={() => onAccountFilterChange('wallet')}
-          className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-            accountFilter === 'wallet'
-              ? 'text-amber-300'
-              : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
-          }`}
-        >
-          {accountFilter === 'wallet' && (
-            <motion.div
-              layoutId="month_calendar_account_tab"
-              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              className="absolute inset-0 bg-amber-500/25 rounded-xl shadow-xs border border-amber-500/50"
-            />
-          )}
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            <Wallet
-              size={18}
-              className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
-            />
-            <span>Ví</span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAccountFilterChange('bank')}
-          className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-            accountFilter === 'bank'
-              ? 'text-blue-300'
-              : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
-          }`}
-        >
-          {accountFilter === 'bank' && (
-            <motion.div
-              layoutId="month_calendar_account_tab"
-              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              className="absolute inset-0 bg-blue-500/25 rounded-xl shadow-xs border border-blue-500/50"
-            />
-          )}
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            <Building2
-              size={18}
-              className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
-            />
-            <span>Bank</span>
-          </span>
-        </button>
+          <button
+            onClick={onNextMonth}
+            className="w-10 h-10 rounded-xl hover:bg-[#1a1a1a] text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+            aria-label="Tháng sau"
+          >
+            <ChevronRight size={22} />
+          </button>
+        </div>
       </div>
 
       {/* Month Summary Cards */}
