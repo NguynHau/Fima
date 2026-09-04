@@ -41,6 +41,7 @@ import {
   ChevronDown,
   ChevronUp,
   List,
+  X,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -125,7 +126,7 @@ import { usePWA } from '../hooks/usePWA';
 // AI Assistant & Quota Monitor Component in Statistics
 const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transactions }) => {
   const { isOnline } = usePWA();
-  const [activeTab, setActiveTab] = useState<'assistant' | 'monitor'>('assistant');
+  const [isQuotaOpen, setIsQuotaOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -161,116 +162,116 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
   ];
 
   return (
-    <div className="space-y-3 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Sub-tab Navigation */}
-      <div className="bg-[#121212] border border-neutral-800 p-1 rounded-2xl grid grid-cols-2 gap-1.5 shadow-sm">
-        <button
-          type="button"
-          onClick={() => setActiveTab('monitor')}
-          className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'monitor'
-              ? 'bg-purple-600 text-white shadow-sm font-extrabold'
-              : 'text-neutral-400 hover:text-neutral-200'
-          }`}
-        >
-          <span>📊 AI Usage & Quota</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('assistant')}
-          className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'assistant'
-              ? 'bg-purple-600 text-white shadow-sm font-extrabold'
-              : 'text-neutral-400 hover:text-neutral-200'
-          }`}
-        >
-          <Sparkles size={14} />
-          <span>Trợ lý Tài chính</span>
-        </button>
-      </div>
-
-      {activeTab === 'monitor' ? (
-        <AIUsageMonitor />
-      ) : (
-        <div className="bg-gradient-to-br from-purple-900/40 via-[#121212] to-pink-900/20 rounded-3xl p-5 border border-purple-500/30 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
-                <Sparkles size={22} className="animate-pulse" />
-              </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-black text-white">Trợ lý Tài chính AI</h3>
-                <p className="text-[10px] text-purple-200/60 font-bold uppercase tracking-wider">Financial Reasoning Engine</p>
-              </div>
+    <div className="space-y-3 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+      <div className="bg-gradient-to-br from-purple-900/40 via-[#121212] to-pink-900/20 rounded-3xl p-5 border border-purple-500/30 shadow-xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+              <Sparkles size={22} className="animate-pulse" />
             </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-white">Trợ lý Tài chính AI</h3>
+              <p className="text-[10px] text-purple-200/60 font-bold uppercase tracking-wider">Financial Reasoning Engine</p>
+            </div>
+          </div>
 
+          <div className="flex items-center gap-2">
             {!isOnline && (
               <div className="flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold">
                 <WifiOff size={13} className="text-amber-400" />
-                <span>Ngoại tuyến</span>
+                <span className="hidden sm:inline">Ngoại tuyến</span>
               </div>
             )}
-          </div>
-
-          {!isOnline && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-xs text-amber-200 flex items-start gap-2.5">
-              <WifiOff size={16} className="text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-amber-300">Chế độ Ngoại tuyến:</span> Tất cả dữ liệu thống kê, biểu đồ thu chi và danh mục hoạt động 100% không cần mạng. Trợ lý AI sẽ tự động hoạt động trở lại ngay khi có kết nối Internet.
-              </div>
-            </div>
-          )}
-
-          {answer && (
-            <div className="bg-white/5 border border-purple-500/20 rounded-2xl p-4 text-xs sm:text-sm text-neutral-200 leading-relaxed animate-in zoom-in-95 duration-300">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={14} className="text-purple-400 shrink-0" />
-                  <span className="font-extrabold text-purple-300">Phản hồi từ Fima AI:</span>
-                </div>
-                <button
-                  onClick={() => setAnswer(null)}
-                  className="text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
-                >
-                  Đóng
-                </button>
-              </div>
-              <div className="whitespace-pre-line text-neutral-200 space-y-2 font-normal leading-relaxed">
-                {cleanPlainAssistantText(answer)}
-              </div>
-            </div>
-          )}
-
-          <div className="relative group">
-            <input
-              type="text"
-              placeholder={isOnline ? "Hỏi AI về tài chính của bạn..." : "Trợ lý AI cần kết nối Internet..."}
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
-              disabled={!isOnline}
-              className="w-full bg-black/40 border border-purple-500/30 disabled:border-neutral-800 disabled:opacity-60 rounded-2xl py-3.5 pl-4 pr-12 text-sm font-medium placeholder:text-neutral-500 focus:border-purple-400 outline-none transition-all"
-            />
             <button
-              onClick={() => handleAsk()}
-              disabled={isLoading || !question.trim() || !isOnline}
-              className="absolute right-2 top-2 bottom-2 px-3 bg-purple-600 hover:bg-purple-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg flex items-center justify-center cursor-pointer"
+              onClick={() => setIsQuotaOpen(true)}
+              className="w-9 h-9 rounded-2xl bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center justify-center hover:bg-purple-500/20 transition-colors cursor-pointer active:scale-95"
+              title="AI Quota"
             >
-              {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'HỎI'}
+              <BarChart3 size={16} />
             </button>
           </div>
+        </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
-            {suggestions.map((s) => (
+        {!isOnline && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-xs text-amber-200 flex items-start gap-2.5">
+            <WifiOff size={16} className="text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-amber-300">Chế độ Ngoại tuyến:</span> Tất cả dữ liệu thống kê, biểu đồ thu chi và danh mục hoạt động 100% không cần mạng. Trợ lý AI sẽ tự động hoạt động trở lại ngay khi có kết nối Internet.
+            </div>
+          </div>
+        )}
+
+        {answer && (
+          <div className="bg-white/5 border border-purple-500/20 rounded-2xl p-4 text-xs sm:text-sm text-neutral-200 leading-relaxed animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Sparkles size={14} className="text-purple-400 shrink-0" />
+                <span className="font-extrabold text-purple-300">Phản hồi từ Fima AI:</span>
+              </div>
               <button
-                key={s}
-                onClick={() => handleAsk(s)}
-                disabled={isLoading || !isOnline}
-                className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95"
+                onClick={() => setAnswer(null)}
+                className="text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
               >
-                {s}
+                Đóng
               </button>
-            ))}
+            </div>
+            <div className="whitespace-pre-line text-neutral-200 space-y-2 font-normal leading-relaxed">
+              {cleanPlainAssistantText(answer)}
+            </div>
+          </div>
+        )}
+
+        <div className="relative group">
+          <input
+            type="text"
+            placeholder={isOnline ? "Hỏi AI về tài chính của bạn..." : "Trợ lý AI cần kết nối Internet..."}
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
+            disabled={!isOnline}
+            className="w-full bg-black/40 border border-purple-500/30 disabled:border-neutral-800 disabled:opacity-60 rounded-2xl py-3.5 pl-4 pr-12 text-sm font-medium placeholder:text-neutral-500 focus:border-purple-400 outline-none transition-all"
+          />
+          <button
+            onClick={() => handleAsk()}
+            disabled={isLoading || !question.trim() || !isOnline}
+            className="absolute right-2 top-2 bottom-2 px-3 bg-purple-600 hover:bg-purple-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg flex items-center justify-center cursor-pointer"
+          >
+            {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'HỎI'}
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              onClick={() => handleAsk(s)}
+              disabled={isLoading || !isOnline}
+              className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isQuotaOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#121212] w-full max-w-md rounded-3xl border border-neutral-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-800 bg-[#1a1a1a]">
+              <h3 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
+                <BarChart3 size={18} className="text-purple-400" />
+                AI Usage & Quota
+              </h3>
+              <button
+                onClick={() => setIsQuotaOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors cursor-pointer active:scale-90"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="p-4 sm:p-5 overflow-y-auto bg-[#121212]">
+              <AIUsageMonitor />
+            </div>
           </div>
         </div>
       )}
@@ -292,6 +293,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
   
   const [isTxListOpen, setIsTxListOpen] = useState(false);
+  const [isInsightsOpen, setIsInsightsOpen] = useState(false);
   const [txListFilter, setTxListFilter] = useState<'all' | 'expense' | 'income'>('all');
 
   const accountTabs: CalendarAccountFilter[] = ['all', 'wallet', 'bank'];
@@ -770,46 +772,172 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     ];
   }, [transactions, startDateStr, endDateStr]);
 
-  // 9. INSIGHTS
-  // Highest expense day in current period
-  const highestExpenseDay = useMemo(() => {
-    const dayTotals: Record<string, number> = {};
-    filteredTransactions.forEach((tx) => {
+  // 9. DYNAMIC INSIGHTS
+  const quickInsights = useMemo(() => {
+    const insights: Array<{
+      id: string;
+      title: string;
+      valueText: string;
+      subText?: string;
+      icon: React.ReactNode;
+      colorClass: string;
+      onClick?: () => void;
+      hasArrow?: boolean;
+    }> = [];
+
+    if (filteredTransactions.length === 0) return insights;
+
+    let maxExpenseTx: Transaction | null = null;
+    let maxIncomeTx: Transaction | null = null;
+    
+    const dayExp: Record<string, number> = {};
+    const dayInc: Record<string, number> = {};
+    const dayCount: Record<string, number> = {};
+    
+    const catExp: Record<string, number> = {};
+    const catInc: Record<string, number> = {};
+    
+    let totalExp = 0; let countExp = 0;
+    let totalInc = 0; let countInc = 0;
+
+    filteredTransactions.forEach(tx => {
+      dayCount[tx.date] = (dayCount[tx.date] || 0) + 1;
       if (tx.type === 'expense') {
-        dayTotals[tx.date] = (dayTotals[tx.date] || 0) + tx.amount;
+        if (!maxExpenseTx || tx.amount > maxExpenseTx.amount) maxExpenseTx = tx;
+        dayExp[tx.date] = (dayExp[tx.date] || 0) + tx.amount;
+        catExp[tx.category] = (catExp[tx.category] || 0) + tx.amount;
+        totalExp += tx.amount;
+        countExp++;
+      } else if (tx.type === 'income') {
+        if (!maxIncomeTx || tx.amount > maxIncomeTx.amount) maxIncomeTx = tx;
+        dayInc[tx.date] = (dayInc[tx.date] || 0) + tx.amount;
+        catInc[tx.category] = (catInc[tx.category] || 0) + tx.amount;
+        totalInc += tx.amount;
+        countInc++;
       }
     });
 
-    let maxDay = '';
-    let maxAmount = 0;
-    Object.entries(dayTotals).forEach(([dStr, amount]) => {
-      if (amount > maxAmount) {
-        maxAmount = amount;
-        maxDay = dStr;
-      }
-    });
+    const getExtreme = (dict: Record<string, number>) => {
+      let maxK = ''; let maxV = 0;
+      Object.entries(dict).forEach(([k, v]) => { if (v > maxV) { maxV = v; maxK = k; } });
+      return { k: maxK, v: maxV };
+    };
 
-    return maxAmount > 0 ? { dateStr: maxDay, amount: maxAmount } : null;
-  }, [filteredTransactions]);
+    const expDay = getExtreme(dayExp);
+    const incDay = getExtreme(dayInc);
+    const expCat = getExtreme(catExp);
+    const incCat = getExtreme(catInc);
+    const bDay = getExtreme(dayCount);
 
-  // Largest transaction in current period
-  const largestTransaction = useMemo(() => {
-    if (filteredTransactions.length === 0) return null;
-    let maxTx = filteredTransactions[0];
-    filteredTransactions.forEach((tx) => {
-      if (tx.amount > maxTx.amount) {
-        maxTx = tx;
-      }
-    });
-    return maxTx;
-  }, [filteredTransactions]);
+    // 1. Khoản chi lớn nhất
+    if (maxExpenseTx && maxExpenseTx.amount > 0) {
+      insights.push({
+        id: 'max-exp-tx',
+        title: 'Khoản chi lớn nhất',
+        valueText: `−${formatVND(maxExpenseTx.amount)}`,
+        subText: `${maxExpenseTx.category} (${formatDateVN(maxExpenseTx.date)})`,
+        icon: <TrendingDown size={18} />,
+        colorClass: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+        onClick: () => onSelectTransaction?.(maxExpenseTx!),
+        hasArrow: true
+      });
+    }
 
-  // Savings rate: ((Income - Expense) / Income) * 100
-  const savingsRate = useMemo(() => {
-    if (currentKPI.income <= 0) return null;
-    const rate = ((currentKPI.income - currentKPI.expense) / currentKPI.income) * 100;
-    return rate;
-  }, [currentKPI]);
+    // 2. Khoản thu lớn nhất
+    if (maxIncomeTx && maxIncomeTx.amount > 0) {
+      insights.push({
+        id: 'max-inc-tx',
+        title: 'Khoản thu lớn nhất',
+        valueText: `+${formatVND(maxIncomeTx.amount)}`,
+        subText: `${maxIncomeTx.category} (${formatDateVN(maxIncomeTx.date)})`,
+        icon: <TrendingUp size={18} />,
+        colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+        onClick: () => onSelectTransaction?.(maxIncomeTx!),
+        hasArrow: true
+      });
+    }
+
+    // 3. Ngày chi nhiều nhất
+    if (expDay.v > 0) {
+      insights.push({
+        id: 'max-exp-day',
+        title: 'Ngày chi nhiều nhất',
+        valueText: `−${formatVND(expDay.v)}`,
+        subText: formatFullDateVN(expDay.k),
+        icon: <Calendar size={18} />,
+        colorClass: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
+        onClick: () => onSelectDay?.(expDay.k),
+        hasArrow: true
+      });
+    }
+
+    // 4. Hạng mục chi nhiều nhất
+    if (expCat.v > 0) {
+      insights.push({
+        id: 'max-exp-cat',
+        title: 'Hạng mục chi nhiều nhất',
+        valueText: `−${formatVND(expCat.v)}`,
+        subText: expCat.k,
+        icon: <PieChartIcon size={18} />,
+        colorClass: 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+      });
+    }
+
+    // 5. Hạng mục thu nhiều nhất
+    if (incCat.v > 0) {
+      insights.push({
+        id: 'max-inc-cat',
+        title: 'Hạng mục thu nhiều nhất',
+        valueText: `+${formatVND(incCat.v)}`,
+        subText: incCat.k,
+        icon: <PieChartIcon size={18} />,
+        colorClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+      });
+    }
+
+    // 6. Chi trung bình / giao dịch
+    if (countExp > 1) {
+      insights.push({
+        id: 'avg-exp',
+        title: 'Chi trung bình / giao dịch',
+        valueText: `−${formatVND(totalExp / countExp)}`,
+        subText: `Trên tổng ${countExp} khoản chi`,
+        icon: <BarChart3 size={18} />,
+        colorClass: 'bg-neutral-500/20 text-neutral-300 border-neutral-500/30'
+      });
+    }
+
+    // 7. Ngày nhiều giao dịch nhất
+    if (bDay.v > 1) {
+      insights.push({
+        id: 'busiest-day',
+        title: 'Ngày sôi động nhất',
+        valueText: `${bDay.v} giao dịch`,
+        subText: formatFullDateVN(bDay.k),
+        icon: <Users size={18} />,
+        colorClass: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+        onClick: () => onSelectDay?.(bDay.k),
+        hasArrow: true
+      });
+    }
+
+    // 8. Tỷ lệ tích lũy
+    if (totalInc > 0) {
+      const rate = ((totalInc - totalExp) / totalInc) * 100;
+      insights.push({
+        id: 'savings-rate',
+        title: 'Tỷ lệ tiền tích lũy',
+        valueText: `${rate.toFixed(1)}%`,
+        subText: '(Thu − Chi) / Thu',
+        icon: <DollarSign size={18} />,
+        colorClass: rate > 0 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+      });
+    }
+
+    // We can prioritize and just take the top 6 most interesting
+    // They are already pushed in a reasonable order
+    return insights.slice(0, 8);
+  }, [filteredTransactions, onSelectTransaction, onSelectDay]);
 
   // Comparison helper calculation
   const compareMeta = (curr: number, prev: number) => {
@@ -1076,6 +1204,174 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             {formatVND(availableBalance)}
           </div>
         </div>
+      </div>
+
+      {/* 12. TRANSACTION LIST (DROPDOWN) */}
+      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden mt-2.5">
+        <button
+          onClick={() => setIsTxListOpen(!isTxListOpen)}
+          className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#1a1a1a] transition-colors active:bg-[#222]"
+        >
+          <div className="flex items-center gap-3 text-white">
+            <div className="w-9 h-9 rounded-xl bg-neutral-800/50 flex items-center justify-center border border-neutral-700/50 text-neutral-300">
+              <List size={18} />
+            </div>
+            <div className="text-left">
+              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
+                Danh sách giao dịch
+              </h3>
+              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
+                {filteredTransactions.length} giao dịch trong kỳ
+              </p>
+            </div>
+          </div>
+          <div className="text-neutral-400 bg-[#1a1a1a] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800">
+            {isTxListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </div>
+        </button>
+
+        {isTxListOpen && (
+          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-4">
+            {/* Filter */}
+            <div className="flex p-1 bg-[#1a1a1a] rounded-xl border border-neutral-800">
+              {(['all', 'expense', 'income'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setTxListFilter(filter)}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    txListFilter === filter
+                      ? filter === 'expense'
+                        ? 'bg-rose-500/20 text-rose-300 shadow-xs'
+                        : filter === 'income'
+                        ? 'bg-emerald-500/20 text-emerald-300 shadow-xs'
+                        : 'bg-white text-black shadow-xs'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                  }`}
+                >
+                  {filter === 'all' && 'Tất cả'}
+                  {filter === 'expense' && 'Chi'}
+                  {filter === 'income' && 'Thu'}
+                </button>
+              ))}
+            </div>
+
+            {/* List */}
+            <div className="space-y-2">
+              {visibleTransactions.length === 0 ? (
+                <div className="py-8 text-center text-neutral-500 text-xs font-bold">
+                  Không có giao dịch nào
+                </div>
+              ) : (
+                visibleTransactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    onClick={() => onSelectTransaction?.(tx)}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <CategoryIcon category={tx.category} type={tx.type} size={18} />
+                      <div>
+                        <div className="text-xs sm:text-sm font-bold text-neutral-200">
+                          {tx.category}
+                        </div>
+                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 flex items-center gap-1.5">
+                          <span>{formatDateVN(tx.date)}</span>
+                          {tx.note && (
+                            <>
+                              <span className="w-1 h-1 rounded-full bg-neutral-600" />
+                              <span className="truncate max-w-[120px]">{tx.note}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`text-sm font-black font-mono ${
+                        tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {formatSignedVND(tx.amount, tx.type)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 11. INSIGHTS CARDS (DROPDOWN) */}
+      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden mt-2.5">
+        <button
+          onClick={() => setIsInsightsOpen(!isInsightsOpen)}
+          className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#1a1a1a] transition-colors active:bg-[#222]"
+        >
+          <div className="flex items-center gap-3 text-white">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-neutral-300">
+              <Sparkles size={18} className="text-amber-400" />
+            </div>
+            <div className="text-left">
+              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
+                Gợi ý & Thông tin nhanh
+              </h3>
+              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
+                {quickInsights.length} điểm nổi bật
+              </p>
+            </div>
+          </div>
+          <div className="text-neutral-400 bg-[#1a1a1a] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800">
+            {isInsightsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </div>
+        </button>
+
+        {isInsightsOpen && (
+          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-2">
+            {quickInsights.length === 0 ? (
+              <div className="py-6 text-center text-xs font-bold text-neutral-500">
+                Không đủ dữ liệu để tạo gợi ý
+              </div>
+            ) : (
+              quickInsights.map(insight => (
+                <div
+                  key={insight.id}
+                  onClick={insight.onClick}
+                  className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                    insight.onClick
+                      ? 'bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98'
+                      : 'bg-[#1a1a1a] border border-neutral-800/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${insight.colorClass}`}>
+                      {insight.icon}
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-bold text-neutral-200">
+                        {insight.title}
+                      </div>
+                      {insight.subText && (
+                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 max-w-[150px] sm:max-w-[200px] truncate">
+                          {insight.subText}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-right flex flex-col justify-center items-end">
+                    <div className="text-sm font-black text-white font-mono">
+                      {insight.valueText}
+                    </div>
+                    {insight.hasArrow && insight.onClick && (
+                      <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
+                        Chi tiết <ArrowRight size={10} />
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {!hasDataInPeriod ? (
@@ -1479,236 +1775,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         </div>
       </div>
 
-      {/* 11. INSIGHTS CARDS */}
-      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
-        <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-neutral-800 pb-2.5">
-          <Sparkles size={18} className="text-amber-400" />
-          Gợi ý & Thông tin nhanh (Insights)
-        </h3>
 
-        <div className="grid grid-cols-1 gap-3 pt-1">
-          {/* Card 1: Ngày chi tiêu nhiều nhất */}
-          <div
-            onClick={() => {
-              if (highestExpenseDay && onSelectDay) {
-                onSelectDay(highestExpenseDay.dateStr);
-              }
-            }}
-            className={`p-3.5 rounded-2xl border transition-all ${
-              highestExpenseDay
-                ? 'bg-[#1a1a1a] hover:bg-[#222] border-neutral-800 cursor-pointer active:scale-98'
-                : 'bg-[#1a1a1a]/60 border-neutral-800/60'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center shrink-0">
-                  <Calendar size={18} />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-neutral-300">Ngày chi tiêu nhiều nhất</div>
-                  {highestExpenseDay ? (
-                    <div className="text-sm font-black text-white mt-0.5">
-                      {formatFullDateVN(highestExpenseDay.dateStr)}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-neutral-400 mt-0.5">—</div>
-                  )}
-                </div>
-              </div>
-              {highestExpenseDay && (
-                <div className="text-right">
-                  <div className="text-xs font-black text-rose-400 font-mono">
-                    −{formatVND(highestExpenseDay.amount)}
-                  </div>
-                  <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
-                    Xem chi tiết <ArrowRight size={10} />
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Card 2: Giao dịch lớn nhất */}
-          <div
-            onClick={() => {
-              if (largestTransaction && onSelectTransaction) {
-                onSelectTransaction(largestTransaction);
-              }
-            }}
-            className={`p-3.5 rounded-2xl border transition-all ${
-              largestTransaction
-                ? 'bg-[#1a1a1a] hover:bg-[#222] border-neutral-800 cursor-pointer active:scale-98'
-                : 'bg-[#1a1a1a]/60 border-neutral-800/60'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                {largestTransaction ? (
-                  <CategoryIcon category={largestTransaction.category} type={largestTransaction.type} size={20} />
-                ) : (
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center shrink-0">
-                    <Tag size={18} />
-                  </div>
-                )}
-                <div>
-                  <div className="text-xs font-bold text-neutral-300">Giao dịch lớn nhất</div>
-                  {largestTransaction ? (
-                    <div className="text-sm font-black text-white mt-0.5 flex items-center gap-1.5">
-                      <span>{largestTransaction.category}</span>
-                      <span className="text-xs font-medium text-neutral-400">
-                        ({formatDateVN(largestTransaction.date)})
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="text-xs text-neutral-400 mt-0.5">—</div>
-                  )}
-                </div>
-              </div>
-
-              {largestTransaction && (
-                <div className="text-right">
-                  <div
-                    className={`text-xs font-black font-mono ${
-                      largestTransaction.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                    }`}
-                  >
-                    {formatSignedVND(largestTransaction.amount, largestTransaction.type)}
-                  </div>
-                  <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
-                    Sửa <ArrowRight size={10} />
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Card 3: Tỷ lệ tiền còn lại (Savings / Remaining Income Rate) */}
-          <div className="p-3.5 rounded-2xl bg-[#1a1a1a] border border-neutral-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                  <DollarSign size={18} />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-neutral-300">Tỷ lệ tiền tích lũy / còn lại</div>
-                  <div className="text-[11px] text-neutral-400 font-medium mt-0.5">
-                    (Thu nhập − Chi tiêu) / Thu nhập
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <div
-                  className={`text-sm sm:text-base font-black font-mono ${
-                    savingsRate !== null && savingsRate > 0
-                      ? 'text-emerald-400'
-                      : savingsRate !== null && savingsRate < 0
-                      ? 'text-rose-400'
-                      : 'text-neutral-300'
-                  }`}
-                >
-                  {savingsRate !== null ? `${savingsRate.toFixed(1)}%` : '—'}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 12. TRANSACTION LIST (DROPDOWN) */}
-      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
-        <button
-          onClick={() => setIsTxListOpen(!isTxListOpen)}
-          className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#1a1a1a] transition-colors active:bg-[#222]"
-        >
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-9 h-9 rounded-xl bg-neutral-800/50 flex items-center justify-center border border-neutral-700/50 text-neutral-300">
-              <List size={18} />
-            </div>
-            <div className="text-left">
-              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
-                Danh sách giao dịch
-              </h3>
-              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
-                {filteredTransactions.length} giao dịch trong kỳ
-              </p>
-            </div>
-          </div>
-          <div className="text-neutral-400 bg-[#1a1a1a] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800">
-            {isTxListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </div>
-        </button>
-
-        {isTxListOpen && (
-          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-4">
-            {/* Filter */}
-            <div className="flex p-1 bg-[#1a1a1a] rounded-xl border border-neutral-800">
-              {(['all', 'expense', 'income'] as const).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setTxListFilter(filter)}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    txListFilter === filter
-                      ? filter === 'expense'
-                        ? 'bg-rose-500/20 text-rose-300 shadow-xs'
-                        : filter === 'income'
-                        ? 'bg-emerald-500/20 text-emerald-300 shadow-xs'
-                        : 'bg-white text-black shadow-xs'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
-                  }`}
-                >
-                  {filter === 'all' && 'Tất cả'}
-                  {filter === 'expense' && 'Chi'}
-                  {filter === 'income' && 'Thu'}
-                </button>
-              ))}
-            </div>
-
-            {/* List */}
-            <div className="space-y-2">
-              {visibleTransactions.length === 0 ? (
-                <div className="py-8 text-center text-neutral-500 text-xs font-bold">
-                  Không có giao dịch nào
-                </div>
-              ) : (
-                visibleTransactions.map((tx) => (
-                  <div
-                    key={tx.id}
-                    onClick={() => onSelectTransaction?.(tx)}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98 transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <CategoryIcon category={tx.category} type={tx.type} size={18} />
-                      <div>
-                        <div className="text-xs sm:text-sm font-bold text-neutral-200">
-                          {tx.category}
-                        </div>
-                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 flex items-center gap-1.5">
-                          <span>{formatDateVN(tx.date)}</span>
-                          {tx.note && (
-                            <>
-                              <span className="w-1 h-1 rounded-full bg-neutral-600" />
-                              <span className="truncate max-w-[120px]">{tx.note}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className={`text-sm font-black font-mono ${
-                        tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                      }`}
-                    >
-                      {formatSignedVND(tx.amount, tx.type)}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* 13. DEBTS AND LOANS SUMMARY (INDEPENDENT) */}
       {debtStats && (
