@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { motion, Reorder, useDragControls } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   type Transaction,
   type BalancesSummary,
@@ -42,8 +42,6 @@ import {
   ChevronUp,
   List,
   X,
-  GripVertical,
-  RotateCcw,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -295,49 +293,6 @@ const DEFAULT_CARD_ORDER = [
   'debt_summary',
 ];
 
-function DragHandle({ controls }: { controls: ReturnType<typeof useDragControls> }) {
-  return (
-    <div
-      onPointerDown={(e) => {
-        e.preventDefault();
-        controls.start(e);
-      }}
-      className="p-1.5 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] active:bg-[#333] border border-neutral-800 text-neutral-400 hover:text-white cursor-grab active:cursor-grabbing touch-none select-none shrink-0 transition-colors flex items-center justify-center"
-      title="Nhấn đè và kéo để sắp xếp thứ tự"
-    >
-      <GripVertical size={16} />
-    </div>
-  );
-}
-
-function ReorderableCardItem({
-  id,
-  children,
-}: {
-  id: string;
-  children: (controls: ReturnType<typeof useDragControls>) => React.ReactNode;
-}) {
-  const controls = useDragControls();
-
-  return (
-    <Reorder.Item
-      as="div"
-      value={id}
-      id={id}
-      dragControls={controls}
-      dragListener={false}
-      className="relative touch-none select-none transition-shadow rounded-2xl"
-      whileDrag={{
-        scale: 1.02,
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7)',
-        zIndex: 50,
-      }}
-    >
-      {children(controls)}
-    </Reorder.Item>
-  );
-}
-
 export const StatisticsView: React.FC<StatisticsViewProps> = ({
   transactions,
   balances,
@@ -354,40 +309,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   const [isTxListOpen, setIsTxListOpen] = useState(false);
   const [isInsightsOpen, setIsInsightsOpen] = useState(false);
   const [txListFilter, setTxListFilter] = useState<'all' | 'expense' | 'income'>('all');
-
-  // CARD REORDERING STATE
-  const [cardOrder, setCardOrder] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('stats_chart_order_v1');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const validKeys = parsed.filter((key) => DEFAULT_CARD_ORDER.includes(key));
-          const missingKeys = DEFAULT_CARD_ORDER.filter((key) => !parsed.includes(key));
-          return [...validKeys, ...missingKeys];
-        }
-      }
-    } catch {}
-    return DEFAULT_CARD_ORDER;
-  });
-
-  const handleReorder = (newOrder: string[]) => {
-    setCardOrder(newOrder);
-    try {
-      localStorage.setItem('stats_chart_order_v1', JSON.stringify(newOrder));
-    } catch {}
-  };
-
-  const resetCardOrder = () => {
-    setCardOrder(DEFAULT_CARD_ORDER);
-    try {
-      localStorage.removeItem('stats_chart_order_v1');
-    } catch {}
-  };
-
-  const isCustomOrder = useMemo(() => {
-    return JSON.stringify(cardOrder) !== JSON.stringify(DEFAULT_CARD_ORDER);
-  }, [cardOrder]);
 
   const accountTabs: CalendarAccountFilter[] = ['all', 'wallet', 'bank'];
   const accountControlRef = useRef<HTMLDivElement>(null);
@@ -1082,16 +1003,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {isCustomOrder && (
-            <button
-              onClick={resetCardOrder}
-              className="h-10 px-3 rounded-2xl bg-[#121212] hover:bg-[#1a1a1a] active:scale-95 border border-neutral-800 text-neutral-400 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm text-xs font-bold"
-              title="Khôi phục thứ tự biểu đồ mặc định"
-            >
-              <RotateCcw size={15} />
-              <span className="hidden sm:inline">Khôi phục vị trí</span>
-            </button>
-          )}
           <button
             onClick={onOpenSearch}
             className="w-10 h-10 rounded-2xl bg-[#121212] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm"
@@ -1282,30 +1193,20 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         )}
       </div>
 
-      {/* 4. REORDERABLE CARDS & CHARTS */}
-      <Reorder.Group
-        as="div"
-        axis="y"
-        values={cardOrder}
-        onReorder={handleReorder}
-        className="space-y-2.5 mt-2.5"
-      >
-        {cardOrder.map((cardId) => {
+      {/* 4. CARDS & CHARTS */}
+      <div className="space-y-2.5 mt-2.5">
+        {DEFAULT_CARD_ORDER.map((cardId) => {
           if (!shouldRenderCard(cardId)) return null;
 
-          return (
-            <ReorderableCardItem key={cardId} id={cardId}>
-              {(controls) => {
-                switch (cardId) {
-                  case 'kpis':
-                    return (
-                      <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-4 border border-neutral-800 shadow-sm space-y-2.5">
-                        <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
-                          <span className="text-xs font-extrabold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <BarChart3 size={15} className="text-white" /> KPIs Tổng quan
-                          </span>
-                          <DragHandle controls={controls} />
-                        </div>
+          switch (cardId) {
+            case 'kpis':
+              return (
+                <div key={cardId} className="bg-[#121212] rounded-2xl p-3.5 sm:p-4 border border-neutral-800 shadow-sm space-y-2.5">
+                  <div className="border-b border-neutral-800/80 pb-2">
+                    <span className="text-xs font-extrabold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <BarChart3 size={15} className="text-white" /> KPIs Tổng quan
+                    </span>
+                  </div>
                         <div className="grid grid-cols-2 gap-2.5">
                           <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800 shadow-xs">
                             <div className="text-[11px] font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
@@ -1382,7 +1283,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             >
                               {isTxListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                             </button>
-                            <DragHandle controls={controls} />
                           </div>
                         </div>
 
@@ -1486,7 +1386,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             >
                               {isInsightsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                             </button>
-                            <DragHandle controls={controls} />
                           </div>
                         </div>
 
@@ -1541,9 +1440,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   case 'empty_state':
                     return (
                       <div className="bg-[#121212] border border-neutral-800 rounded-2xl p-6 sm:p-8 text-center space-y-3 relative">
-                        <div className="absolute top-3 right-3">
-                          <DragHandle controls={controls} />
-                        </div>
                         <div className="w-14 h-14 rounded-2xl bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center mx-auto text-neutral-400 shadow-inner">
                           <AlertCircle size={28} />
                         </div>
@@ -1576,7 +1472,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 <span className="w-2.5 h-2.5 rounded-full bg-rose-400" /> Chi
                               </span>
                             </div>
-                            <DragHandle controls={controls} />
                           </div>
                         </div>
 
@@ -1625,7 +1520,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             <BarChart3 size={18} className="text-blue-400" />
                             Dòng tiền ròng (Net = Thu − Chi)
                           </h3>
-                          <DragHandle controls={controls} />
                         </div>
 
                         <div className="h-48 w-full pt-2">
@@ -1677,7 +1571,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             <span className="text-xs font-bold text-neutral-300 font-mono">
                               {formatVND(categoryBreakdown.totalExpenseInFilter)}
                             </span>
-                            <DragHandle controls={controls} />
                           </div>
                         </div>
 
@@ -1778,7 +1671,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 </span>
                               )}
                             </div>
-                            <DragHandle controls={controls} />
                           </div>
                         </div>
 
@@ -1838,7 +1730,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 <span className="w-2.5 h-2.5 rounded-full bg-blue-400" /> Bank
                               </span>
                             </div>
-                            <DragHandle controls={controls} />
                           </div>
                         </div>
 
@@ -1875,7 +1766,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             <Scale size={18} className="text-white" />
                             So sánh với kỳ trước
                           </h3>
-                          <DragHandle controls={controls} />
                         </div>
 
                         <div className="space-y-2.5 pt-1">
@@ -1993,7 +1883,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             <Users size={18} className="text-[#94a3b8]" />
                             Thống kê Công nợ & Vay mượn (Độc lập)
                           </h3>
-                          <DragHandle controls={controls} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-2.5">
@@ -2050,11 +1939,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   default:
                     return null;
                 }
-              }}
-            </ReorderableCardItem>
-          );
         })}
-      </Reorder.Group>
+      </div>
     </div>
   );
 };
