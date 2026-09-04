@@ -28,29 +28,13 @@ interface LiquidGlassContextType {
   isDirty: boolean;
 }
 
-const STORAGE_KEY = 'fima_liquid_glass_config_v1';
-const USER_DEFAULT_KEY = 'fima_liquid_glass_user_default_v1';
+const STORAGE_KEY = 'fima_liquid_glass_config_v2';
+const USER_DEFAULT_KEY = 'fima_liquid_glass_user_default_v2';
 
 const LiquidGlassContext = createContext<LiquidGlassContextType | null>(null);
 
 export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Helper to load user's custom default or standard default
   const getInitialDefault = (): LiquidGlassConfig => {
-    try {
-      const userDef = localStorage.getItem(USER_DEFAULT_KEY);
-      if (userDef) {
-        const parsed = JSON.parse(userDef);
-        if (parsed && parsed.island && parsed.activeTab) {
-          return {
-            preset: parsed.preset || 'custom',
-            island: { ...DEFAULT_ISLAND_CONFIG, ...parsed.island },
-            activeTab: { ...DEFAULT_ACTIVE_TAB_CONFIG, ...parsed.activeTab },
-          };
-        }
-      }
-    } catch (e) {
-      console.error('Error loading custom default', e);
-    }
     return DEFAULT_LIQUID_GLASS_CONFIG;
   };
 
@@ -70,7 +54,7 @@ export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } catch (e) {
       console.error('Error loading liquid glass config from storage', e);
     }
-    return getInitialDefault();
+    return DEFAULT_LIQUID_GLASS_CONFIG;
   });
 
   const [config, setConfig] = useState<LiquidGlassConfig>(savedConfig);

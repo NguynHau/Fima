@@ -7,7 +7,6 @@ import {
   Check,
   Undo2,
   Redo2,
-  BookmarkCheck,
   Copy,
   Layers,
   PieChart,
@@ -54,7 +53,6 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
     resetAll,
     resetToOriginalDefault,
     saveCurrentConfig,
-    setAsNewDefault,
     undo,
     redo,
     canUndo,
@@ -62,7 +60,8 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
     isDirty,
   } = useLiquidGlass();
 
-  const [activeSubTab, setActiveSubTab] = useState<'presets' | 'island' | 'droplet' | 'export'>('presets');
+  const [mainTab, setMainTab] = useState<'presets' | 'custom'>('presets');
+  const [customSubTab, setCustomSubTab] = useState<'island' | 'droplet' | 'export'>('island');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showControls, setShowControls] = useState(true);
@@ -336,123 +335,220 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
           </div>
 
           {/* Header Action Tools */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
-            <button
-              onClick={undo}
-              disabled={!canUndo}
-              className="w-8 h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-              title="Hoàn tác (Undo)"
-            >
-              <Undo2 size={15} />
-            </button>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            {/* Top row: 3 buttons undo, tiến (redo), reset */}
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <button
+                onClick={undo}
+                disabled={!canUndo}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                title="Hoàn tác (Undo)"
+              >
+                <Undo2 size={14} />
+              </button>
 
-            <button
-              onClick={redo}
-              disabled={!canRedo}
-              className="w-8 h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-              title="Làm lại (Redo)"
-            >
-              <Redo2 size={15} />
-            </button>
+              <button
+                onClick={redo}
+                disabled={!canRedo}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                title="Làm lại (Tiến/Redo)"
+              >
+                <Redo2 size={14} />
+              </button>
 
-            <button
-              onClick={() => {
-                resetAll();
-                showToast('Đã khôi phục về mặc định!');
-              }}
-              className="w-8 h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-              title="Đặt lại mặc định (Reset)"
-            >
-              <RotateCcw size={15} />
-            </button>
+              <button
+                onClick={() => {
+                  resetAll();
+                  showToast('Đã khôi phục về mặc định!');
+                }}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                title="Đặt lại mặc định (Reset)"
+              >
+                <RotateCcw size={14} />
+              </button>
+            </div>
 
-            <button
-              onClick={() => {
-                setAsNewDefault();
-                showToast('Đã đặt cấu hình hiện tại làm Mặc định mới!');
-              }}
-              className="px-2.5 py-1.5 rounded-xl bg-neutral-800/90 hover:bg-neutral-700 text-amber-300 hover:text-amber-200 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border border-amber-500/20"
-              title="Lưu thông số này làm mẫu mặc định mỗi khi Reset"
-            >
-              <BookmarkCheck size={14} />
-              <span className="hidden sm:inline">Làm mặc định</span>
-            </button>
-
+            {/* Bottom: Nút Lưu có theme tím hồng gradient */}
             <button
               onClick={() => {
                 saveCurrentConfig();
                 showToast('Đã lưu cấu hình Liquid Glass thành công!');
               }}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+              className="w-full px-3 py-1 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-[11px] sm:text-xs font-black flex items-center justify-center gap-1.5 shadow-md shadow-pink-900/30 active:scale-95 cursor-pointer transition-all border border-pink-400/25"
               title="Lưu cấu hình"
             >
-              <Check size={14} strokeWidth={2.5} />
+              <Check size={13} strokeWidth={2.5} />
               <span>{isDirty ? 'Lưu' : 'Đã lưu'}</span>
             </button>
           </div>
         </div>
 
-        {/* Studio Sub Tabs Bar */}
-        <div className="flex items-center px-4 gap-2 overflow-x-auto no-scrollbar pb-2.5 pt-1">
-          <button
-            onClick={() => setActiveSubTab('presets')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeSubTab === 'presets'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'bg-neutral-800/70 text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            <Sparkles size={13} />
-            <span>Chủ đề theo mức độ ({PRESET_INFOS.length})</span>
-          </button>
+        {/* CHỦ ĐỀ THEO MỨC ĐỘ & TÙY CHỈNH NẰM TRONG 1 THẺ */}
+        <div className="px-4 pt-1.5 pb-2">
+          <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm">
+            <div className="grid grid-cols-2 gap-1.5 relative select-none">
+              <button
+                type="button"
+                onClick={() => setMainTab('presets')}
+                className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+                  mainTab === 'presets'
+                    ? 'text-black'
+                    : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                }`}
+              >
+                {mainTab === 'presets' && (
+                  <motion.div
+                    layoutId="liquid_studio_main_tab"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-white rounded-xl shadow-sm"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Sparkles
+                    size={16}
+                    className={mainTab === 'presets' ? 'text-black' : 'text-neutral-400'}
+                  />
+                  <span>Chủ đề theo mức độ</span>
+                </span>
+              </button>
 
-          <button
-            onClick={() => setActiveSubTab('island')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeSubTab === 'island'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-neutral-800/70 text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            <Sliders size={13} />
-            <span>Đảo chính (Main Island)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('droplet')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeSubTab === 'droplet'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-neutral-800/70 text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            <Layers size={13} />
-            <span>Giọt nước chọn tab (Active Tab)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('export')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-              activeSubTab === 'export'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'bg-neutral-800/70 text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            <Copy size={13} />
-            <span>Mã CSS / Xuất</span>
-          </button>
-
-          <div className="ml-auto shrink-0">
-            <button
-              onClick={() => setShowControls((prev) => !prev)}
-              className="px-2.5 py-1.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
-              title={showControls ? 'Thu gọn bảng để quan sát rộng hơn' : 'Hiện bảng điều khiển'}
-            >
-              {showControls ? <EyeOff size={13} /> : <Eye size={13} />}
-              <span className="hidden sm:inline">{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setMainTab('custom')}
+                className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+                  mainTab === 'custom'
+                    ? 'text-black'
+                    : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                }`}
+              >
+                {mainTab === 'custom' && (
+                  <motion.div
+                    layoutId="liquid_studio_main_tab"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-white rounded-xl shadow-sm"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Sliders
+                    size={16}
+                    className={mainTab === 'custom' ? 'text-black' : 'text-neutral-400'}
+                  />
+                  <span>Tùy chỉnh</span>
+                </span>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* KHI ẤN QUA TÙY CHỈNH: ĐẢO CHÍNH - GIỌT NƯỚC - MÃ CSS NẰM TRONG 1 THẺ (STYLE TƯƠNG TỰ) */}
+        {mainTab === 'custom' && (
+          <div className="px-4 pb-2.5 space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm">
+              <div className="grid grid-cols-3 gap-1.5 relative select-none">
+                <button
+                  type="button"
+                  onClick={() => setCustomSubTab('island')}
+                  className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                    customSubTab === 'island'
+                      ? 'text-black'
+                      : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                  }`}
+                >
+                  {customSubTab === 'island' && (
+                    <motion.div
+                      layoutId="liquid_studio_custom_subtab"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute inset-0 bg-white rounded-xl shadow-sm"
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-1.5">
+                    <Sliders
+                      size={15}
+                      className={customSubTab === 'island' ? 'text-black' : 'text-neutral-400'}
+                    />
+                    <span>Đảo chính</span>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCustomSubTab('droplet')}
+                  className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                    customSubTab === 'droplet'
+                      ? 'text-black'
+                      : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                  }`}
+                >
+                  {customSubTab === 'droplet' && (
+                    <motion.div
+                      layoutId="liquid_studio_custom_subtab"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute inset-0 bg-white rounded-xl shadow-sm"
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-1.5">
+                    <Layers
+                      size={15}
+                      className={customSubTab === 'droplet' ? 'text-black' : 'text-neutral-400'}
+                    />
+                    <span>Giọt nước</span>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCustomSubTab('export')}
+                  className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                    customSubTab === 'export'
+                      ? 'text-black'
+                      : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                  }`}
+                >
+                  {customSubTab === 'export' && (
+                    <motion.div
+                      layoutId="liquid_studio_custom_subtab"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute inset-0 bg-white rounded-xl shadow-sm"
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-1.5">
+                    <Copy
+                      size={15}
+                      className={customSubTab === 'export' ? 'text-black' : 'text-neutral-400'}
+                    />
+                    <span>Mã CSS</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end px-1">
+              <button
+                type="button"
+                onClick={() => setShowControls((prev) => !prev)}
+                className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                title={showControls ? 'Thu gọn bảng để quan sát rộng hơn' : 'Hiện bảng điều khiển'}
+              >
+                {showControls ? <EyeOff size={12} /> : <Eye size={12} />}
+                <span>{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Khi ở Chủ đề theo mức độ: Hàng tinh gọn với nút ẩn/hiện bảng */}
+        {mainTab === 'presets' && (
+          <div className="flex items-center justify-between px-4 pb-2 text-[11px] text-neutral-400">
+            <span>Chọn mức độ kính ({PRESET_INFOS.length} cấp độ):</span>
+            <button
+              onClick={() => setShowControls((prev) => !prev)}
+              className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs flex items-center gap-1 cursor-pointer"
+            >
+              {showControls ? <EyeOff size={12} /> : <Eye size={12} />}
+              <span>{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Toast feedback */}
@@ -473,7 +569,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         }`}
       >
         {/* SUBTAB 1: PRESETS THEO MỨC ĐỘ */}
-        {activeSubTab === 'presets' && (
+        {mainTab === 'presets' && (
           <div className="space-y-3 max-w-xl mx-auto">
             <div className="bg-[#121418] rounded-2xl p-3 border border-neutral-800 text-xs text-neutral-400 flex items-start gap-2">
               <Info size={16} className="text-purple-400 shrink-0 mt-0.5" />
@@ -533,7 +629,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         )}
 
         {/* SUBTAB 2: CHỈNH ĐẢO CHÍNH (MAIN ISLAND) */}
-        {activeSubTab === 'island' && (
+        {mainTab === 'custom' && customSubTab === 'island' && (
           <div className="space-y-4 max-w-xl mx-auto">
             {/* Nhóm Hình học & Bo góc */}
             <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800/80 space-y-3">
@@ -787,7 +883,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         )}
 
         {/* SUBTAB 3: CHỈNH GIỌT NƯỚC CHỌN TAB (ACTIVE TAB CIRCLE) */}
-        {activeSubTab === 'droplet' && (
+        {mainTab === 'custom' && customSubTab === 'droplet' && (
           <div className="space-y-4 max-w-xl mx-auto">
             {/* Nhóm Kích thước & Phình nước */}
             <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800/80 space-y-3">
@@ -900,9 +996,9 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                   </div>
                   <input
                     type="range"
-                    min="0.02"
+                    min="0"
                     max="0.60"
-                    step="0.02"
+                    step="0.01"
                     value={config.activeTab.bgOpacity}
                     onChange={(e) => updateActiveTab({ bgOpacity: Number(e.target.value) })}
                     className="w-full accent-cyan-500 cursor-pointer"
@@ -945,7 +1041,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                   <input
                     type="range"
                     min="150"
-                    max="800"
+                    max="1200"
                     step="10"
                     value={config.activeTab.moveStiffness}
                     onChange={(e) => updateActiveTab({ moveStiffness: Number(e.target.value) })}
@@ -985,7 +1081,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         )}
 
         {/* SUBTAB 4: MÃ CSS / XUẤT */}
-        {activeSubTab === 'export' && (
+        {mainTab === 'custom' && customSubTab === 'export' && (
           <div className="space-y-4 max-w-xl mx-auto">
             <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800 space-y-3">
               <div className="flex items-center justify-between">

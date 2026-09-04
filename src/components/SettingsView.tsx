@@ -66,13 +66,24 @@ const SettingsCardHeader: React.FC<SettingsCardHeaderProps> = ({
       {isDanger ? (
         <Icon size={18} className="text-rose-500 shrink-0" strokeWidth={2.3} />
       ) : (
-        <Icon
-          size={18}
-          className="shrink-0"
-          color="url(#settings-pink-purple-grad)"
-          stroke="url(#settings-pink-purple-grad)"
-          strokeWidth={2.3}
-        />
+        <span className="relative shrink-0 flex items-center justify-center">
+          <svg className="w-0 h-0 absolute pointer-events-none" aria-hidden="true">
+            <defs>
+              <linearGradient id="settings-pink-purple-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24">
+                <stop offset="0%" stopColor="#f472b6" />
+                <stop offset="50%" stopColor="#e879f9" />
+                <stop offset="100%" stopColor="#c084fc" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <Icon
+            size={18}
+            className="shrink-0"
+            color="url(#settings-pink-purple-grad)"
+            stroke="url(#settings-pink-purple-grad)"
+            strokeWidth={2.3}
+          />
+        </span>
       )}
       <h3
         className={`text-xs sm:text-sm font-black uppercase tracking-wider ${
@@ -302,7 +313,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* SVG Gradient Defs for Settings Logos */}
       <svg className="w-0 h-0 absolute pointer-events-none" aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
-          <linearGradient id="settings-pink-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="settings-pink-purple-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24">
             <stop offset="0%" stopColor="#f472b6" />
             <stop offset="50%" stopColor="#e879f9" />
             <stop offset="100%" stopColor="#c084fc" />
@@ -310,21 +321,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </defs>
       </svg>
 
-      {/* 1. SECTION: TÀI CHÍNH */}
+      {/* 1. SECTION: SỐ DƯ BAN ĐẦU */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
           icon={Wallet}
-          title="Tài chính & Số dư ban đầu"
+          title="Số dư ban đầu"
           description="Số dư ban đầu là số tiền gốc trong Ví và Ngân hàng khi bạn bắt đầu theo dõi thu chi. Việc thay đổi số dư này sẽ ảnh hưởng trực tiếp đến tổng tài sản hiện có."
         />
 
         <button
           type="button"
           onClick={() => setShowWarningModal(true)}
-          className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-md"
+          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
-          <Edit3 size={16} />
-          Chỉnh sửa
+          <Edit3 size={16} className="text-neutral-300" />
+          <span>Chỉnh sửa</span>
         </button>
       </div>
 
@@ -339,35 +350,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <button
           type="button"
           onClick={() => onSetCategoryModalOpen(true)}
-          className="w-full p-3.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-98 group"
+          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex items-center -space-x-2 shrink-0">
-              {expenseCategories.slice(0, 2).map((c) => (
-                <div key={c.id} className="relative z-10">
-                  <CategoryIcon category={c.name} type="expense" size={14} showBackground={false} />
-                </div>
-              ))}
-              {incomeCategories.slice(0, 1).map((c) => (
-                <div key={c.id} className="relative z-0">
-                  <CategoryIcon category={c.name} type="income" size={14} showBackground={false} />
-                </div>
-              ))}
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-bold text-white group-hover:text-pink-300 transition-colors">
-                Danh mục Thu & Chi
-              </div>
-              <div className="text-[11px] text-neutral-400">
-                {expenseCategories.length} khoản chi • {incomeCategories.length} khoản thu
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1 text-neutral-400 group-hover:text-white transition-colors">
-            <span className="text-xs font-semibold">Chỉnh sửa</span>
-            <ChevronRight size={16} />
-          </div>
+          <Tag size={16} className="text-neutral-300 shrink-0" />
+          <span>Chỉnh sửa ({expenseCategories.length} khoản chi • {incomeCategories.length} khoản thu)</span>
         </button>
       </div>
 
@@ -382,26 +368,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <button
           type="button"
           onClick={onOpenLiquidGlassStudio}
-          className="w-full p-3.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 hover:border-neutral-700 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-98 group"
+          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500/15 via-fuchsia-500/15 to-pink-500/15 border border-purple-500/30 flex items-center justify-center text-pink-400 group-hover:scale-105 transition-transform shrink-0">
-              <Sliders size={18} color="url(#settings-pink-purple-grad)" stroke="url(#settings-pink-purple-grad)" />
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-bold text-white group-hover:text-pink-300 transition-colors">
-                Mở Liquid Glass Studio
-              </div>
-              <div className="text-[11px] text-neutral-400">
-                Toàn trang • Đảo giả lập thử nghiệm chuyển động
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1 text-neutral-400 group-hover:text-white transition-colors">
-            <span className="text-xs font-semibold">Tùy chỉnh</span>
-            <ChevronRight size={16} />
-          </div>
+          <Sliders size={16} className="text-neutral-300" />
+          <span>Mở liquid glass studio</span>
         </button>
       </div>
 
@@ -469,8 +439,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           onClick={onOpenInstallGuide}
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
-          <Smartphone size={16} color="url(#settings-pink-purple-grad)" stroke="url(#settings-pink-purple-grad)" />
-          Xem hướng dẫn cài đặt
+          <Smartphone size={16} className="text-neutral-300" />
+          <span>Xem hướng dẫn cài đặt</span>
         </button>
       </div>
 
