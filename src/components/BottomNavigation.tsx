@@ -217,7 +217,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             whileTap={{ scale: 0.88 }}
             whileHover={{ scale: 1.08 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="w-13 h-13 rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex items-center justify-center cursor-pointer outline-none touch-manipulation border-2 border-black"
+            className="w-[70px] h-[70px] rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex items-center justify-center cursor-pointer outline-none touch-manipulation border-none"
             aria-label="Thêm mới"
             title="Thêm mới"
           >

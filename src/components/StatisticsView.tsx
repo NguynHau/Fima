@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { motion } from 'motion/react';
+import { motion, Reorder, useDragControls } from 'motion/react';
 import {
   type Transaction,
   type BalancesSummary,
@@ -42,6 +42,8 @@ import {
   ChevronUp,
   List,
   X,
+  GripVertical,
+  RotateCcw,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -279,6 +281,63 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
   );
 };
 
+const DEFAULT_CARD_ORDER = [
+  'kpis',
+  'tx_list',
+  'insights',
+  'empty_state',
+  'chart_income_vs_expense',
+  'chart_net_cashflow',
+  'chart_category_expense',
+  'chart_balance_over_time',
+  'chart_wallet_vs_bank',
+  'compare_prev_period',
+  'debt_summary',
+];
+
+function DragHandle({ controls }: { controls: ReturnType<typeof useDragControls> }) {
+  return (
+    <div
+      onPointerDown={(e) => {
+        e.preventDefault();
+        controls.start(e);
+      }}
+      className="p-1.5 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] active:bg-[#333] border border-neutral-800 text-neutral-400 hover:text-white cursor-grab active:cursor-grabbing touch-none select-none shrink-0 transition-colors flex items-center justify-center"
+      title="Nhấn đè và kéo để sắp xếp thứ tự"
+    >
+      <GripVertical size={16} />
+    </div>
+  );
+}
+
+function ReorderableCardItem({
+  id,
+  children,
+}: {
+  id: string;
+  children: (controls: ReturnType<typeof useDragControls>) => React.ReactNode;
+}) {
+  const controls = useDragControls();
+
+  return (
+    <Reorder.Item
+      as="div"
+      value={id}
+      id={id}
+      dragControls={controls}
+      dragListener={false}
+      className="relative touch-none select-none transition-shadow rounded-2xl"
+      whileDrag={{
+        scale: 1.02,
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7)',
+        zIndex: 50,
+      }}
+    >
+      {children(controls)}
+    </Reorder.Item>
+  );
+}
+
 export const StatisticsView: React.FC<StatisticsViewProps> = ({
   transactions,
   balances,
@@ -295,6 +354,40 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   const [isTxListOpen, setIsTxListOpen] = useState(false);
   const [isInsightsOpen, setIsInsightsOpen] = useState(false);
   const [txListFilter, setTxListFilter] = useState<'all' | 'expense' | 'income'>('all');
+
+  // CARD REORDERING STATE
+  const [cardOrder, setCardOrder] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('stats_chart_order_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const validKeys = parsed.filter((key) => DEFAULT_CARD_ORDER.includes(key));
+          const missingKeys = DEFAULT_CARD_ORDER.filter((key) => !parsed.includes(key));
+          return [...validKeys, ...missingKeys];
+        }
+      }
+    } catch {}
+    return DEFAULT_CARD_ORDER;
+  });
+
+  const handleReorder = (newOrder: string[]) => {
+    setCardOrder(newOrder);
+    try {
+      localStorage.setItem('stats_chart_order_v1', JSON.stringify(newOrder));
+    } catch {}
+  };
+
+  const resetCardOrder = () => {
+    setCardOrder(DEFAULT_CARD_ORDER);
+    try {
+      localStorage.removeItem('stats_chart_order_v1');
+    } catch {}
+  };
+
+  const isCustomOrder = useMemo(() => {
+    return JSON.stringify(cardOrder) !== JSON.stringify(DEFAULT_CARD_ORDER);
+  }, [cardOrder]);
 
   const accountTabs: CalendarAccountFilter[] = ['all', 'wallet', 'bank'];
   const accountControlRef = useRef<HTMLDivElement>(null);
@@ -955,6 +1048,25 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
   const hasDataInPeriod = filteredTransactions.length > 0;
 
+  const shouldRenderCard = (cardId: string) => {
+    if (cardId === 'kpis') return true;
+    if (cardId === 'tx_list') return true;
+    if (cardId === 'insights') return true;
+    if (cardId === 'compare_prev_period') return true;
+    if (cardId === 'debt_summary') return !!debtStats;
+    if (cardId === 'empty_state') return !hasDataInPeriod;
+
+    if (!hasDataInPeriod) return false;
+
+    if (cardId === 'chart_income_vs_expense') return true;
+    if (cardId === 'chart_net_cashflow') return true;
+    if (cardId === 'chart_category_expense') return true;
+    if (cardId === 'chart_balance_over_time') return true;
+    if (cardId === 'chart_wallet_vs_bank') return accountFilter === 'all';
+
+    return false;
+  };
+
   return (
     <div className="space-y-4 pb-24 text-neutral-100">
       {/* 1. HEADER */}
@@ -969,94 +1081,107 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onOpenSearch}
-          className="w-10 h-10 rounded-2xl bg-[#121212] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm"
-          title="Tìm kiếm giao dịch"
-        >
-          <Search size={20} strokeWidth={2.5} />
-        </button>
+        <div className="flex items-center gap-2">
+          {isCustomOrder && (
+            <button
+              onClick={resetCardOrder}
+              className="h-10 px-3 rounded-2xl bg-[#121212] hover:bg-[#1a1a1a] active:scale-95 border border-neutral-800 text-neutral-400 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-sm text-xs font-bold"
+              title="Khôi phục thứ tự biểu đồ mặc định"
+            >
+              <RotateCcw size={15} />
+              <span className="hidden sm:inline">Khôi phục vị trí</span>
+            </button>
+          )}
+          <button
+            onClick={onOpenSearch}
+            className="w-10 h-10 rounded-2xl bg-[#121212] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm"
+            title="Tìm kiếm giao dịch"
+          >
+            <Search size={20} strokeWidth={2.5} />
+          </button>
+        </div>
       </div>
 
       {/* AI ASSISTANT SECTION */}
       <AIAssistantSection transactions={transactions} />
 
-      {/* 2. ACCOUNT FILTER */}
-      <div
-        ref={accountControlRef}
-        onPointerDown={handleAccountPointerDown}
-        onPointerMove={handleAccountPointerMove}
-        onPointerUp={handleAccountPointerUp}
-        onPointerCancel={handleAccountPointerUp}
-        className="bg-[#121212] border border-neutral-800 p-1.5 rounded-2xl grid grid-cols-3 gap-2 shadow-sm relative touch-none select-none"
-      >
-        <button
-          type="button"
-          onClick={() => setAccountFilter('all')}
-          className={`relative py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-            accountFilter === 'all'
-              ? 'text-black font-extrabold'
-              : 'text-neutral-400 hover:text-neutral-200'
-          }`}
-        >
-          {accountFilter === 'all' && (
-            <motion.div
-              layoutId="stats_account_filter_tab"
-              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              className="absolute inset-0 bg-white rounded-xl shadow-xs"
-            />
-          )}
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            <Layers size={16} />
-            <span>Tất cả</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setAccountFilter('wallet')}
-          className={`relative py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-            accountFilter === 'wallet'
-              ? 'text-amber-300 font-extrabold'
-              : 'text-neutral-400 hover:text-neutral-200'
-          }`}
-        >
-          {accountFilter === 'wallet' && (
-            <motion.div
-              layoutId="stats_account_filter_tab"
-              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-xl shadow-xs"
-            />
-          )}
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            <Wallet size={16} className="text-amber-400" />
-            <span>Ví</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setAccountFilter('bank')}
-          className={`relative py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-            accountFilter === 'bank'
-              ? 'text-blue-300 font-extrabold'
-              : 'text-neutral-400 hover:text-neutral-200'
-          }`}
-        >
-          {accountFilter === 'bank' && (
-            <motion.div
-              layoutId="stats_account_filter_tab"
-              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              className="absolute inset-0 bg-blue-500/25 border border-blue-500/40 rounded-xl shadow-xs"
-            />
-          )}
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            <Building2 size={16} className="text-blue-400" />
-            <span>Bank</span>
-          </span>
-        </button>
-      </div>
-
-      {/* 3. TIME FILTER & NAVIGATION */}
+      {/* 2 & 3. FILTERS (Account & Time) */}
       <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">
+        {/* Account Filter */}
+        <div
+          ref={accountControlRef}
+          onPointerDown={handleAccountPointerDown}
+          onPointerMove={handleAccountPointerMove}
+          onPointerUp={handleAccountPointerUp}
+          onPointerCancel={handleAccountPointerUp}
+          className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
+        >
+          <button
+            type="button"
+            onClick={() => setAccountFilter('all')}
+            className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+              accountFilter === 'all'
+                ? 'text-black font-extrabold'
+                : 'text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            {accountFilter === 'all' && (
+              <motion.div
+                layoutId="stats_account_filter_tab"
+                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                className="absolute inset-0 bg-white rounded-lg shadow-xs"
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <Layers size={16} />
+              <span>Tất cả</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountFilter('wallet')}
+            className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+              accountFilter === 'wallet'
+                ? 'text-amber-300 font-extrabold'
+                : 'text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            {accountFilter === 'wallet' && (
+              <motion.div
+                layoutId="stats_account_filter_tab"
+                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-lg shadow-xs"
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <Wallet size={16} className="text-amber-400" />
+              <span>Ví</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountFilter('bank')}
+            className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+              accountFilter === 'bank'
+                ? 'text-blue-300 font-extrabold'
+                : 'text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            {accountFilter === 'bank' && (
+              <motion.div
+                layoutId="stats_account_filter_tab"
+                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                className="absolute inset-0 bg-blue-500/25 border border-blue-500/40 rounded-lg shadow-xs"
+              />
+            )}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <Building2 size={16} className="text-blue-400" />
+              <span>Bank</span>
+            </span>
+          </button>
+        </div>
+
+        {/* Time Filter */}
         <div
           ref={timeControlRef}
           onPointerDown={handleTimePointerDown}
@@ -1157,687 +1282,779 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         )}
       </div>
 
-      {/* 4. OVERVIEW KPIs (4 Cards) */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {/* Total Income */}
-        <div className="bg-[#121212] rounded-2xl p-3.5 border border-neutral-800 shadow-sm">
-          <div className="text-xs font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
-            <TrendingUp size={15} className="text-emerald-400" /> Thu nhập
-          </div>
-          <div className="text-sm sm:text-lg font-black text-emerald-400 mt-1.5 truncate font-mono">
-            +{formatVND(currentKPI.income)}
-          </div>
-        </div>
+      {/* 4. REORDERABLE CARDS & CHARTS */}
+      <Reorder.Group
+        as="div"
+        axis="y"
+        values={cardOrder}
+        onReorder={handleReorder}
+        className="space-y-2.5 mt-2.5"
+      >
+        {cardOrder.map((cardId) => {
+          if (!shouldRenderCard(cardId)) return null;
 
-        {/* Total Expense */}
-        <div className="bg-[#121212] rounded-2xl p-3.5 border border-neutral-800 shadow-sm">
-          <div className="text-xs font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
-            <TrendingDown size={15} className="text-rose-400" /> Chi tiêu
-          </div>
-          <div className="text-sm sm:text-lg font-black text-rose-400 mt-1.5 truncate font-mono">
-            −{formatVND(currentKPI.expense)}
-          </div>
-        </div>
-
-        {/* Net Difference */}
-        <div className="bg-[#121212] rounded-2xl p-3.5 border border-neutral-800 shadow-sm">
-          <div className="text-xs font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
-            <Scale size={15} className="text-neutral-400" /> Chênh lệch
-          </div>
-          <div
-            className={`text-sm sm:text-lg font-black mt-1.5 truncate font-mono ${
-              currentKPI.net !== 0
-                ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400'
-                : 'text-neutral-200'
-            }`}
-          >
-            {formatSignedVND(currentKPI.net, 'net')}
-          </div>
-        </div>
-
-        {/* Current Available Balance */}
-        <div className="bg-[#121212] rounded-2xl p-3.5 border border-neutral-800 shadow-sm">
-          <div className="text-xs font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
-            <Wallet size={15} className="text-amber-400" /> Tiền hiện có
-          </div>
-          <div className="text-sm sm:text-lg font-black text-white mt-1.5 truncate font-mono">
-            {formatVND(availableBalance)}
-          </div>
-        </div>
-      </div>
-
-      {/* 12. TRANSACTION LIST (DROPDOWN) */}
-      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden mt-2.5">
-        <button
-          onClick={() => setIsTxListOpen(!isTxListOpen)}
-          className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#1a1a1a] transition-colors active:bg-[#222]"
-        >
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-9 h-9 rounded-xl bg-neutral-800/50 flex items-center justify-center border border-neutral-700/50 text-neutral-300">
-              <List size={18} />
-            </div>
-            <div className="text-left">
-              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
-                Danh sách giao dịch
-              </h3>
-              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
-                {filteredTransactions.length} giao dịch trong kỳ
-              </p>
-            </div>
-          </div>
-          <div className="text-neutral-400 bg-[#1a1a1a] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800">
-            {isTxListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </div>
-        </button>
-
-        {isTxListOpen && (
-          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-4">
-            {/* Filter */}
-            <div className="flex p-1 bg-[#1a1a1a] rounded-xl border border-neutral-800">
-              {(['all', 'expense', 'income'] as const).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setTxListFilter(filter)}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    txListFilter === filter
-                      ? filter === 'expense'
-                        ? 'bg-rose-500/20 text-rose-300 shadow-xs'
-                        : filter === 'income'
-                        ? 'bg-emerald-500/20 text-emerald-300 shadow-xs'
-                        : 'bg-white text-black shadow-xs'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
-                  }`}
-                >
-                  {filter === 'all' && 'Tất cả'}
-                  {filter === 'expense' && 'Chi'}
-                  {filter === 'income' && 'Thu'}
-                </button>
-              ))}
-            </div>
-
-            {/* List */}
-            <div className="space-y-2">
-              {visibleTransactions.length === 0 ? (
-                <div className="py-8 text-center text-neutral-500 text-xs font-bold">
-                  Không có giao dịch nào
-                </div>
-              ) : (
-                visibleTransactions.map((tx) => (
-                  <div
-                    key={tx.id}
-                    onClick={() => onSelectTransaction?.(tx)}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98 transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <CategoryIcon category={tx.category} type={tx.type} size={18} />
-                      <div>
-                        <div className="text-xs sm:text-sm font-bold text-neutral-200">
-                          {tx.category}
-                        </div>
-                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 flex items-center gap-1.5">
-                          <span>{formatDateVN(tx.date)}</span>
-                          {tx.note && (
-                            <>
-                              <span className="w-1 h-1 rounded-full bg-neutral-600" />
-                              <span className="truncate max-w-[120px]">{tx.note}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className={`text-sm font-black font-mono ${
-                        tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                      }`}
-                    >
-                      {formatSignedVND(tx.amount, tx.type)}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 11. INSIGHTS CARDS (DROPDOWN) */}
-      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden mt-2.5">
-        <button
-          onClick={() => setIsInsightsOpen(!isInsightsOpen)}
-          className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#1a1a1a] transition-colors active:bg-[#222]"
-        >
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-neutral-300">
-              <Sparkles size={18} className="text-amber-400" />
-            </div>
-            <div className="text-left">
-              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
-                Gợi ý & Thông tin nhanh
-              </h3>
-              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
-                {quickInsights.length} điểm nổi bật
-              </p>
-            </div>
-          </div>
-          <div className="text-neutral-400 bg-[#1a1a1a] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800">
-            {isInsightsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </div>
-        </button>
-
-        {isInsightsOpen && (
-          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-2">
-            {quickInsights.length === 0 ? (
-              <div className="py-6 text-center text-xs font-bold text-neutral-500">
-                Không đủ dữ liệu để tạo gợi ý
-              </div>
-            ) : (
-              quickInsights.map(insight => (
-                <div
-                  key={insight.id}
-                  onClick={insight.onClick}
-                  className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                    insight.onClick
-                      ? 'bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98'
-                      : 'bg-[#1a1a1a] border border-neutral-800/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${insight.colorClass}`}>
-                      {insight.icon}
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-bold text-neutral-200">
-                        {insight.title}
-                      </div>
-                      {insight.subText && (
-                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 max-w-[150px] sm:max-w-[200px] truncate">
-                          {insight.subText}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="text-right flex flex-col justify-center items-end">
-                    <div className="text-sm font-black text-white font-mono">
-                      {insight.valueText}
-                    </div>
-                    {insight.hasArrow && insight.onClick && (
-                      <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
-                        Chi tiết <ArrowRight size={10} />
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
-      {!hasDataInPeriod ? (
-        /* Empty State */
-        <div className="bg-[#121212] border border-neutral-800 rounded-2xl p-8 text-center my-4 space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center mx-auto text-neutral-400 shadow-inner">
-            <AlertCircle size={28} />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-extrabold text-white">Chưa có dữ liệu</h3>
-            <p className="text-xs sm:text-sm text-neutral-300 font-medium">
-              Không có giao dịch nào trong khoảng thời gian đã chọn.
-            </p>
-            <p className="text-xs text-white font-bold pt-1">
-              Thêm giao dịch đầu tiên để xem thống kê.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* 5. CHART 1 — THU NHẬP VS CHI TIÊU */}
-          <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                <LineChartIcon size={18} className="text-white" />
-                Thu nhập vs Chi tiêu
-              </h3>
-              <div className="flex items-center gap-3 text-xs font-bold">
-                <span className="flex items-center gap-1 text-emerald-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Thu
-                </span>
-                <span className="flex items-center gap-1 text-rose-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-400" /> Chi
-                </span>
-              </div>
-            </div>
-
-            <div className="h-52 w-full pt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={timeBucketsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="label" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={10}
-                    tickLine={false}
-                    tickFormatter={(val) => (val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val)}
-                  />
-                  <Tooltip content={<CustomChartTooltip />} />
-                  <Line
-                    type="monotone"
-                    dataKey="income"
-                    name="Thu nhập"
-                    stroke="#10b981"
-                    strokeWidth={2.5}
-                    dot={false}
-                    activeDot={{ r: 5 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="expense"
-                    name="Chi tiêu"
-                    stroke="#f43f5e"
-                    strokeWidth={2.5}
-                    dot={false}
-                    activeDot={{ r: 5 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* 6. CHART 2 — DÒNG TIỀN RÒNG (NET CASHFLOW BAR CHART) */}
-          <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                <BarChart3 size={18} className="text-blue-400" />
-                Dòng tiền ròng (Net = Thu − Chi)
-              </h3>
-            </div>
-
-            <div className="h-48 w-full pt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={timeBucketsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="netGradient" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#c084fc" />
-                      <stop offset="100%" stopColor="#f472b6" />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="label" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={10}
-                    tickLine={false}
-                    tickFormatter={(val) => (Math.abs(val) >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : Math.abs(val) >= 1000 ? `${(val / 1000).toFixed(0)}k` : val)}
-                  />
-                  <Tooltip content={<CustomChartTooltip />} />
-                  <Bar dataKey="net" name="Dòng tiền ròng" radius={[4, 4, 0, 0]}>
-                    {timeBucketsData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.net !== 0 ? 'url(#netGradient)' : '#64748b'}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* 7. CHART 3 — CHI TIÊU THEO HẠNG MỤC (EXPENSE DONUT CHART) */}
-          <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                <PieChartIcon size={18} className="text-purple-400" />
-                Chi tiêu theo hạng mục
-              </h3>
-              <span className="text-xs font-bold text-neutral-300 font-mono">
-                {formatVND(categoryBreakdown.totalExpenseInFilter)}
-              </span>
-            </div>
-
-            {categoryBreakdown.list.length === 0 ? (
-              <div className="py-6 text-center text-neutral-400 text-xs">
-                Không có khoản chi tiêu nào trong kỳ này.
-              </div>
-            ) : (
-              <>
-                {/* Donut Chart */}
-                <div className="flex items-center justify-center py-2">
-                  <div className="relative w-44 h-44 flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryBreakdown.list}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={48}
-                          outerRadius={72}
-                          paddingAngle={3}
-                          dataKey="amount"
-                        >
-                          {categoryBreakdown.list.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomChartTooltip />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-
-                    {/* Donut Center Text */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Tổng chi</span>
-                      <span className="text-xs sm:text-sm font-black text-rose-400 font-mono">
-                        {formatVND(categoryBreakdown.totalExpenseInFilter)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Categories Compact Ranking List */}
-                <div className="space-y-3 pt-1 border-t border-neutral-800">
-                  {categoryBreakdown.list.map((cat) => (
-                    <div key={cat.name} className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs sm:text-sm">
-                        <div className="flex items-center gap-2">
-                          <CategoryIcon category={cat.name} type="expense" size={16} />
-                          <span className="font-bold text-neutral-100 text-xs sm:text-sm">{cat.name}</span>
-                          <span className="text-xs text-neutral-400 font-medium">({cat.count})</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-extrabold text-white text-xs sm:text-sm font-mono">
-                            {formatVND(cat.amount)}
+          return (
+            <ReorderableCardItem key={cardId} id={cardId}>
+              {(controls) => {
+                switch (cardId) {
+                  case 'kpis':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl p-3.5 sm:p-4 border border-neutral-800 shadow-sm space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
+                          <span className="text-xs font-extrabold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <BarChart3 size={15} className="text-white" /> KPIs Tổng quan
                           </span>
-                          <span className="text-xs font-bold text-neutral-300 ml-2 font-mono">
-                            {cat.percentage.toFixed(1)}%
-                          </span>
+                          <DragHandle controls={controls} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800 shadow-xs">
+                            <div className="text-[11px] font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
+                              <TrendingUp size={14} className="text-emerald-400" /> Thu nhập
+                            </div>
+                            <div className="text-sm sm:text-base font-black text-emerald-400 mt-1 truncate font-mono">
+                              +{formatVND(currentKPI.income)}
+                            </div>
+                          </div>
+
+                          <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800 shadow-xs">
+                            <div className="text-[11px] font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
+                              <TrendingDown size={14} className="text-rose-400" /> Chi tiêu
+                            </div>
+                            <div className="text-sm sm:text-base font-black text-rose-400 mt-1 truncate font-mono">
+                              −{formatVND(currentKPI.expense)}
+                            </div>
+                          </div>
+
+                          <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800 shadow-xs">
+                            <div className="text-[11px] font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
+                              <Scale size={14} className="text-neutral-400" /> Chênh lệch
+                            </div>
+                            <div
+                              className={`text-sm sm:text-base font-black mt-1 truncate font-mono ${
+                                currentKPI.net !== 0
+                                  ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400'
+                                  : 'text-neutral-200'
+                              }`}
+                            >
+                              {formatSignedVND(currentKPI.net, 'net')}
+                            </div>
+                          </div>
+
+                          <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800 shadow-xs">
+                            <div className="text-[11px] font-bold text-neutral-400 flex items-center gap-1.5 uppercase tracking-wider">
+                              <Wallet size={14} className="text-amber-400" /> Tiền hiện có
+                            </div>
+                            <div className="text-sm sm:text-base font-black text-white mt-1 truncate font-mono">
+                              {formatVND(availableBalance)}
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    );
 
-                      {/* Bar Fill */}
-                      <div className="w-full h-2 bg-[#1a1a1a] rounded-full overflow-hidden border border-neutral-800">
-                        <div
-                          className="h-full rounded-full transition-all duration-300"
-                          style={{
-                            width: `${Math.min(100, Math.max(2, cat.percentage))}%`,
-                            backgroundColor: cat.color,
-                          }}
-                        />
+                  case 'tx_list':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
+                        <div className="w-full flex items-center justify-between p-4 sm:p-5">
+                          <button
+                            type="button"
+                            onClick={() => setIsTxListOpen(!isTxListOpen)}
+                            className="flex items-center gap-3 text-white text-left flex-1 cursor-pointer"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-neutral-800/50 flex items-center justify-center border border-neutral-700/50 text-neutral-300">
+                              <List size={18} />
+                            </div>
+                            <div>
+                              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
+                                Danh sách giao dịch
+                              </h3>
+                              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
+                                {filteredTransactions.length} giao dịch trong kỳ
+                              </p>
+                            </div>
+                          </button>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsTxListOpen(!isTxListOpen)}
+                              className="text-neutral-400 bg-[#1a1a1a] hover:bg-[#262626] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800 cursor-pointer"
+                            >
+                              {isTxListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                            </button>
+                            <DragHandle controls={controls} />
+                          </div>
+                        </div>
+
+                        {isTxListOpen && (
+                          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-4">
+                            <div className="flex p-1 bg-[#1a1a1a] rounded-xl border border-neutral-800">
+                              {(['all', 'expense', 'income'] as const).map((filter) => (
+                                <button
+                                  key={filter}
+                                  type="button"
+                                  onClick={() => setTxListFilter(filter)}
+                                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    txListFilter === filter
+                                      ? filter === 'expense'
+                                        ? 'bg-rose-500/20 text-rose-300 shadow-xs'
+                                        : filter === 'income'
+                                        ? 'bg-emerald-500/20 text-emerald-300 shadow-xs'
+                                        : 'bg-white text-black shadow-xs'
+                                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                                  }`}
+                                >
+                                  {filter === 'all' && 'Tất cả'}
+                                  {filter === 'expense' && 'Chi'}
+                                  {filter === 'income' && 'Thu'}
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className="space-y-2">
+                              {visibleTransactions.length === 0 ? (
+                                <div className="py-8 text-center text-neutral-500 text-xs font-bold">
+                                  Không có giao dịch nào
+                                </div>
+                              ) : (
+                                visibleTransactions.map((tx) => (
+                                  <div
+                                    key={tx.id}
+                                    onClick={() => onSelectTransaction?.(tx)}
+                                    className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98 transition-all"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <CategoryIcon category={tx.category} type={tx.type} size={18} />
+                                      <div>
+                                        <div className="text-xs sm:text-sm font-bold text-neutral-200">
+                                          {tx.category}
+                                        </div>
+                                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 flex items-center gap-1.5">
+                                          <span>{formatDateVN(tx.date)}</span>
+                                          {tx.note && (
+                                            <>
+                                              <span className="w-1 h-1 rounded-full bg-neutral-600" />
+                                              <span className="truncate max-w-[120px]">{tx.note}</span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div
+                                      className={`text-sm font-black font-mono ${
+                                        tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                                      }`}
+                                    >
+                                      {formatSignedVND(tx.amount, tx.type)}
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+                    );
 
-          {/* 8. CHART 4 — SỐ DƯ VÍ & BANK THEO THỜI GIAN */}
-          <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                <LineChartIcon size={18} className="text-amber-400" />
-                Số dư Ví & Bank theo thời gian
-              </h3>
-              <div className="flex items-center gap-2.5 text-xs font-bold">
-                {(accountFilter === 'all' || accountFilter === 'wallet') && (
-                  <span className="flex items-center gap-1 text-amber-400">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Ví
-                  </span>
-                )}
-                {(accountFilter === 'all' || accountFilter === 'bank') && (
-                  <span className="flex items-center gap-1 text-blue-400">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-400" /> Bank
-                  </span>
-                )}
-              </div>
-            </div>
+                  case 'insights':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
+                        <div className="w-full flex items-center justify-between p-4 sm:p-5">
+                          <button
+                            type="button"
+                            onClick={() => setIsInsightsOpen(!isInsightsOpen)}
+                            className="flex items-center gap-3 text-white text-left flex-1 cursor-pointer"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-neutral-800/50 flex items-center justify-center border border-neutral-700/50 text-neutral-300">
+                              <Sparkles size={18} className="text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
+                                Gợi ý & Thông tin nhanh
+                              </h3>
+                              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
+                                {quickInsights.length} điểm nổi bật
+                              </p>
+                            </div>
+                          </button>
 
-            <div className="h-52 w-full pt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={balanceOverTimeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="label" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={10}
-                    tickLine={false}
-                    tickFormatter={(val) => (val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val)}
-                  />
-                  <Tooltip content={<CustomChartTooltip />} />
-                  {(accountFilter === 'all' || accountFilter === 'wallet') && (
-                    <Line
-                      type="monotone"
-                      dataKey="wallet"
-                      name="Số dư Ví"
-                      stroke="#f59e0b"
-                      strokeWidth={2.5}
-                      dot={false}
-                    />
-                  )}
-                  {(accountFilter === 'all' || accountFilter === 'bank') && (
-                    <Line
-                      type="monotone"
-                      dataKey="bank"
-                      name="Số dư Bank"
-                      stroke="#3b82f6"
-                      strokeWidth={2.5}
-                      dot={false}
-                    />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsInsightsOpen(!isInsightsOpen)}
+                              className="text-neutral-400 bg-[#1a1a1a] hover:bg-[#262626] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800 cursor-pointer"
+                            >
+                              {isInsightsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                            </button>
+                            <DragHandle controls={controls} />
+                          </div>
+                        </div>
 
-          {/* 9. CHART 5 — SO SÁNH VÍ VS BANK (Visible ONLY when accountFilter === 'all') */}
-          {accountFilter === 'all' && (
-            <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                  <BarChart3 size={18} className="text-indigo-400" />
-                  So sánh Ví vs Bank
-                </h3>
-                <div className="flex items-center gap-2.5 text-xs font-bold">
-                  <span className="flex items-center gap-1 text-amber-400">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Ví
-                  </span>
-                  <span className="flex items-center gap-1 text-blue-400">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-400" /> Bank
-                  </span>
-                </div>
-              </div>
+                        {isInsightsOpen && (
+                          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-2">
+                            {quickInsights.length === 0 ? (
+                              <div className="py-6 text-center text-xs font-bold text-neutral-500">
+                                Không đủ dữ liệu để tạo gợi ý
+                              </div>
+                            ) : (
+                              quickInsights.map((insight) => (
+                                <div
+                                  key={insight.id}
+                                  onClick={insight.onClick}
+                                  className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                                    insight.onClick
+                                      ? 'bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98'
+                                      : 'bg-[#1a1a1a] border border-neutral-800/60'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div>
+                                      <div className="text-xs sm:text-sm font-bold text-neutral-200">
+                                        {insight.title}
+                                      </div>
+                                      {insight.subText && (
+                                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 max-w-[150px] sm:max-w-[200px] truncate">
+                                          {insight.subText}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
 
-              <div className="h-48 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={walletVsBankData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <XAxis dataKey="metric" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                    <YAxis
-                      stroke="#94a3b8"
-                      fontSize={10}
-                      tickLine={false}
-                      tickFormatter={(val) => (Math.abs(val) >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : Math.abs(val) >= 1000 ? `${(val / 1000).toFixed(0)}k` : val)}
-                    />
-                    <Tooltip content={<CustomChartTooltip />} />
-                    <Bar dataKey="Ví" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Bank" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+                                  <div className="text-right flex flex-col justify-center items-end">
+                                    <div className="text-sm font-black text-white font-mono">
+                                      {insight.valueText}
+                                    </div>
+                                    {insight.hasArrow && insight.onClick && (
+                                      <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
+                                        Chi tiết <ArrowRight size={10} />
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
 
-      {/* 10. SO SÁNH VỚI KỲ TRƯỚC */}
-      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-        <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-neutral-800 pb-2.5">
-          <Scale size={18} className="text-white" />
-          So sánh với kỳ trước
-        </h3>
+                  case 'empty_state':
+                    return (
+                      <div className="bg-[#121212] border border-neutral-800 rounded-2xl p-6 sm:p-8 text-center space-y-3 relative">
+                        <div className="absolute top-3 right-3">
+                          <DragHandle controls={controls} />
+                        </div>
+                        <div className="w-14 h-14 rounded-2xl bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center mx-auto text-neutral-400 shadow-inner">
+                          <AlertCircle size={28} />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-base font-extrabold text-white">Chưa có dữ liệu</h3>
+                          <p className="text-xs sm:text-sm text-neutral-300 font-medium">
+                            Không có giao dịch nào trong khoảng thời gian đã chọn.
+                          </p>
+                          <p className="text-xs text-white font-bold pt-1">
+                            Thêm giao dịch đầu tiên để xem thống kê.
+                          </p>
+                        </div>
+                      </div>
+                    );
 
-        <div className="space-y-2.5 pt-1">
-          {/* Expense Comparison */}
-          {(() => {
-            const expMeta = compareMeta(currentKPI.expense, prevKPI.expense);
-            return (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
-                <div>
-                  <div className="text-xs font-bold text-neutral-300">Chi tiêu kỳ này</div>
-                  <div className="text-sm font-black text-white font-mono mt-0.5">
-                    {formatVND(currentKPI.expense)}
-                  </div>
-                </div>
-                <div className="text-right flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
-                  <div
-                    className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
-                      expMeta.direction === 'up'
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : expMeta.direction === 'down'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-neutral-500/20 text-neutral-300 border border-neutral-500/30'
-                    }`}
-                  >
-                    {expMeta.direction === 'up' && <ArrowUpRight size={14} />}
-                    {expMeta.direction === 'down' && <ArrowDownRight size={14} />}
-                    {expMeta.direction === 'neutral' && <Minus size={14} />}
-                    <span>{expMeta.text}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+                  case 'chart_income_vs_expense':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                            <LineChartIcon size={18} className="text-white" />
+                            Thu nhập vs Chi tiêu
+                          </h3>
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-3 text-xs font-bold">
+                              <span className="flex items-center gap-1 text-emerald-400">
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Thu
+                              </span>
+                              <span className="flex items-center gap-1 text-rose-400">
+                                <span className="w-2.5 h-2.5 rounded-full bg-rose-400" /> Chi
+                              </span>
+                            </div>
+                            <DragHandle controls={controls} />
+                          </div>
+                        </div>
 
-          {/* Income Comparison */}
-          {(() => {
-            const incMeta = compareMeta(currentKPI.income, prevKPI.income);
-            return (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
-                <div>
-                  <div className="text-xs font-bold text-neutral-300">Thu nhập kỳ này</div>
-                  <div className="text-sm font-black text-white font-mono mt-0.5">
-                    {formatVND(currentKPI.income)}
-                  </div>
-                </div>
-                <div className="text-right flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
-                  <div
-                    className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
-                      incMeta.direction === 'up'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : incMeta.direction === 'down'
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : 'bg-neutral-500/20 text-neutral-300 border border-neutral-500/30'
-                    }`}
-                  >
-                    {incMeta.direction === 'up' && <ArrowUpRight size={14} />}
-                    {incMeta.direction === 'down' && <ArrowDownRight size={14} />}
-                    {incMeta.direction === 'neutral' && <Minus size={14} />}
-                    <span>{incMeta.text}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+                        <div className="h-52 w-full pt-2">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={timeBucketsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                              <XAxis dataKey="label" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                              <YAxis
+                                stroke="#94a3b8"
+                                fontSize={10}
+                                tickLine={false}
+                                tickFormatter={(val) =>
+                                  val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val
+                                }
+                              />
+                              <Tooltip content={<CustomChartTooltip />} />
+                              <Line
+                                type="monotone"
+                                dataKey="income"
+                                name="Thu nhập"
+                                stroke="#10b981"
+                                strokeWidth={2.5}
+                                dot={false}
+                                activeDot={{ r: 5 }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="expense"
+                                name="Chi tiêu"
+                                stroke="#f43f5e"
+                                strokeWidth={2.5}
+                                dot={false}
+                                activeDot={{ r: 5 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    );
 
-          {/* Net Comparison */}
-          {(() => {
-            const netMeta = compareMeta(currentKPI.net, prevKPI.net);
-            return (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
-                <div>
-                  <div className="text-xs font-bold text-neutral-300">Chênh lệch kỳ này</div>
-                  <div className={`text-sm font-black font-mono mt-0.5 ${
-                    currentKPI.net !== 0 
-                      ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400'
-                      : 'text-white'
-                  }`}>
-                    {formatSignedVND(currentKPI.net, 'net')}
-                  </div>
-                </div>
-                <div className="text-right flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
-                  <div
-                    className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
-                      netMeta.direction === 'up'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : netMeta.direction === 'down'
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : 'bg-neutral-500/20 text-neutral-300 border border-neutral-500/30'
-                    }`}
-                  >
-                    {netMeta.direction === 'up' && <ArrowUpRight size={14} />}
-                    {netMeta.direction === 'down' && <ArrowDownRight size={14} />}
-                    {netMeta.direction === 'neutral' && <Minus size={14} />}
-                    <span>{netMeta.text}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </div>
+                  case 'chart_net_cashflow':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                            <BarChart3 size={18} className="text-blue-400" />
+                            Dòng tiền ròng (Net = Thu − Chi)
+                          </h3>
+                          <DragHandle controls={controls} />
+                        </div>
 
+                        <div className="h-48 w-full pt-2">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={timeBucketsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="netGradient" x1="0" y1="0" x2="1" y2="0">
+                                  <stop offset="0%" stopColor="#c084fc" />
+                                  <stop offset="100%" stopColor="#f472b6" />
+                                </linearGradient>
+                              </defs>
+                              <XAxis dataKey="label" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                              <YAxis
+                                stroke="#94a3b8"
+                                fontSize={10}
+                                tickLine={false}
+                                tickFormatter={(val) =>
+                                  Math.abs(val) >= 1000000
+                                    ? `${(val / 1000000).toFixed(1)}M`
+                                    : Math.abs(val) >= 1000
+                                    ? `${(val / 1000).toFixed(0)}k`
+                                    : val
+                                }
+                              />
+                              <Tooltip content={<CustomChartTooltip />} />
+                              <Bar dataKey="net" name="Dòng tiền ròng" radius={[4, 4, 0, 0]}>
+                                {timeBucketsData.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={entry.net !== 0 ? 'url(#netGradient)' : '#64748b'}
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    );
 
+                  case 'chart_category_expense':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                            <PieChartIcon size={18} className="text-purple-400" />
+                            Chi tiêu theo hạng mục
+                          </h3>
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-xs font-bold text-neutral-300 font-mono">
+                              {formatVND(categoryBreakdown.totalExpenseInFilter)}
+                            </span>
+                            <DragHandle controls={controls} />
+                          </div>
+                        </div>
 
-      {/* 13. DEBTS AND LOANS SUMMARY (INDEPENDENT) */}
-      {debtStats && (
-        <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
-          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-neutral-800 pb-2.5">
-            <Users size={18} className="text-[#94a3b8]" />
-            Thống kê Công nợ & Vay mượn (Độc lập)
-          </h3>
-          
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* Total Lend */}
-            <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
-              <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> Người khác nợ bạn
-              </div>
-              <div className="text-sm font-black text-[#38bdf8] font-mono mt-1">
-                {formatVND(debtStats.totalLendRemaining)}
-              </div>
-              <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
-                {debtStats.activeLendCount} khoản chưa thu hồi
-              </div>
-            </div>
+                        {categoryBreakdown.list.length === 0 ? (
+                          <div className="py-6 text-center text-neutral-400 text-xs">
+                            Không có khoản chi tiêu nào trong kỳ này.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-center py-2">
+                              <div className="relative w-44 h-44 flex items-center justify-center">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <PieChart>
+                                    <Pie
+                                      data={categoryBreakdown.list}
+                                      cx="50%"
+                                      cy="50%"
+                                      innerRadius={48}
+                                      outerRadius={72}
+                                      paddingAngle={3}
+                                      dataKey="amount"
+                                    >
+                                      {categoryBreakdown.list.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip content={<CustomChartTooltip />} />
+                                  </PieChart>
+                                </ResponsiveContainer>
 
-            {/* Total Borrow */}
-            <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
-              <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#f43f5e]" /> Bạn nợ người khác
-              </div>
-              <div className="text-sm font-black text-[#f43f5e] font-mono mt-1">
-                {formatVND(debtStats.totalBorrowRemaining)}
-              </div>
-              <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
-                {debtStats.activeBorrowCount} khoản chưa hoàn trả
-              </div>
-            </div>
-          </div>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                                    Tổng chi
+                                  </span>
+                                  <span className="text-xs sm:text-sm font-black text-rose-400 font-mono">
+                                    {formatVND(categoryBreakdown.totalExpenseInFilter)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
 
-          {/* Ratio bar */}
-          {debtStats.grandTotalDebtRemaining > 0 && (
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-xs font-bold text-neutral-300">
-                <span>Tỷ lệ nợ ròng</span>
-                <span className="font-mono text-[10px]">
-                  {debtStats.lendRatio.toFixed(0)}% Cho vay | {debtStats.borrowRatio.toFixed(0)}% Đi vay
-                </span>
-              </div>
-              <div className="w-full h-2.5 bg-[#262626] rounded-full overflow-hidden flex border border-neutral-800">
-                <div 
-                  className="h-full bg-[#38bdf8]" 
-                  style={{ width: `${debtStats.lendRatio}%` }}
-                  title="Cho vay"
-                />
-                <div 
-                  className="h-full bg-[#f43f5e]" 
-                  style={{ width: `${debtStats.borrowRatio}%` }}
-                  title="Đi vay"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+                            <div className="space-y-3 pt-1 border-t border-neutral-800">
+                              {categoryBreakdown.list.map((cat) => (
+                                <div key={cat.name} className="space-y-1.5">
+                                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                                    <div className="flex items-center gap-2">
+                                      <CategoryIcon category={cat.name} type="expense" size={16} />
+                                      <span className="font-bold text-neutral-100 text-xs sm:text-sm">
+                                        {cat.name}
+                                      </span>
+                                      <span className="text-xs text-neutral-400 font-medium">({cat.count})</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="font-extrabold text-white text-xs sm:text-sm font-mono">
+                                        {formatVND(cat.amount)}
+                                      </span>
+                                      <span className="text-xs font-bold text-neutral-300 ml-2 font-mono">
+                                        {cat.percentage.toFixed(1)}%
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="w-full h-2 bg-[#1a1a1a] rounded-full overflow-hidden border border-neutral-800">
+                                    <div
+                                      className="h-full rounded-full transition-all duration-300"
+                                      style={{
+                                        width: `${Math.min(100, Math.max(2, cat.percentage))}%`,
+                                        backgroundColor: cat.color,
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+
+                  case 'chart_balance_over_time':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                            <LineChartIcon size={18} className="text-amber-400" />
+                            Số dư Ví & Bank theo thời gian
+                          </h3>
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-2.5 text-xs font-bold">
+                              {(accountFilter === 'all' || accountFilter === 'wallet') && (
+                                <span className="flex items-center gap-1 text-amber-400">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Ví
+                                </span>
+                              )}
+                              {(accountFilter === 'all' || accountFilter === 'bank') && (
+                                <span className="flex items-center gap-1 text-blue-400">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400" /> Bank
+                                </span>
+                              )}
+                            </div>
+                            <DragHandle controls={controls} />
+                          </div>
+                        </div>
+
+                        <div className="h-52 w-full pt-2">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={balanceOverTimeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                              <XAxis dataKey="label" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                              <YAxis
+                                stroke="#94a3b8"
+                                fontSize={10}
+                                tickLine={false}
+                                tickFormatter={(val) =>
+                                  val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val
+                                }
+                              />
+                              <Tooltip content={<CustomChartTooltip />} />
+                              {(accountFilter === 'all' || accountFilter === 'wallet') && (
+                                <Line
+                                  type="monotone"
+                                  dataKey="wallet"
+                                  name="Số dư Ví"
+                                  stroke="#f59e0b"
+                                  strokeWidth={2.5}
+                                  dot={false}
+                                />
+                              )}
+                              {(accountFilter === 'all' || accountFilter === 'bank') && (
+                                <Line
+                                  type="monotone"
+                                  dataKey="bank"
+                                  name="Số dư Bank"
+                                  stroke="#3b82f6"
+                                  strokeWidth={2.5}
+                                  dot={false}
+                                />
+                              )}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    );
+
+                  case 'chart_wallet_vs_bank':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                            <BarChart3 size={18} className="text-indigo-400" />
+                            So sánh Ví vs Bank
+                          </h3>
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-2.5 text-xs font-bold">
+                              <span className="flex items-center gap-1 text-amber-400">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Ví
+                              </span>
+                              <span className="flex items-center gap-1 text-blue-400">
+                                <span className="w-2.5 h-2.5 rounded-full bg-blue-400" /> Bank
+                              </span>
+                            </div>
+                            <DragHandle controls={controls} />
+                          </div>
+                        </div>
+
+                        <div className="h-48 w-full pt-2">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={walletVsBankData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                              <XAxis dataKey="metric" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                              <YAxis
+                                stroke="#94a3b8"
+                                fontSize={10}
+                                tickLine={false}
+                                tickFormatter={(val) =>
+                                  Math.abs(val) >= 1000000
+                                    ? `${(val / 1000000).toFixed(1)}M`
+                                    : Math.abs(val) >= 1000
+                                    ? `${(val / 1000).toFixed(0)}k`
+                                    : val
+                                }
+                              />
+                              <Tooltip content={<CustomChartTooltip />} />
+                              <Bar dataKey="Ví" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                              <Bar dataKey="Bank" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    );
+
+                  case 'compare_prev_period':
+                    return (
+                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
+                          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                            <Scale size={18} className="text-white" />
+                            So sánh với kỳ trước
+                          </h3>
+                          <DragHandle controls={controls} />
+                        </div>
+
+                        <div className="space-y-2.5 pt-1">
+                          {/* Expense Comparison */}
+                          {(() => {
+                            const expMeta = compareMeta(currentKPI.expense, prevKPI.expense);
+                            return (
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
+                                <div>
+                                  <div className="text-xs font-bold text-neutral-300">Chi tiêu kỳ này</div>
+                                  <div className="text-sm font-black text-white font-mono mt-0.5">
+                                    {formatVND(currentKPI.expense)}
+                                  </div>
+                                </div>
+                                <div className="text-right flex items-center gap-1.5">
+                                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
+                                  <div
+                                    className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
+                                      expMeta.direction === 'up'
+                                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                        : expMeta.direction === 'down'
+                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                        : 'bg-neutral-500/20 text-neutral-300 border border-neutral-500/30'
+                                    }`}
+                                  >
+                                    {expMeta.direction === 'up' && <ArrowUpRight size={14} />}
+                                    {expMeta.direction === 'down' && <ArrowDownRight size={14} />}
+                                    {expMeta.direction === 'neutral' && <Minus size={14} />}
+                                    <span>{expMeta.text}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Income Comparison */}
+                          {(() => {
+                            const incMeta = compareMeta(currentKPI.income, prevKPI.income);
+                            return (
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
+                                <div>
+                                  <div className="text-xs font-bold text-neutral-300">Thu nhập kỳ này</div>
+                                  <div className="text-sm font-black text-white font-mono mt-0.5">
+                                    {formatVND(currentKPI.income)}
+                                  </div>
+                                </div>
+                                <div className="text-right flex items-center gap-1.5">
+                                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
+                                  <div
+                                    className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
+                                      incMeta.direction === 'up'
+                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                        : incMeta.direction === 'down'
+                                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                        : 'bg-neutral-500/20 text-neutral-300 border border-neutral-500/30'
+                                    }`}
+                                  >
+                                    {incMeta.direction === 'up' && <ArrowUpRight size={14} />}
+                                    {incMeta.direction === 'down' && <ArrowDownRight size={14} />}
+                                    {incMeta.direction === 'neutral' && <Minus size={14} />}
+                                    <span>{incMeta.text}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Net Comparison */}
+                          {(() => {
+                            const netMeta = compareMeta(currentKPI.net, prevKPI.net);
+                            return (
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
+                                <div>
+                                  <div className="text-xs font-bold text-neutral-300">Chênh lệch kỳ này</div>
+                                  <div
+                                    className={`text-sm font-black font-mono mt-0.5 ${
+                                      currentKPI.net !== 0
+                                        ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400'
+                                        : 'text-white'
+                                    }`}
+                                  >
+                                    {formatSignedVND(currentKPI.net, 'net')}
+                                  </div>
+                                </div>
+                                <div className="text-right flex items-center gap-1.5">
+                                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
+                                  <div
+                                    className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
+                                      netMeta.direction === 'up'
+                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                        : netMeta.direction === 'down'
+                                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                        : 'bg-neutral-500/20 text-neutral-300 border border-neutral-500/30'
+                                    }`}
+                                  >
+                                    {netMeta.direction === 'up' && <ArrowUpRight size={14} />}
+                                    {netMeta.direction === 'down' && <ArrowDownRight size={14} />}
+                                    {netMeta.direction === 'neutral' && <Minus size={14} />}
+                                    <span>{netMeta.text}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    );
+
+                  case 'debt_summary':
+                    if (!debtStats) return null;
+                    return (
+                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
+                        <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
+                          <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                            <Users size={18} className="text-[#94a3b8]" />
+                            Thống kê Công nợ & Vay mượn (Độc lập)
+                          </h3>
+                          <DragHandle controls={controls} />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
+                            <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> Người khác nợ bạn
+                            </div>
+                            <div className="text-sm font-black text-[#38bdf8] font-mono mt-1">
+                              {formatVND(debtStats.totalLendRemaining)}
+                            </div>
+                            <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
+                              {debtStats.activeLendCount} khoản chưa thu hồi
+                            </div>
+                          </div>
+
+                          <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
+                            <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-[#f43f5e]" /> Bạn nợ người khác
+                            </div>
+                            <div className="text-sm font-black text-[#f43f5e] font-mono mt-1">
+                              {formatVND(debtStats.totalBorrowRemaining)}
+                            </div>
+                            <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
+                              {debtStats.activeBorrowCount} khoản chưa hoàn trả
+                            </div>
+                          </div>
+                        </div>
+
+                        {debtStats.grandTotalDebtRemaining > 0 && (
+                          <div className="space-y-1.5 pt-1">
+                            <div className="flex items-center justify-between text-xs font-bold text-neutral-300">
+                              <span>Tỷ lệ nợ ròng</span>
+                              <span className="font-mono text-[10px]">
+                                {debtStats.lendRatio.toFixed(0)}% Cho vay | {debtStats.borrowRatio.toFixed(0)}% Đi vay
+                              </span>
+                            </div>
+                            <div className="w-full h-2.5 bg-[#262626] rounded-full overflow-hidden flex border border-neutral-800">
+                              <div
+                                className="h-full bg-[#38bdf8]"
+                                style={{ width: `${debtStats.lendRatio}%` }}
+                                title="Cho vay"
+                              />
+                              <div
+                                className="h-full bg-[#f43f5e]"
+                                style={{ width: `${debtStats.borrowRatio}%` }}
+                                title="Đi vay"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+
+                  default:
+                    return null;
+                }
+              }}
+            </ReorderableCardItem>
+          );
+        })}
+      </Reorder.Group>
     </div>
   );
 };

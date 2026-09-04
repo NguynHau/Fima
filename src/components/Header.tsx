@@ -33,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
           <p className="text-xs sm:text-sm font-semibold text-neutral-400 leading-tight">
             {getGreeting()}
           </p>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight flex items-center gap-1.5 mt-0.5">
+          <h1 className="text-3xl font-black tracking-tight text-white leading-tight flex items-center gap-1.5 mt-0.5">
             <span className="truncate max-w-[200px] sm:max-w-[260px]">{nickname || 'Bạn'}</span>
             <span>👋</span>
           </h1>
@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="relative cursor-pointer active:scale-95 transition-transform"
             aria-label="Cá nhân"
           >
-            <div className="w-11 h-11 rounded-full p-[2px] bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 shadow-md flex items-center justify-center">
+            <div className="w-[65px] h-[65px] rounded-full p-[2px] bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 shadow-md flex items-center justify-center">
               <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center">
                 {avatarDataUrl ? (
                   <img
