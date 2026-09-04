@@ -12,6 +12,7 @@ import {
 import {
   calculateBalances,
   getUserSettings,
+  updateUserSettings,
   getTransactions,
   updateTransaction,
   deleteTransaction,
@@ -97,7 +98,7 @@ export default function App() {
       setTransactions(txs);
       setDebts(dbs);
 
-      const hasLaunchedBefore = localStorage.getItem('hasLaunchedBefore') === 'true' || settings.isInitialSetupDone;
+      const hasLaunchedBefore = settings.hasLaunchedBefore === true || settings.isInitialSetupDone === true;
 
       if (!hasLaunchedBefore) {
         // First launch ever: show initial setup, do not open camera
@@ -105,7 +106,10 @@ export default function App() {
         hasAutoOpenedCameraRef.current = true;
       } else {
         // From 2nd launch onwards: ensure state is saved and auto-open camera
-        localStorage.setItem('hasLaunchedBefore', 'true');
+        if (settings.hasLaunchedBefore !== true) {
+          await updateUserSettings({ hasLaunchedBefore: true });
+          setUserSettings(prev => prev ? { ...prev, hasLaunchedBefore: true } : prev);
+        }
         if (!hasAutoOpenedCameraRef.current) {
           hasAutoOpenedCameraRef.current = true;
           setIsCameraOpen(true);
@@ -124,21 +128,24 @@ export default function App() {
     // Start background update checker for long-running PWA
     const cleanupUpdateChecker = initAutoUpdateChecker();
 
-    // Check if opening on web for the first time (not standalone mode)
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-
-    const hasSeenGuide = localStorage.getItem('fima_has_seen_install_guide') === 'true';
-
-    if (!isStandalone && !hasSeenGuide) {
-      setIsInstallGuideOpen(true);
-    }
-
     return () => {
       cleanupUpdateChecker();
     };
   }, [refreshData]);
+
+  useEffect(() => {
+    if (userSettings) {
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+
+      const hasSeenGuide = userSettings.hasSeenInstallGuide === true;
+
+      if (!isStandalone && !hasSeenGuide) {
+        setIsInstallGuideOpen(true);
+      }
+    }
+  }, [userSettings]);
 
   // Handle month navigation
   const handlePrevMonth = () => {
@@ -378,8 +385,8 @@ export default function App() {
         {/* 5. Initial Setup Onboarding for First-Time Use */}
         <InitialSetupModal
           isOpen={showInitialSetup}
-          onComplete={() => {
-            localStorage.setItem('hasLaunchedBefore', 'true');
+          onComplete={async () => {
+            await updateUserSettings({ hasLaunchedBefore: true, isInitialSetupDone: true });
             setShowInitialSetup(false);
             refreshData();
           }}

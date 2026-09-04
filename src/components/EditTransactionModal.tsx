@@ -100,10 +100,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const handleCropComplete = async (croppedBlob: Blob) => {
     setCropModalImageSrc(null);
     try {
-      const activeQuality: PhotoQuality =
-        photoQuality ||
-        (localStorage.getItem('fima_photo_quality') as PhotoQuality) ||
-        'low';
+      const activeQuality: PhotoQuality = photoQuality || 'low';
       const compressed = await compressImageWithQuality(croppedBlob, activeQuality);
       setInlineNewPhotoBlob(compressed);
     } catch (err) {
@@ -170,10 +167,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         canvas.toBlob(
           async (blob) => {
             if (blob) {
-              const activeQuality: PhotoQuality =
-                photoQuality ||
-                (localStorage.getItem('fima_photo_quality') as PhotoQuality) ||
-                'low';
+              const activeQuality: PhotoQuality = photoQuality || 'low';
               const compressed = await compressImageWithQuality(blob, activeQuality);
               setInlineNewPhotoBlob(compressed);
               stopInlineCamera();

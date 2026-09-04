@@ -53,7 +53,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const { categories, expenseCategories, incomeCategories } = useCategories();
 
-  const [backendUrl, setBackendUrl] = useState(() => AIManager.getBackendUrl());
+  const [backendUrl, setBackendUrl] = useState('');
   const [isTestingBackend, setIsTestingBackend] = useState(false);
   const [backendStatus, setBackendStatus] = useState<{
     tested: boolean;
@@ -63,8 +63,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     server?: string;
   } | null>(null);
 
-  const handleSaveBackendUrl = () => {
-    AIManager.setBackendUrl(backendUrl);
+  useEffect(() => {
+    AIManager.getBackendUrl().then(url => setBackendUrl(url));
+  }, []);
+
+  const handleSaveBackendUrl = async () => {
+    await AIManager.setBackendUrl(backendUrl);
     setStatusMessage({ type: 'success', text: 'Đã lưu cấu hình máy chủ AI backend!' });
     setTimeout(() => setStatusMessage(null), 3000);
   };
@@ -544,9 +548,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {backendUrl && (
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 setBackendUrl('');
-                AIManager.setBackendUrl('');
+                await AIManager.setBackendUrl('');
                 setBackendStatus(null);
                 setStatusMessage({ type: 'success', text: 'Đã đặt lại về URL mặc định!' });
                 setTimeout(() => setStatusMessage(null), 3000);

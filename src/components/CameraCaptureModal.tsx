@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Camera, RefreshCw, X, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { compressImageWithQuality } from '../utils/imageCompressor';
 import { type PhotoQuality } from '../types';
+import { getUserSettings, updateUserSettings } from '../db/database';
 import { ImageCropModal } from './ImageCropModal';
 
 interface CameraCaptureModalProps {
@@ -25,21 +26,30 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
 
   // Photo quality state: defaults to 'low' (Thấp)
-  const [photoQuality, setPhotoQuality] = useState<PhotoQuality>(() => {
-    try {
-      const saved = localStorage.getItem('fima_photo_quality');
-      return saved === 'high' ? 'high' : 'low';
-    } catch {
-      return 'low';
-    }
-  });
+  const [photoQuality, setPhotoQuality] = useState<PhotoQuality>('low');
 
-  const handleQualityChange = (q: PhotoQuality) => {
+  useEffect(() => {
+    const loadQuality = async () => {
+      try {
+        const settings = await getUserSettings();
+        if (settings.photoQuality) {
+          setPhotoQuality(settings.photoQuality);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    if (isOpen) {
+      loadQuality();
+    }
+  }, [isOpen]);
+
+  const handleQualityChange = async (q: PhotoQuality) => {
     setPhotoQuality(q);
     try {
-      localStorage.setItem('fima_photo_quality', q);
+      await updateUserSettings({ photoQuality: q });
     } catch {
-      // Ignore localStorage errors
+      // Ignore errors
     }
   };
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Share, PlusSquare, MoreHorizontal, CheckCircle, Smartphone } from 'lucide-react';
 import { usePWA } from '../hooks/usePWA';
+import { updateUserSettings } from '../db/database';
 import appLogo from '../assets/logo.png';
 
 interface IOSInstallGuideProps {
@@ -13,8 +14,8 @@ export const IOSInstallGuide: React.FC<IOSInstallGuideProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
-  const handleDismiss = () => {
-    localStorage.setItem('fima_has_seen_install_guide', 'true');
+  const handleDismiss = async () => {
+    await updateUserSettings({ hasSeenInstallGuide: true });
     onClose();
   };
 

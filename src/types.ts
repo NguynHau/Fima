@@ -44,6 +44,10 @@ export interface UserSettings {
   initialWalletBalance: number;
   initialBankBalance: number;
   isInitialSetupDone: boolean;
+  hasLaunchedBefore?: boolean;
+  hasSeenInstallGuide?: boolean;
+  photoQuality?: PhotoQuality;
+  aiBackendUrl?: string;
   nickname?: string;
   avatarDataUrl?: string;
   createdAt: string;

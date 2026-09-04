@@ -2,6 +2,7 @@ import { RawReceiptExtraction } from '../receiptRecognition/ReceiptTypes';
 import { LocalHistoryLearner } from './LocalHistoryLearner';
 import { AIUsageSummaryResponse } from './usageTypes';
 import { cleanPlainAssistantText } from './cleanText';
+import { getUserSettings, updateUserSettings } from '../../db/database';
 
 export interface AIContext {
   currentDate: string;
@@ -9,19 +10,21 @@ export interface AIContext {
   recentHistory: string;
 }
 
-const STORAGE_KEY_BACKEND_URL = 'fima_ai_backend_url';
-
 export class AIManager {
   /**
    * Resolves the AI backend server URL
-   * 1. User manual configuration in localStorage (highest priority)
+   * 1. User manual configuration in Dexie Settings (highest priority)
    * 2. Build-time environment variable VITE_AI_BACKEND_URL
    * 3. Fallback: Empty string (relative path /api/... for same-origin full-stack deployments)
    */
-  static getBackendUrl(): string {
-    const saved = localStorage.getItem(STORAGE_KEY_BACKEND_URL);
-    if (saved && saved.trim()) {
-      return saved.trim().replace(/\/+$/, '');
+  static async getBackendUrl(): Promise<string> {
+    try {
+      const settings = await getUserSettings();
+      if (settings.aiBackendUrl && settings.aiBackendUrl.trim()) {
+        return settings.aiBackendUrl.trim().replace(/\/+$/, '');
+      }
+    } catch {
+      // fallback
     }
 
     const envUrl = (import.meta as any).env?.VITE_AI_BACKEND_URL;
@@ -36,13 +39,9 @@ export class AIManager {
   /**
    * Sets or clears the custom backend server URL
    */
-  static setBackendUrl(url: string) {
+  static async setBackendUrl(url: string) {
     const clean = url.trim().replace(/\/+$/, '');
-    if (!clean) {
-      localStorage.removeItem(STORAGE_KEY_BACKEND_URL);
-    } else {
-      localStorage.setItem(STORAGE_KEY_BACKEND_URL, clean);
-    }
+    await updateUserSettings({ aiBackendUrl: clean || undefined });
   }
 
   /**
@@ -57,7 +56,7 @@ export class AIManager {
   }> {
     const base = customUrl !== undefined
       ? customUrl.trim().replace(/\/+$/, '')
-      : this.getBackendUrl();
+      : await this.getBackendUrl();
     const endpoint = `${base}/api/health`;
 
     const start = Date.now();
@@ -112,7 +111,7 @@ export class AIManager {
       throw new Error('Chế độ Ngoại tuyến: Thiết bị không có kết nối Internet. Tính năng AI cần mạng để hoạt động.');
     }
 
-    const baseUrl = this.getBackendUrl();
+    const baseUrl = await this.getBackendUrl();
     const url = `${baseUrl}${endpoint}`;
 
     const controller = new AbortController();
@@ -290,7 +289,7 @@ export class AIManager {
       };
     }
 
-    const baseUrl = this.getBackendUrl();
+    const baseUrl = await this.getBackendUrl();
     const url = `${baseUrl}/api/ai/usage`;
 
     const controller = new AbortController();
