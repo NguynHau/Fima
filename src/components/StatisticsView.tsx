@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { motion } from 'motion/react';
 import {
   type Transaction,
   type BalancesSummary,
@@ -36,6 +37,7 @@ import {
   ArrowRight,
   Users,
   Search,
+  WifiOff,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -113,9 +115,14 @@ const CustomChartTooltip = ({ active, payload, label }: any) => {
 };
 
 import { AIManager } from '../services/ai/AIManager';
+import { AIUsageMonitor } from './AIUsageMonitor';
+import { cleanPlainAssistantText } from '../services/ai/cleanText';
+import { usePWA } from '../hooks/usePWA';
 
-// AI Assistant Component
+// AI Assistant & Quota Monitor Component in Statistics
 const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transactions }) => {
+  const { isOnline } = usePWA();
+  const [activeTab, setActiveTab] = useState<'assistant' | 'monitor'>('assistant');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -124,15 +131,20 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
     const finalQuestion = q || question;
     if (!finalQuestion.trim()) return;
     
+    if (!isOnline) {
+      setAnswer('Bạn đang ở chế độ ngoại tuyến (Offline). Trợ lý AI cần kết nối Internet để phân tích dữ liệu và trả lời.');
+      return;
+    }
+
     setIsLoading(true);
     setAnswer(null);
     try {
       const response = await AIManager.askAssistant(finalQuestion, transactions);
-      setAnswer(response);
+      setAnswer(cleanPlainAssistantText(response));
       setQuestion('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('AI Assistant Error:', err);
-      setAnswer('Rất tiếc, AI gặp lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.');
+      setAnswer(err?.message || 'Rất tiếc, AI gặp lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.');
     } finally {
       setIsLoading(false);
     }
@@ -146,67 +158,119 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
   ];
 
   return (
-    <div className="bg-gradient-to-br from-purple-900/40 via-[#121212] to-pink-900/20 rounded-3xl p-5 border border-purple-500/30 shadow-xl space-y-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
-          <Sparkles size={22} className="animate-pulse" />
-        </div>
-        <div>
-          <h3 className="text-sm sm:text-base font-black text-white">Trợ lý Tài chính AI</h3>
-          <p className="text-[10px] text-purple-200/60 font-bold uppercase tracking-wider">Financial Reasoning Engine</p>
-        </div>
-      </div>
-
-      {answer && (
-        <div className="bg-white/5 border border-purple-500/20 rounded-2xl p-4 text-xs sm:text-sm text-neutral-200 leading-relaxed animate-in zoom-in-95 duration-300">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-purple-400 shrink-0" />
-              <span className="font-extrabold text-purple-300">Phản hồi từ Fima AI:</span>
-            </div>
-            <button
-              onClick={() => setAnswer(null)}
-              className="text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
-            >
-              Đóng
-            </button>
-          </div>
-          <div className="whitespace-pre-line text-neutral-200 space-y-2">
-            {answer}
-          </div>
-        </div>
-      )}
-
-      <div className="relative group">
-        <input
-          type="text"
-          placeholder="Hỏi AI về tài chính của bạn..."
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
-          className="w-full bg-black/40 border border-purple-500/30 rounded-2xl py-3.5 pl-4 pr-12 text-sm font-medium placeholder:text-neutral-500 focus:border-purple-400 outline-none transition-all"
-        />
+    <div className="space-y-3 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Sub-tab Navigation */}
+      <div className="bg-[#121212] border border-neutral-800 p-1 rounded-2xl grid grid-cols-2 gap-1.5 shadow-sm">
         <button
-          onClick={() => handleAsk()}
-          disabled={isLoading || !question.trim()}
-          className="absolute right-2 top-2 bottom-2 px-3 bg-purple-600 hover:bg-purple-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg flex items-center justify-center"
+          type="button"
+          onClick={() => setActiveTab('monitor')}
+          className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'monitor'
+              ? 'bg-purple-600 text-white shadow-sm font-extrabold'
+              : 'text-neutral-400 hover:text-neutral-200'
+          }`}
         >
-          {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'HỎI'}
+          <span>📊 AI Usage & Quota</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('assistant')}
+          className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'assistant'
+              ? 'bg-purple-600 text-white shadow-sm font-extrabold'
+              : 'text-neutral-400 hover:text-neutral-200'
+          }`}
+        >
+          <Sparkles size={14} />
+          <span>Trợ lý Tài chính</span>
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2 pt-1">
-        {suggestions.map((s) => (
-          <button
-            key={s}
-            onClick={() => handleAsk(s)}
-            disabled={isLoading}
-            className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      {activeTab === 'monitor' ? (
+        <AIUsageMonitor />
+      ) : (
+        <div className="bg-gradient-to-br from-purple-900/40 via-[#121212] to-pink-900/20 rounded-3xl p-5 border border-purple-500/30 shadow-xl space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+                <Sparkles size={22} className="animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-white">Trợ lý Tài chính AI</h3>
+                <p className="text-[10px] text-purple-200/60 font-bold uppercase tracking-wider">Financial Reasoning Engine</p>
+              </div>
+            </div>
+
+            {!isOnline && (
+              <div className="flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold">
+                <WifiOff size={13} className="text-amber-400" />
+                <span>Ngoại tuyến</span>
+              </div>
+            )}
+          </div>
+
+          {!isOnline && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-xs text-amber-200 flex items-start gap-2.5">
+              <WifiOff size={16} className="text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-amber-300">Chế độ Ngoại tuyến:</span> Tất cả dữ liệu thống kê, biểu đồ thu chi và danh mục hoạt động 100% không cần mạng. Trợ lý AI sẽ tự động hoạt động trở lại ngay khi có kết nối Internet.
+              </div>
+            </div>
+          )}
+
+          {answer && (
+            <div className="bg-white/5 border border-purple-500/20 rounded-2xl p-4 text-xs sm:text-sm text-neutral-200 leading-relaxed animate-in zoom-in-95 duration-300">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-purple-400 shrink-0" />
+                  <span className="font-extrabold text-purple-300">Phản hồi từ Fima AI:</span>
+                </div>
+                <button
+                  onClick={() => setAnswer(null)}
+                  className="text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+              <div className="whitespace-pre-line text-neutral-200 space-y-2 font-normal leading-relaxed">
+                {cleanPlainAssistantText(answer)}
+              </div>
+            </div>
+          )}
+
+          <div className="relative group">
+            <input
+              type="text"
+              placeholder={isOnline ? "Hỏi AI về tài chính của bạn..." : "Trợ lý AI cần kết nối Internet..."}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
+              disabled={!isOnline}
+              className="w-full bg-black/40 border border-purple-500/30 disabled:border-neutral-800 disabled:opacity-60 rounded-2xl py-3.5 pl-4 pr-12 text-sm font-medium placeholder:text-neutral-500 focus:border-purple-400 outline-none transition-all"
+            />
+            <button
+              onClick={() => handleAsk()}
+              disabled={isLoading || !question.trim() || !isOnline}
+              className="absolute right-2 top-2 bottom-2 px-3 bg-purple-600 hover:bg-purple-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg flex items-center justify-center cursor-pointer"
+            >
+              {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'HỎI'}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                onClick={() => handleAsk(s)}
+                disabled={isLoading || !isOnline}
+                className="text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-40 border border-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -223,6 +287,84 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   // 1. GLOBAL FILTERS STATE
   const [accountFilter, setAccountFilter] = useState<CalendarAccountFilter>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
+
+  const accountTabs: CalendarAccountFilter[] = ['all', 'wallet', 'bank'];
+  const accountControlRef = useRef<HTMLDivElement>(null);
+  const isDraggingAccountRef = useRef(false);
+
+  const updateAccountFromPointer = (clientX: number) => {
+    if (!accountControlRef.current) return;
+    const rect = accountControlRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relX = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(0.999, relX / rect.width));
+    const targetIdx = Math.floor(ratio * accountTabs.length);
+    const selected = accountTabs[targetIdx];
+    if (selected && selected !== accountFilter) {
+      setAccountFilter(selected);
+    }
+  };
+
+  const handleAccountPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingAccountRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updateAccountFromPointer(e.clientX);
+  };
+
+  const handleAccountPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingAccountRef.current) return;
+    updateAccountFromPointer(e.clientX);
+  };
+
+  const handleAccountPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingAccountRef.current) {
+      isDraggingAccountRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
+
+  const timeTabs: TimeFilter[] = ['week', 'month', 'year', 'custom'];
+  const timeControlRef = useRef<HTMLDivElement>(null);
+  const isDraggingTimeRef = useRef(false);
+
+  const updateTimeFromPointer = (clientX: number) => {
+    if (!timeControlRef.current) return;
+    const rect = timeControlRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relX = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(0.999, relX / rect.width));
+    const targetIdx = Math.floor(ratio * timeTabs.length);
+    const selected = timeTabs[targetIdx];
+    if (selected && selected !== timeFilter) {
+      setTimeFilter(selected);
+    }
+  };
+
+  const handleTimePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingTimeRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updateTimeFromPointer(e.clientX);
+  };
+
+  const handleTimePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingTimeRef.current) return;
+    updateTimeFromPointer(e.clientX);
+  };
+
+  const handleTimePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingTimeRef.current) {
+      isDraggingTimeRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
 
   // Reference date state for week/month/year navigation
   const [refDate, setRefDate] = useState<Date>(() => new Date());
@@ -696,45 +838,89 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       <AIAssistantSection transactions={transactions} />
 
       {/* 2. ACCOUNT FILTER */}
-      <div className="bg-[#121212] border border-neutral-800 p-1.5 rounded-2xl grid grid-cols-3 gap-2 shadow-sm">
+      <div
+        ref={accountControlRef}
+        onPointerDown={handleAccountPointerDown}
+        onPointerMove={handleAccountPointerMove}
+        onPointerUp={handleAccountPointerUp}
+        onPointerCancel={handleAccountPointerUp}
+        className="bg-[#121212] border border-neutral-800 p-1.5 rounded-2xl grid grid-cols-3 gap-2 shadow-sm relative touch-none select-none"
+      >
         <button
+          type="button"
           onClick={() => setAccountFilter('all')}
-          className={`py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+          className={`relative py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
             accountFilter === 'all'
-              ? 'bg-white text-black font-extrabold shadow-xs'
+              ? 'text-black font-extrabold'
               : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
-          <Layers size={16} />
-          <span>Tất cả</span>
+          {accountFilter === 'all' && (
+            <motion.div
+              layoutId="stats_account_filter_tab"
+              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+              className="absolute inset-0 bg-white rounded-xl shadow-xs"
+            />
+          )}
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            <Layers size={16} />
+            <span>Tất cả</span>
+          </span>
         </button>
         <button
+          type="button"
           onClick={() => setAccountFilter('wallet')}
-          className={`py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+          className={`relative py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
             accountFilter === 'wallet'
-              ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-xs'
+              ? 'text-amber-300 font-extrabold'
               : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
-          <Wallet size={16} className="text-amber-400" />
-          <span>Ví</span>
+          {accountFilter === 'wallet' && (
+            <motion.div
+              layoutId="stats_account_filter_tab"
+              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+              className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-xl shadow-xs"
+            />
+          )}
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            <Wallet size={16} className="text-amber-400" />
+            <span>Ví</span>
+          </span>
         </button>
         <button
+          type="button"
           onClick={() => setAccountFilter('bank')}
-          className={`py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+          className={`relative py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
             accountFilter === 'bank'
-              ? 'bg-blue-500/25 text-blue-300 border border-blue-500/40 shadow-xs'
+              ? 'text-blue-300 font-extrabold'
               : 'text-neutral-400 hover:text-neutral-200'
           }`}
         >
-          <Building2 size={16} className="text-blue-400" />
-          <span>Bank</span>
+          {accountFilter === 'bank' && (
+            <motion.div
+              layoutId="stats_account_filter_tab"
+              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+              className="absolute inset-0 bg-blue-500/25 border border-blue-500/40 rounded-xl shadow-xs"
+            />
+          )}
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            <Building2 size={16} className="text-blue-400" />
+            <span>Bank</span>
+          </span>
         </button>
       </div>
 
       {/* 3. TIME FILTER & NAVIGATION */}
       <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">
-        <div className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800">
+        <div
+          ref={timeControlRef}
+          onPointerDown={handleTimePointerDown}
+          onPointerMove={handleTimePointerMove}
+          onPointerUp={handleTimePointerUp}
+          onPointerCancel={handleTimePointerUp}
+          className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
+        >
           {(
             [
               { id: 'week', label: 'Tuần' },
@@ -745,14 +931,22 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           ).map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setTimeFilter(tab.id)}
-              className={`flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
                 timeFilter === tab.id
-                  ? 'bg-white text-black shadow-xs font-extrabold'
+                  ? 'text-black font-extrabold'
                   : 'text-neutral-300 hover:text-white'
               }`}
             >
-              {tab.label}
+              {timeFilter === tab.id && (
+                <motion.div
+                  layoutId="stats_time_filter_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
             </button>
           ))}
         </div>

@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
+import { motion } from 'motion/react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -54,6 +55,45 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
   onSelectDay,
 }) => {
   const todayStr = useMemo(() => getTodayString(), []);
+
+  const accountTabs: CalendarAccountFilter[] = ['all', 'wallet', 'bank'];
+  const accountControlRef = useRef<HTMLDivElement>(null);
+  const isDraggingAccountRef = useRef(false);
+
+  const updateAccountFromPointer = (clientX: number) => {
+    if (!accountControlRef.current) return;
+    const rect = accountControlRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relX = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(0.999, relX / rect.width));
+    const targetIdx = Math.floor(ratio * accountTabs.length);
+    const selected = accountTabs[targetIdx];
+    if (selected && selected !== accountFilter) {
+      onAccountFilterChange(selected);
+    }
+  };
+
+  const handleAccountPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingAccountRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updateAccountFromPointer(e.clientX);
+  };
+
+  const handleAccountPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingAccountRef.current) return;
+    updateAccountFromPointer(e.clientX);
+  };
+
+  const handleAccountPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingAccountRef.current) {
+      isDraggingAccountRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
 
   // 1. Filter transactions according to active account tab (Tất cả | Ví | Bank)
   const filteredTransactions = useMemo(() => {
@@ -196,53 +236,87 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
       </div>
 
       {/* Account Filter Segmented Control (Tất cả | Ví | Bank) */}
-      <div className="bg-[#121212] p-1.5 rounded-2xl border border-neutral-800 grid grid-cols-3 gap-2 shadow-sm">
+      <div
+        ref={accountControlRef}
+        onPointerDown={handleAccountPointerDown}
+        onPointerMove={handleAccountPointerMove}
+        onPointerUp={handleAccountPointerUp}
+        onPointerCancel={handleAccountPointerUp}
+        className="bg-[#121212] p-1.5 rounded-2xl border border-neutral-800 grid grid-cols-3 gap-2 shadow-sm relative touch-none select-none"
+      >
         <button
           type="button"
           onClick={() => onAccountFilterChange('all')}
-          className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
             accountFilter === 'all'
-              ? 'bg-white text-black shadow-sm'
+              ? 'text-black'
               : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
           }`}
         >
-          <Layers
-            size={18}
-            className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
-          />
-          <span>Tất cả</span>
+          {accountFilter === 'all' && (
+            <motion.div
+              layoutId="month_calendar_account_tab"
+              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+              className="absolute inset-0 bg-white rounded-xl shadow-sm"
+            />
+          )}
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            <Layers
+              size={18}
+              className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
+            />
+            <span>Tất cả</span>
+          </span>
         </button>
 
         <button
           type="button"
           onClick={() => onAccountFilterChange('wallet')}
-          className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
             accountFilter === 'wallet'
-              ? 'bg-amber-500/25 text-amber-300 shadow-xs border border-amber-500/50'
+              ? 'text-amber-300'
               : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
           }`}
         >
-          <Wallet
-            size={18}
-            className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
-          />
-          <span>Ví</span>
+          {accountFilter === 'wallet' && (
+            <motion.div
+              layoutId="month_calendar_account_tab"
+              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+              className="absolute inset-0 bg-amber-500/25 rounded-xl shadow-xs border border-amber-500/50"
+            />
+          )}
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            <Wallet
+              size={18}
+              className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
+            />
+            <span>Ví</span>
+          </span>
         </button>
 
         <button
           type="button"
           onClick={() => onAccountFilterChange('bank')}
-          className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
             accountFilter === 'bank'
-              ? 'bg-blue-500/25 text-blue-300 shadow-xs border border-blue-500/50'
+              ? 'text-blue-300'
               : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
           }`}
         >
-          <Building2
-            size={18}
-            className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
-          />
-          <span>Bank</span>
+          {accountFilter === 'bank' && (
+            <motion.div
+              layoutId="month_calendar_account_tab"
+              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+              className="absolute inset-0 bg-blue-500/25 rounded-xl shadow-xs border border-blue-500/50"
+            />
+          )}
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            <Building2
+              size={18}
+              className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
+            />
+            <span>Bank</span>
+          </span>
         </button>
       </div>
 

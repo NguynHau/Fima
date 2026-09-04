@@ -14,6 +14,8 @@ import {
   Image as ImageIcon,
   Trash2,
   Sparkles,
+  WifiOff,
+  Crop,
 } from 'lucide-react';
 import {
   type AccountType,
@@ -29,6 +31,7 @@ import { compressImageWithQuality } from '../utils/imageCompressor';
 import { defaultReceiptRecognizer } from '../services/receiptRecognition';
 import { useCategories } from '../hooks/useCategories';
 import { AIManager } from '../services/ai/AIManager';
+import { usePWA } from '../hooks/usePWA';
 
 interface NewTransactionModalProps {
   isOpen: boolean;
@@ -51,6 +54,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   onRetakePhoto,
   onSuccess,
 }) => {
+  const { isOnline } = usePWA();
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(initialPhotoBlob);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
 
@@ -75,8 +79,46 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const userEditedRef = useRef(false);
   const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
 
+  const triggerReceiptAnalysis = (blobToScan: Blob) => {
+    if (!AIManager.isOnline()) {
+      return;
+    }
+    setIsAnalyzing(true);
+    defaultReceiptRecognizer
+      .recognize(blobToScan)
+      .then((result) => {
+        if (!userEditedRef.current) {
+          if (result.amount) {
+            setAmountStr(result.amount.toString());
+          }
+          if (result.date) {
+            setDate(result.date);
+          }
+          if (result.type) {
+            setType(result.type);
+          }
+          if (result.category) {
+            setCategory(result.category);
+          }
+          if (result.note) {
+            setNote(result.note);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Receipt recognition notice:', err);
+      })
+      .finally(() => {
+        setIsAnalyzing(false);
+      });
+  };
+
   const handleAiTextProcess = async () => {
     if (!aiInput.trim()) return;
+    if (!isOnline) {
+      setErrorMessage('Chế độ ngoại tuyến: Tính năng AI văn bản cần kết nối Internet. Bạn có thể nhập số tiền bên dưới.');
+      return;
+    }
     setIsAnalyzing(true);
     setErrorMessage(null);
     try {
@@ -122,25 +164,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
       const url = URL.createObjectURL(compressed);
       setPhotoPreviewUrl(url);
 
-      // Trigger AI OCR recognition for new library image
-      setIsAnalyzing(true);
-      defaultReceiptRecognizer
-        .recognize(compressed)
-        .then((result) => {
-          if (!userEditedRef.current) {
-            if (result.amount) setAmountStr(result.amount.toString());
-            if (result.date) setDate(result.date);
-            if (result.type) setType(result.type);
-            if (result.category) setCategory(result.category);
-            if (result.note) setNote(result.note);
-          }
-        })
-        .catch((err) => {
-          console.warn('Receipt recognition notice:', err);
-        })
-        .finally(() => {
-          setIsAnalyzing(false);
-        });
+      // Trigger AI OCR recognition for new library image if online
+      if (isOnline) {
+        triggerReceiptAnalysis(compressed);
+      }
     } catch (err) {
       console.error('Lỗi khi nén ảnh chọn từ thư viện:', err);
     }
@@ -172,35 +199,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
       setErrorMessage(null);
       userEditedRef.current = false;
 
-      // Automatically trigger AI/OCR receipt recognition in background
-      setIsAnalyzing(true);
-      defaultReceiptRecognizer
-        .recognize(initialPhotoBlob)
-        .then((result) => {
-          if (!userEditedRef.current) {
-            if (result.amount) {
-              setAmountStr(result.amount.toString());
-            }
-            if (result.date) {
-              setDate(result.date);
-            }
-            if (result.type) {
-              setType(result.type);
-            }
-            if (result.category) {
-              setCategory(result.category);
-            }
-            if (result.note) {
-              setNote(result.note);
-            }
-          }
-        })
-        .catch((err) => {
-          console.warn('Receipt recognition notice:', err);
-        })
-        .finally(() => {
-          setIsAnalyzing(false);
-        });
+      // Automatically trigger AI/OCR receipt recognition in background if online
+      if (AIManager.isOnline()) {
+        triggerReceiptAnalysis(initialPhotoBlob);
+      }
 
       return () => URL.revokeObjectURL(url);
     }
@@ -292,13 +294,27 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           Hủy
         </button>
 
-        {/* AI status card: purple-to-pink gradient during active recognition */}
-        {isAnalyzing && (
+        {/* AI status card / Offline badge / Scan AI button */}
+        {isAnalyzing ? (
           <div className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all duration-300 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 border border-pink-300/40 animate-pulse">
             <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
             <span className="tracking-wide">Đang phân tích...</span>
           </div>
-        )}
+        ) : !isOnline ? (
+          <div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <WifiOff size={13} className="text-amber-400" />
+            <span>Ngoại tuyến (Lưu máy)</span>
+          </div>
+        ) : photoBlob ? (
+          <button
+            type="button"
+            onClick={() => triggerReceiptAnalysis(photoBlob)}
+            className="px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
+          >
+            <Sparkles size={13} className="text-purple-300" />
+            <span>Quét lại AI</span>
+          </button>
+        ) : null}
       </div>
 
       {/* AI Smart Input */}
@@ -338,11 +354,26 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
         {/* 2 & 3. Central Square Photo with Transparent Overlay inside */}
         <div className="w-full relative rounded-[2.5rem] border border-[#3a3f4b] bg-[#282c34] overflow-hidden shadow-2xl flex items-center justify-center aspect-square max-h-[46vh] shrink-0 my-auto">
           {photoPreviewUrl ? (
-            <img
-              src={photoPreviewUrl}
-              alt="Ảnh chứng từ"
-              className="w-full h-full object-cover cursor-pointer" onClick={onRetakePhoto}
-            />
+            <>
+              <img
+                src={photoPreviewUrl}
+                alt="Ảnh chứng từ"
+                className="w-full h-full object-cover cursor-pointer"
+                onClick={onRetakePhoto}
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCropModalImageSrc(photoPreviewUrl);
+                }}
+                className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer z-10"
+                title="Cắt / Căn chỉnh ảnh"
+              >
+                <Crop size={13} className="text-purple-300" />
+                <span>Cắt lại</span>
+              </button>
+            </>
           ) : (
             <button
               type="button"

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { motion } from 'motion/react';
 import {
   X,
   Plus,
@@ -511,6 +512,45 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     return transactions.filter((t) => t.account === accountFilter);
   }, [transactions, accountFilter]);
 
+  const accountTabs: CalendarAccountFilter[] = ['all', 'wallet', 'bank'];
+  const accountControlRef = useRef<HTMLDivElement>(null);
+  const isDraggingAccountRef = useRef(false);
+
+  const updateAccountFromPointer = (clientX: number) => {
+    if (!accountControlRef.current || !onAccountFilterChange) return;
+    const rect = accountControlRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relX = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(0.999, relX / rect.width));
+    const targetIdx = Math.floor(ratio * accountTabs.length);
+    const selected = accountTabs[targetIdx];
+    if (selected && selected !== accountFilter) {
+      onAccountFilterChange(selected);
+    }
+  };
+
+  const handleAccountPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingAccountRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updateAccountFromPointer(e.clientX);
+  };
+
+  const handleAccountPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingAccountRef.current) return;
+    updateAccountFromPointer(e.clientX);
+  };
+
+  const handleAccountPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingAccountRef.current) {
+      isDraggingAccountRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!txToDelete) return;
     setIsDeleting(true);
@@ -577,53 +617,87 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
           {/* Account Filter Switcher within Day Detail */}
           {onAccountFilterChange && (
-            <div className="bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 grid grid-cols-3 gap-1.5">
+            <div
+              ref={accountControlRef}
+              onPointerDown={handleAccountPointerDown}
+              onPointerMove={handleAccountPointerMove}
+              onPointerUp={handleAccountPointerUp}
+              onPointerCancel={handleAccountPointerUp}
+              className="bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 grid grid-cols-3 gap-1.5 relative touch-none select-none"
+            >
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('all')}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`relative py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   accountFilter === 'all'
-                    ? 'bg-white text-black font-extrabold shadow-xs'
+                    ? 'text-black font-extrabold'
                     : 'text-neutral-300 hover:text-white'
                 }`}
               >
-                <Layers
-                  size={14}
-                  className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
-                />
-                <span>Tất cả</span>
+                {accountFilter === 'all' && (
+                  <motion.div
+                    layoutId="day_detail_account_tab"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-1.5">
+                  <Layers
+                    size={14}
+                    className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
+                  />
+                  <span>Tất cả</span>
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('wallet')}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`relative py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   accountFilter === 'wallet'
-                    ? 'bg-amber-500/25 text-amber-300 shadow-xs border border-amber-500/50'
+                    ? 'text-amber-300 font-extrabold'
                     : 'text-neutral-300 hover:text-white'
                 }`}
               >
-                <Wallet
-                  size={14}
-                  className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
-                />
-                <span>Ví</span>
+                {accountFilter === 'wallet' && (
+                  <motion.div
+                    layoutId="day_detail_account_tab"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-amber-500/25 rounded-lg shadow-xs border border-amber-500/50"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-1.5">
+                  <Wallet
+                    size={14}
+                    className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
+                  />
+                  <span>Ví</span>
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('bank')}
-                className={`py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                className={`relative py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   accountFilter === 'bank'
-                    ? 'bg-blue-500/25 text-blue-300 shadow-xs border border-blue-500/50'
+                    ? 'text-blue-300 font-extrabold'
                     : 'text-neutral-300 hover:text-white'
                 }`}
               >
-                <Building2
-                  size={14}
-                  className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
-                />
-                <span>Bank</span>
+                {accountFilter === 'bank' && (
+                  <motion.div
+                    layoutId="day_detail_account_tab"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-blue-500/25 rounded-lg shadow-xs border border-blue-500/50"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-1.5">
+                  <Building2
+                    size={14}
+                    className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
+                  />
+                  <span>Bank</span>
+                </span>
               </button>
             </div>
           )}

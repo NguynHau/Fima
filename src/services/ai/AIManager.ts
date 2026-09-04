@@ -1,5 +1,7 @@
 import { RawReceiptExtraction } from '../receiptRecognition/ReceiptTypes';
 import { LocalHistoryLearner } from './LocalHistoryLearner';
+import { AIUsageSummaryResponse } from './usageTypes';
+import { cleanPlainAssistantText } from './cleanText';
 
 export interface AIContext {
   currentDate: string;
@@ -96,9 +98,20 @@ export class AIManager {
   }
 
   /**
+   * Checks if the browser currently has network connectivity
+   */
+  static isOnline(): boolean {
+    return typeof navigator !== 'undefined' ? navigator.onLine : true;
+  }
+
+  /**
    * Resilient request sender with AbortController timeout & actionable error messages
    */
   private static async sendRequest(endpoint: string, body: any, timeoutMs: number = 25000): Promise<any> {
+    if (!this.isOnline()) {
+      throw new Error('Chế độ Ngoại tuyến: Thiết bị không có kết nối Internet. Tính năng AI cần mạng để hoạt động.');
+    }
+
     const baseUrl = this.getBackendUrl();
     const url = `${baseUrl}${endpoint}`;
 
@@ -230,7 +243,118 @@ export class AIManager {
       30000
     );
 
-    return result.data.answer;
+    return cleanPlainAssistantText(result.data?.answer || '');
+  }
+
+  /**
+   * Fetches the current AI Usage & Quota statistics from the backend
+   * Does NOT consume Gemini API quota or tokens
+   */
+  static async getUsageStats(): Promise<AIUsageSummaryResponse> {
+    const emptyPeriod = {
+      requests: { total: 0, vision: 0, text: 0, successful: 0, failed: 0, rateLimited429: 0 },
+      tokens: { input: 0, output: 0, thinking: 0, total: 0 },
+      estimatedCost: { total: 0, averagePerRequest: null, averageVisionRequest: null, averageTextRequest: null },
+      averageTokensPerVision: null,
+      averageTokensPerText: null,
+    };
+
+    if (!this.isOnline()) {
+      return {
+        primaryModel: 'gemini-3.1-flash-lite',
+        fallbackModel: 'gemini-3.8-flash',
+        status: 'unavailable',
+        statusMessage: 'Thiết bị đang ở chế độ ngoại tuyến (Offline). Quota và lịch sử AI sẽ tự động cập nhật khi có kết nối mạng.',
+        quota: {
+          readableDirectly: false,
+          available: false,
+          rpm: null,
+          tpm: null,
+          rpd: null,
+          remaining: null,
+          resetAt: null,
+          officialDashboardUrl: 'https://aistudio.google.com/app/plan_information',
+          message: 'Đang ngoại tuyến. Vui lòng kết nối mạng để tải thông tin AI.',
+        },
+        periods: {
+          today: { ...emptyPeriod },
+          yesterday: { ...emptyPeriod },
+          last7Days: { ...emptyPeriod },
+          last30Days: { ...emptyPeriod },
+          allTime: { ...emptyPeriod },
+        },
+        modelsUsed: {},
+        recentLogs: [],
+        totalLoggedCount: 0,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+
+    const baseUrl = this.getBackendUrl();
+    const url = `${baseUrl}/api/ai/usage`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const resJson = await response.json();
+      if (resJson && resJson.success && resJson.data) {
+        return resJson.data as AIUsageSummaryResponse;
+      }
+      throw new Error('Invalid response structure');
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      console.warn('[AIManager] Failed to fetch AI usage stats, returning fallback:', err);
+      
+      const emptyPeriod = {
+        requests: { total: 0, vision: 0, text: 0, successful: 0, failed: 0, rateLimited429: 0 },
+        tokens: { input: 0, output: 0, thinking: 0, total: 0 },
+        estimatedCost: { total: 0, averagePerRequest: null, averageVisionRequest: null, averageTextRequest: null },
+        averageTokensPerVision: null,
+        averageTokensPerText: null,
+      };
+
+      return {
+        primaryModel: 'gemini-3.1-flash-lite',
+        fallbackModel: 'gemini-3.8-flash',
+        status: 'unavailable',
+        statusMessage: 'Không thể kết nối đến máy chủ AI backend hoặc chưa có phản hồi.',
+        quota: {
+          readableDirectly: false,
+          available: false,
+          rpm: null,
+          tpm: null,
+          rpd: null,
+          remaining: null,
+          resetAt: null,
+          officialDashboardUrl: 'https://aistudio.google.com/app/plan_information',
+          message: 'Không thể đọc trực tiếp quota từ Gemini API backend. Vui lòng xem quota chính thức trong Google AI Studio.',
+        },
+        periods: {
+          today: { ...emptyPeriod },
+          yesterday: { ...emptyPeriod },
+          last7Days: { ...emptyPeriod },
+          last30Days: { ...emptyPeriod },
+          allTime: { ...emptyPeriod },
+        },
+        modelsUsed: {},
+        recentLogs: [],
+        totalLoggedCount: 0,
+        updatedAt: new Date().toISOString(),
+      };
+    }
   }
 
   private static blobToBase64(blob: Blob): Promise<string> {

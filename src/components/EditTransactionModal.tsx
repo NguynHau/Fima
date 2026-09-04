@@ -13,6 +13,7 @@ import {
   Pencil,
   Image as ImageIcon,
   X,
+  Crop,
 } from 'lucide-react';
 import {
   type AccountType,
@@ -375,12 +376,26 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               </div>
             </div>
           ) : photoUrl ? (
-            <img
-              src={photoUrl}
-              alt="Ảnh chứng từ giao dịch"
-              className="w-full h-full object-cover cursor-pointer"
-              onClick={startInlineCamera}
-            />
+            <>
+              <img
+                src={photoUrl}
+                alt="Ảnh chứng từ giao dịch"
+                className="w-full h-full object-cover cursor-pointer"
+                onClick={startInlineCamera}
+              />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCropModalImageSrc(photoUrl);
+                }}
+                className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer z-10"
+                title="Cắt / Căn chỉnh ảnh"
+              >
+                <Crop size={13} className="text-purple-300" />
+                <span>Cắt lại</span>
+              </button>
+            </>
           ) : (
             <button
               type="button"

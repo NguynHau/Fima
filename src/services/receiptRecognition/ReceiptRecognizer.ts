@@ -115,6 +115,16 @@ export class HybridReceiptRecognizer implements ReceiptRecognizer {
   private localRecognizer = new LocalTesseractRecognizer();
 
   async recognize(imageBlob: Blob): Promise<ReceiptRecognitionResult> {
+    // If offline, do NOT call backend / Gemini
+    if (!AIManager.isOnline()) {
+      // Local offline fallback
+      try {
+        return await this.localRecognizer.recognize(imageBlob);
+      } catch (ocrErr) {
+        return {};
+      }
+    }
+
     try {
       const result = await this.apiRecognizer.recognize(imageBlob);
       // If Gemini returned amount or merchant, return high quality Vision result

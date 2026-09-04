@@ -7,6 +7,8 @@ import { resolveAmount } from './src/services/receiptRecognition/AmountResolver'
 import { resolveCategory } from './src/services/receiptRecognition/CategoryResolver';
 import { resolveDate } from './src/services/receiptRecognition/DateResolver';
 import { RawReceiptExtraction } from './src/services/receiptRecognition/ReceiptTypes';
+import { UsageStore } from './src/services/ai/UsageStore';
+import { cleanPlainAssistantText } from './src/services/ai/cleanText';
 
 dotenv.config();
 
@@ -28,19 +30,109 @@ async function startServer() {
   // Body parser for JSON with base64 image payload
   app.use(express.json({ limit: '10mb' }));
 
-  // Helper for resilient Gemini calls: uses gemini-3.1-flash-lite (fast & robust) with fallback to gemini-3.8-flash
-  async function generateWithFallback(ai: GoogleGenAI, params: any) {
+  // Helper for resilient Gemini calls with detailed usage tracking
+  interface ExecuteGeminiOptions {
+    ai: GoogleGenAI;
+    params: any;
+    endpoint: string;
+    feature: 'vision' | 'text';
+    isMultimodal?: boolean;
+  }
+
+  async function executeGeminiWithTracking({
+    ai,
+    params,
+    endpoint,
+    feature,
+    isMultimodal = false,
+  }: ExecuteGeminiOptions) {
+    const startMs = Date.now();
+    const requestId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    let modelAttempted = 'gemini-3.1-flash-lite';
+    let modelSucceeded = '';
+
     try {
-      return await ai.models.generateContent({
-        ...params,
-        model: 'gemini-3.1-flash-lite',
-      });
-    } catch (err: any) {
-      console.warn('gemini-3.1-flash-lite failed, falling back to gemini-3.8-flash:', err?.message || err);
-      return await ai.models.generateContent({
-        ...params,
-        model: 'gemini-3.8-flash',
-      });
+      let response: any;
+      try {
+        response = await ai.models.generateContent({
+          ...params,
+          model: 'gemini-3.1-flash-lite',
+        });
+        modelSucceeded = 'gemini-3.1-flash-lite';
+      } catch (primaryErr: any) {
+        console.warn('gemini-3.1-flash-lite failed, falling back to gemini-3.8-flash:', primaryErr?.message || primaryErr);
+        modelAttempted = 'gemini-3.8-flash';
+        response = await ai.models.generateContent({
+          ...params,
+          model: 'gemini-3.8-flash',
+        });
+        modelSucceeded = 'gemini-3.8-flash';
+      }
+
+      const latencyMs = Date.now() - startMs;
+      const usage = response.usageMetadata || {};
+
+      const promptTokens = usage.promptTokenCount || 0;
+      const candidatesTokens = usage.candidatesTokenCount || 0;
+      const totalTokens = usage.totalTokenCount || (promptTokens + candidatesTokens);
+
+      let imageTokens = 0;
+      if (Array.isArray(usage.promptTokensDetails)) {
+        const imgDetail = usage.promptTokensDetails.find((d: any) => d.modality === 'IMAGE');
+        if (imgDetail) imageTokens = imgDetail.tokenCount || 0;
+      }
+
+      // Log success to UsageStore
+      try {
+        UsageStore.logRequest({
+          requestId,
+          timestamp: new Date().toISOString(),
+          endpoint,
+          feature,
+          model: modelSucceeded || modelAttempted,
+          success: true,
+          httpStatus: 200,
+          inputTokens: promptTokens,
+          outputTokens: candidatesTokens,
+          thinkingTokens: 0,
+          totalTokens,
+          imageTokens,
+          latencyMs,
+          errorType: null,
+          isMultimodal,
+        });
+      } catch (logErr) {
+        console.warn('[UsageStore] Non-fatal log error:', logErr);
+      }
+
+      return response;
+    } catch (error: any) {
+      const latencyMs = Date.now() - startMs;
+      const is429 = error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
+      const errorType = is429 ? '429_RESOURCE_EXHAUSTED' : (error?.name || 'API_ERROR');
+
+      try {
+        UsageStore.logRequest({
+          requestId,
+          timestamp: new Date().toISOString(),
+          endpoint,
+          feature,
+          model: modelAttempted,
+          success: false,
+          httpStatus: is429 ? 429 : (error?.status || 500),
+          inputTokens: 0,
+          outputTokens: 0,
+          thinkingTokens: 0,
+          totalTokens: 0,
+          latencyMs,
+          errorType,
+          isMultimodal,
+        });
+      } catch (logErr) {
+        console.warn('[UsageStore] Non-fatal error log error:', logErr);
+      }
+
+      throw error;
     }
   }
 
@@ -52,6 +144,23 @@ async function startServer() {
       timestamp: new Date().toISOString(),
       geminiConfigured: !!process.env.GEMINI_API_KEY,
     });
+  });
+
+  // AI Usage & Quota Monitoring Endpoint (Reads cached store, NEVER calls Gemini)
+  app.get('/api/ai/usage', (req, res) => {
+    try {
+      const summary = UsageStore.getUsageSummary('gemini-3.1-flash-lite', 'gemini-3.8-flash');
+      return res.json({
+        success: true,
+        data: summary,
+      });
+    } catch (err: any) {
+      console.error('Error fetching AI usage summary:', err);
+      return res.status(500).json({
+        success: false,
+        error: err.message || 'Could not fetch AI usage',
+      });
+    }
   });
 
   // Shared handler for receipt vision analysis via Gemini AI
@@ -226,21 +335,29 @@ RETURN ONLY PURE JSON matching the response schema.
         required: ['transactionType', 'confidence'],
       };
 
-      const response = await generateWithFallback(ai, {
-        contents: [
-          {
-            inlineData: {
-              mimeType: mimeType || 'image/jpeg',
-              data: cleanBase64,
+      const isMultimodal = Boolean(cleanBase64 && cleanBase64.length > 50);
+
+      const response = await executeGeminiWithTracking({
+        ai,
+        params: {
+          contents: [
+            {
+              inlineData: {
+                mimeType: mimeType || 'image/jpeg',
+                data: cleanBase64,
+              },
             },
+            { text: prompt },
+          ],
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: responseSchema,
+            temperature: 0.1,
           },
-          { text: prompt },
-        ],
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: responseSchema,
-          temperature: 0.1,
         },
+        endpoint: req.path || '/api/ai/analyze-receipt',
+        feature: 'vision',
+        isMultimodal,
       });
 
       const responseText = response.text;
@@ -450,23 +567,29 @@ ${recentHistory}
 RETURN ONLY VALID JSON matching the financial schema.
 `;
 
-      const response = await generateWithFallback(ai, {
-        contents: [{ text: prompt }],
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              transactionType: { type: Type.STRING, enum: ['expense', 'income', 'transfer', 'debt', 'unknown'] },
-              amount: { type: Type.NUMBER },
-              merchant: { type: Type.STRING },
-              date: { type: Type.STRING },
-              categorySuggestion: { type: Type.STRING },
-              description: { type: Type.STRING },
-              confidence: { type: Type.NUMBER },
+      const response = await executeGeminiWithTracking({
+        ai,
+        params: {
+          contents: [{ text: prompt }],
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                transactionType: { type: Type.STRING, enum: ['expense', 'income', 'transfer', 'debt', 'unknown'] },
+                amount: { type: Type.NUMBER },
+                merchant: { type: Type.STRING },
+                date: { type: Type.STRING },
+                categorySuggestion: { type: Type.STRING },
+                description: { type: Type.STRING },
+                confidence: { type: Type.NUMBER },
+              },
             },
           },
         },
+        endpoint: '/api/ai/text-to-transaction',
+        feature: 'text',
+        isMultimodal: false,
       });
 
       return res.json({
@@ -503,44 +626,65 @@ RETURN ONLY VALID JSON matching the financial schema.
       } = context;
 
       const prompt = `
-You are the Fima AI Financial Assistant (Trợ lý tài chính cá nhân thông minh của ứng dụng Fima). 
-Answer the user's question based on their REAL transaction data below.
-Today's Date: ${currentDate}
-User's Categories: ${userCategories.join(', ')}
+Bạn là Fima, trợ lý tài chính cá nhân thông minh và tận tâm của ứng dụng quản lý chi tiêu Fima.
+Trả lời câu hỏi tài chính của người dùng dựa trên dữ liệu giao dịch thực tế được cung cấp.
 
-TRANSACTION DATA (up to last 100 transactions):
+Ngày hiện tại: ${currentDate}
+Danh mục tài chính: ${userCategories.join(', ')}
+
+DỮ LIỆU GIAO DỊCH CỦA NGƯỜI DÙNG (tối đa 100 giao dịch gần nhất):
 ${JSON.stringify(transactions, null, 2)}
 
-USER QUESTION: "${question}"
+CÂU HỎI CỦA NGƯỜI DÙNG: "${question}"
 
-GUIDELINES:
-1. Be concise, friendly, analytical, and supportive in Vietnamese.
-2. Use real numbers from the data. Do NOT guess or hallucinate. Format monetary numbers nicely with 'đ' or 'VND'.
-3. If they ask about spending, breakdown by category, highest expense, or time period accurately using provided data.
-4. If there are no transactions or insufficient data, explain gently and suggest recording a few expenses to get personalized insights.
-5. Provide helpful actionable financial advice or budgeting tips when appropriate.
+CÁC NGUYÊN TẮC BẮT BUỘC KHI TRẢ LỜI:
+1. KHÔNG SỬ DỤNG BẤT KỲ ĐỊNH DẠNG MARKDOWN NÀO:
+   - TUYỆT ĐỐI KHÔNG dùng dấu sao **in đậm**, *in nghiêng*, không để ký tự ** hoặc * xuất hiện.
+   - Không dùng dấu thăng (#, ##, ###) để làm tiêu đề.
+   - Không dùng code block (\`\`\`), blockquote (>).
+   - Chỉ xuất ra văn bản thuần túy (plain text). Nếu cần liệt kê, dùng dấu chấm tròn đơn giản (•) hoặc số thứ tự (1., 2.).
+
+2. PHONG CÁCH & NGỮ ĐIỆU:
+   - Trả lời bằng tiếng Việt tự nhiên, thân thiện, súc tích như một người cố vấn tài chính cá nhân.
+   - Đi thẳng vào câu trả lời ngay lập tức, không mở đầu dài dòng hoặc chào hỏi rườm rà.
+   - KHÔNG dùng các câu sáo rỗng xã giao như: "Chào bạn", "Dựa trên dữ liệu giao dịch của bạn...", "Theo như tôi thấy...", "Hy vọng thông tin này sẽ giúp ích cho bạn...".
+
+3. ĐỘ DÀI & ĐỘ SÂU:
+   - Câu hỏi đơn giản hoặc tra cứu số liệu: Trả lời ngắn gọn trong 1-2 câu.
+   - Câu hỏi phân tích, đánh giá, lời khuyên: Tối đa 3-5 câu.
+   - Không lặp lại câu hỏi của người dùng và không liệt kê lại các bảng dữ liệu đã có sẵn trên giao diện.
+   - Chỉ đưa insight thực sự có giá trị, không kéo dài câu trả lời.
+
+4. TÍNH CHÍNH XÁC & CẤU TRÚC:
+   - Thứ tự ưu tiên: Kết luận -> Insight quan trọng -> Gợi ý ngắn gọn (nếu cần).
+   - Sử dụng số liệu chính xác từ dữ liệu giao dịch (định dạng tiền tệ rõ ràng, ví dụ: 50.000đ, 1.250.000đ).
+   - Tuyệt đối KHÔNG suy đoán, giả định hoặc bịa đặt số liệu tài chính.
+   - Nếu không có giao dịch hoặc thiếu dữ liệu để trả lời, nói rõ: "Chưa đủ dữ liệu để kết luận." và gợi ý người dùng ghi chép thêm chi tiêu nếu cần.
 `;
 
-      const response = await generateWithFallback(ai, {
-        contents: [{ text: prompt }],
-        config: {
-          temperature: 0.2,
+      const response = await executeGeminiWithTracking({
+        ai,
+        params: {
+          contents: [{ text: prompt }],
+          config: {
+            temperature: 0.2,
+          },
         },
+        endpoint: '/api/ai/ask',
+        feature: 'text',
+        isMultimodal: false,
       });
+
+      const sanitizedAnswer = cleanPlainAssistantText(response.text || '');
 
       return res.json({
         success: true,
-        data: { answer: response.text },
+        data: { answer: sanitizedAnswer },
       });
     } catch (error: any) {
       console.error('AI Assistant Error:', error);
       return res.status(500).json({ error: error.message || 'Error processing AI question' });
     }
-  });
-
-  // Health check endpoint
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', server: 'Fima Express Server' });
   });
 
   // Vite development middleware or static production serve

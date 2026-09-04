@@ -15,6 +15,7 @@ import {
 import { type UserSettings, type Transaction, type BalancesSummary } from '../types';
 import { updateUserSettings } from '../db/database';
 import { formatVND, formatMonthVN, formatDateVN, getTodayString } from '../utils/formatters';
+import { ImageCropModal } from './ImageCropModal';
 
 interface ProfileViewProps {
   userSettings: UserSettings | null;
@@ -33,6 +34,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [nicknameInput, setNicknameInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
 
   const nickname = userSettings?.nickname || '';
   const avatarUrl = userSettings?.avatarDataUrl;
@@ -106,26 +108,31 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
-  // Handle Avatar Image Upload
+  // Handle Avatar Image Selection & Open Cropper
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Convert file to Base64 data URL
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        try {
-          await updateUserSettings({ avatarDataUrl: dataUrl });
-          onDataChanged();
-        } catch (err) {
-          console.error('Error saving avatar:', err);
-        }
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setCropModalImageSrc(event.target.result as string);
       }
     };
     reader.readAsDataURL(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleAvatarCropComplete = async (_blob: Blob, dataUrl?: string) => {
+    setCropModalImageSrc(null);
+    if (dataUrl) {
+      try {
+        await updateUserSettings({ avatarDataUrl: dataUrl });
+        onDataChanged();
+      } catch (err) {
+        console.error('Error saving avatar:', err);
+      }
+    }
   };
 
   return (
@@ -404,6 +411,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Image Crop Modal for Avatar */}
+      {cropModalImageSrc && (
+        <ImageCropModal
+          isOpen={!!cropModalImageSrc}
+          imageSrc={cropModalImageSrc}
+          shape="circle"
+          initialAspectRatio="1:1"
+          lockAspectRatio={true}
+          title="Cắt ảnh đại diện"
+          onClose={() => setCropModalImageSrc(null)}
+          onCropComplete={handleAvatarCropComplete}
+        />
+      )}
     </div>
   );
 };

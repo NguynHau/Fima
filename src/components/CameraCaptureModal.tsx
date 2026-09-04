@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Camera, RefreshCw, X, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { compressImageWithQuality } from '../utils/imageCompressor';
 import { type PhotoQuality } from '../types';
+import { ImageCropModal } from './ImageCropModal';
 
 interface CameraCaptureModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cropModalImageSrc, setCropModalImageSrc] = useState<string | null>(null);
 
   // Photo quality state: defaults to 'low' (Thấp)
   const [photoQuality, setPhotoQuality] = useState<PhotoQuality>(() => {
@@ -165,19 +167,23 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      try {
-        setIsProcessing(true);
-        const file = files[0];
-        const compressed = await compressImageWithQuality(file, photoQuality);
-        stopCamera();
-        onPhotoCaptured(compressed, photoQuality);
-      } catch (err) {
-        console.error(err);
-        setCameraError('Không thể nén và xử lý ảnh');
-      } finally {
-        setIsProcessing(false);
-      }
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setCropModalImageSrc(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
     }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (libraryInputRef.current) libraryInputRef.current.value = '';
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    setCropModalImageSrc(null);
+    stopCamera();
+    onPhotoCaptured(croppedBlob, photoQuality);
   };
 
   if (!isOpen) return null;
@@ -338,6 +344,19 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
           <span className="text-[10px]">Thư viện</span>
         </div>
       </div>
+
+      {/* Image Crop Modal for Library Picks */}
+      {cropModalImageSrc && (
+        <ImageCropModal
+          isOpen={!!cropModalImageSrc}
+          imageSrc={cropModalImageSrc}
+          photoQuality={photoQuality}
+          initialAspectRatio="4:5"
+          title="Căn chỉnh ảnh hóa đơn"
+          onClose={() => setCropModalImageSrc(null)}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 };
