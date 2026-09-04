@@ -20,7 +20,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform, useVelocity } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
 import { PRESET_INFOS, PresetType } from '../types/liquidGlass';
 import { type ActiveTab } from '../types';
@@ -73,80 +73,223 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   };
 
   // ----------------------------------------------------
-  // DUMMY ISLAND STATE & ANIMATIONS (Observation Sandbox)
+  // DUMMY ISLAND STATE & ANIMATIONS (Observation Sandbox - 100% Parity)
   // ----------------------------------------------------
   const [dummyActiveTab, setDummyActiveTab] = useState<ActiveTab>('flow');
   const [dummyHoverTab, setDummyHoverTab] = useState<ActiveTab | null>(null);
   const dummyNavRef = useRef<HTMLElement>(null);
   const dummyTabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
+  const isInitialRender = useRef(true);
 
-  const blobTargetX = useMotionValue(0);
-  const pressTargetX = useMotionValue(1);
-  const pressTargetY = useMotionValue(1);
+  const isPressingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const isDraggingRef = useRef(false);
 
-  const blobX = useSpring(blobTargetX, {
+  // 1. Core Horizontal Position Tracking
+  const blobX = useMotionValue(0);
+  const animatedX = useSpring(blobX, {
     stiffness: config.activeTab.moveStiffness,
     damping: config.activeTab.moveDamping,
-    mass: 0.8,
+    mass: 0.5,
   });
+  const velocityX = useVelocity(animatedX);
 
-  const springScaleX = useSpring(pressTargetX, {
+  // 2. Velocity-based deformation (Dynamic fluid elongation during drag / jump)
+  const velScaleX = useTransform(velocityX, [-700, 0, 700], [1.3, 1, 1.3]);
+  const velScaleY = useTransform(velocityX, [-700, 0, 700], [0.8, 1, 0.8]);
+
+  // 3. Press-based "Swell" deformation (Liquid Glass expands outwards)
+  const pressTargetX = useMotionValue(1);
+  const pressTargetY = useMotionValue(1);
+  const pressScaleX = useSpring(pressTargetX, {
     stiffness: config.activeTab.pressStiffness,
     damping: config.activeTab.pressDamping,
+    mass: 0.5,
   });
-
-  const springScaleY = useSpring(pressTargetY, {
+  const pressScaleY = useSpring(pressTargetY, {
     stiffness: config.activeTab.pressStiffness,
     damping: config.activeTab.pressDamping,
+    mass: 0.5,
   });
 
-  const dynamicScaleX = useTransform(springScaleX, (val) => val);
-  const dynamicScaleY = useTransform(springScaleY, (val) => val);
+  // 4. Combined Scale outputs
+  const finalScaleX = useTransform([pressScaleX, velScaleX], ([p, v]: number[]) => p * v);
+  const finalScaleY = useTransform([pressScaleY, velScaleY], ([p, v]: number[]) => p * v);
 
-  const getTabCenter = (tabKey: ActiveTab) => {
-    const btn = dummyTabsRef.current[tabKey];
-    const nav = dummyNavRef.current;
-    if (!btn || !nav) return 0;
-    const btnRect = btn.getBoundingClientRect();
-    const navRect = nav.getBoundingClientRect();
-    return btnRect.left - navRect.left + btnRect.width / 2;
+  const getTabCenter = (tab: ActiveTab): number => {
+    const el = dummyTabsRef.current[tab];
+    const navEl = dummyNavRef.current;
+    if (el && navEl) {
+      const rect = el.getBoundingClientRect();
+      const navRect = navEl.getBoundingClientRect();
+      return rect.left - navRect.left + rect.width / 2;
+    }
+    return 0;
+  };
+
+  const getNearestTab = (currentX: number): ActiveTab => {
+    let nearest = dummyActiveTab;
+    let minDistance = Infinity;
+    DUMMY_TAB_ORDER.forEach((tab) => {
+      const center = getTabCenter(tab);
+      if (center > 0) {
+        const dist = Math.abs(center - currentX);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearest = tab;
+        }
+      }
+    });
+    return nearest;
   };
 
   const updateDummyBlobPosition = (tab: ActiveTab) => {
-    const center = getTabCenter(tab);
-    if (center > 0) {
-      blobTargetX.set(center);
+    const centerX = getTabCenter(tab);
+    if (centerX > 0) {
+      if (isInitialRender.current) {
+        blobX.set(centerX);
+        animatedX.set(centerX);
+        isInitialRender.current = false;
+      } else {
+        blobX.set(centerX);
+      }
     }
   };
 
   useEffect(() => {
     if (!isOpen) return;
-    const timer = setTimeout(() => {
-      updateDummyBlobPosition(dummyActiveTab);
-    }, 80);
-    return () => clearTimeout(timer);
-  }, [isOpen, dummyActiveTab, config.island.widthPercent, config.island.height]);
+    if (!isPressingRef.current) {
+      requestAnimationFrame(() => updateDummyBlobPosition(dummyActiveTab));
+    }
+  }, [dummyActiveTab, isOpen, config.island.widthPercent, config.island.height]);
 
-  const handleDummyTabSelect = (tab: ActiveTab) => {
-    setDummyActiveTab(tab);
-    updateDummyBlobPosition(tab);
-    // Trigger droplet organic squish
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleResize = () => updateDummyBlobPosition(dummyActiveTab);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [dummyActiveTab, isOpen]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const navEl = dummyNavRef.current;
+    if (!navEl) return;
+    const navRect = navEl.getBoundingClientRect();
+    const touchX = e.clientX - navRect.left;
+
+    isPressingRef.current = true;
+    dragStartXRef.current = touchX;
+    isDraggingRef.current = false;
+
+    // SWELL: Instantly trigger spring outwards using config swell parameters
     pressTargetX.set(config.activeTab.swellScaleX);
     pressTargetY.set(config.activeTab.swellScaleY);
-    setTimeout(() => {
-      pressTargetX.set(1);
-      pressTargetY.set(1);
-    }, 180);
+
+    const touchedTab = getNearestTab(touchX);
+    setDummyHoverTab(touchedTab);
+
+    const targetCenter = getTabCenter(touchedTab);
+    if (targetCenter > 0) {
+      blobX.set(targetCenter);
+    }
+
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isPressingRef.current) return;
+    const navEl = dummyNavRef.current;
+    if (!navEl) return;
+    const navRect = navEl.getBoundingClientRect();
+    const touchX = e.clientX - navRect.left;
+
+    if (Math.abs(touchX - dragStartXRef.current) > 3) {
+      isDraggingRef.current = true;
+    }
+
+    if (isDraggingRef.current) {
+      const clampedX = Math.max(30, Math.min(navRect.width - 30, touchX));
+      blobX.set(clampedX);
+
+      const currentNearest = getNearestTab(clampedX);
+      setDummyHoverTab(currentNearest);
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isPressingRef.current) return;
+    isPressingRef.current = false;
+
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    // SPRING: Spring back to normal scale
+    pressTargetX.set(1);
+    pressTargetY.set(1);
+
+    const navEl = dummyNavRef.current;
+    if (!navEl) return;
+    const navRect = navEl.getBoundingClientRect();
+    const touchX = e.clientX - navRect.left;
+
+    const chosenTab = getNearestTab(touchX);
+    const targetCenter = getTabCenter(chosenTab);
+    if (targetCenter > 0) {
+      blobX.set(targetCenter);
+    }
+
+    setDummyHoverTab(null);
+    setDummyActiveTab(chosenTab);
+  };
+
+  const DummyNavItem = ({ tab, Icon, label }: { tab: ActiveTab; Icon: any; label: string }) => {
+    const isCurrentActive = dummyActiveTab === tab;
+    const isHovered = dummyHoverTab === tab;
+    const isVisuallyActive = dummyHoverTab !== null ? isHovered : isCurrentActive;
+
+    return (
+      <button
+        ref={(el) => {
+          dummyTabsRef.current[tab] = el;
+        }}
+        id={`dummy-nav-btn-${tab}`}
+        type="button"
+        className="relative flex items-center justify-center flex-1 h-full cursor-pointer outline-none touch-manipulation z-10 select-none"
+        aria-label={label}
+        title={label}
+      >
+        <motion.div
+          animate={{ scale: isVisuallyActive ? 1.18 : 1 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+          className={`p-2 transition-colors flex items-center justify-center ${
+            isVisuallyActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
+          }`}
+        >
+          <Icon size={22} strokeWidth={isVisuallyActive ? 2.5 : 2} />
+        </motion.div>
+      </button>
+    );
   };
 
   if (!isOpen) return null;
 
-  // Island styles calculated from config
+  // Island styles calculated from config matching BottomNavigation
+  const islandBorderRadius = config.island.isCustomCorners
+    ? `${config.island.cornerTopLeft}px ${config.island.cornerTopRight}px ${config.island.cornerBottomRight}px ${config.island.cornerBottomLeft}px`
+    : `${config.island.borderRadius}px`;
+
   const islandStyles: React.CSSProperties = {
+    width: `${config.island.widthPercent}%`,
+    minWidth: `${config.island.minWidth}px`,
+    maxWidth: `${config.island.maxWidth}px`,
     height: `${config.island.height}px`,
-    borderRadius: config.island.isCustomCorners
-      ? `${config.island.cornerTopLeft}px ${config.island.cornerTopRight}px ${config.island.cornerBottomRight}px ${config.island.cornerBottomLeft}px`
-      : `${config.island.borderRadius}px`,
+    paddingLeft: `${config.island.paddingX}px`,
+    paddingRight: `${config.island.paddingX}px`,
+    paddingTop: `${config.island.paddingY}px`,
+    paddingBottom: `${config.island.paddingY}px`,
+    borderRadius: islandBorderRadius,
     backgroundColor: `rgba(255, 255, 255, ${config.island.bgOpacity})`,
     backdropFilter: `blur(${config.island.blur}px) saturate(${config.island.saturation}%) brightness(${config.island.brightness}%) contrast(${config.island.contrast}%)`,
     WebkitBackdropFilter: `blur(${config.island.blur}px) saturate(${config.island.saturation}%) brightness(${config.island.brightness}%) contrast(${config.island.contrast}%)`,
@@ -183,14 +326,9 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
               <X size={18} />
             </button>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
-                  Liquid Glass Studio
-                </h1>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-400">
-                  Dev Options
-                </span>
-              </div>
+              <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
+                Liquid Glass Studio
+              </h1>
               <p className="text-[11px] text-neutral-400">
                 Tinh chỉnh quang học & vật lý Đảo điều hướng
               </p>
@@ -907,100 +1045,64 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         </div>
 
         <div className="relative w-full max-w-[500px] flex flex-col items-end gap-2.5 pointer-events-none">
-          {/* Dummy floating + button for realistic layout */}
-          <div className="pointer-events-auto pr-3 flex flex-col items-center">
-            <motion.button
-              whileTap={{ scale: 0.88 }}
-              whileHover={{ scale: 1.05 }}
-              onClick={() => showToast('Nút thêm giả lập (Chỉ để quan sát bố cục)')}
-              className="w-[70px] h-[70px] rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex items-center justify-center cursor-pointer outline-none touch-manipulation border-none"
-              title="Nút thêm giả lập"
-            >
-              <Plus size={24} strokeWidth={3.5} />
-            </motion.button>
-          </div>
-
-          {/* Dummy Island Navigation */}
+          {/* Dummy Island Navigation - 100% Identical Parity with Real Island */}
           <nav
             ref={dummyNavRef}
             id="dummy-island-navigation"
             role="navigation"
-            aria-label="Đảo giả lập"
-            className="pointer-events-auto relative w-full flex items-center justify-between select-none touch-none"
+            aria-label="Đảo giả lập quan sát"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            className="w-full border rounded-full touch-none pointer-events-auto transition-all flex items-center relative overflow-visible"
             style={islandStyles}
           >
-            {/* The Active Tab Droplet (Water Pill Indicator) */}
+            {/* LIQUID WATER DROPLET INDICATOR */}
             <motion.div
-              className="absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-none z-10"
               style={{
-                x: blobX,
-                left: -dropletWidth / 2 + dropletOffsetX,
-                marginTop: dropletOffsetY,
+                x: animatedX,
+                scaleX: finalScaleX,
+                scaleY: finalScaleY,
                 width: dropletWidth,
                 height: dropletHeight,
-                scaleX: dynamicScaleX,
-                scaleY: dynamicScaleY,
-                borderRadius: `${config.activeTab.borderRadius}px`,
-                background: `radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, ${config.activeTab.bgOpacity}) 0%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.05) 100%)`,
-                backdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) brightness(${config.activeTab.brightness}%) contrast(${config.activeTab.contrast}%)`,
-                WebkitBackdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) brightness(${config.activeTab.brightness}%) contrast(${config.activeTab.contrast}%)`,
-                border: `${config.activeTab.borderWidth}px solid rgba(255, 255, 255, ${config.activeTab.borderOpacity})`,
-                boxShadow: [
-                  `inset 0 1px 1.5px rgba(255, 255, 255, ${config.activeTab.innerBorder})`,
-                  `inset 0 -1px 2px rgba(255, 255, 255, ${config.activeTab.outerBorder})`,
-                  `inset 0 0 ${config.activeTab.innerGlow}px rgba(255, 255, 255, 0.02)`,
-                  `0 8px 20px ${config.activeTab.shadowSpread}px rgba(0, 0, 0, ${config.activeTab.shadowOpacity})`,
-                  `0 2px 5px rgba(0, 0, 0, 0.12)`,
-                ].join(', '),
+                marginTop: `calc(-${dropletHeight / 2}px + ${dropletOffsetY}px)`,
+                marginLeft: `calc(-${dropletWidth / 2}px + ${dropletOffsetX}px)`,
+                willChange: 'transform',
               }}
+              className="absolute top-1/2 left-0 rounded-full z-0 pointer-events-none overflow-visible"
             >
-              {/* Glass Top Highlight Arc */}
-              <div
-                className="absolute inset-x-2 top-0.5 h-[1.5px] rounded-full pointer-events-none"
+              <div 
+                className="absolute inset-0 rounded-full"
                 style={{
-                  background: `linear-gradient(90deg, transparent, rgba(255, 255, 255, ${config.activeTab.highlightOpacity}), transparent)`,
+                  borderRadius: `${config.activeTab.borderRadius}px`,
+                  background: `radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, ${config.activeTab.bgOpacity}) 0%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.05) 100%)`,
+                  backdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) brightness(${config.activeTab.brightness}%) contrast(${config.activeTab.contrast}%)`,
+                  WebkitBackdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) brightness(${config.activeTab.brightness}%) contrast(${config.activeTab.contrast}%)`,
+                  border: `${config.activeTab.borderWidth}px solid rgba(255, 255, 255, ${config.activeTab.borderOpacity})`,
+                  boxShadow: `inset 0 1px 1.5px rgba(255, 255, 255, ${config.activeTab.innerBorder}), inset 0 -1px 2px rgba(255, 255, 255, ${config.activeTab.outerBorder}), inset 0 0 ${config.activeTab.innerGlow}px rgba(255, 255, 255, 0.02), ${config.activeTab.shadowX}px ${config.activeTab.shadowY}px ${config.activeTab.shadowBlur}px ${config.activeTab.shadowSpread}px rgba(0, 0, 0, ${config.activeTab.shadowOpacity})`,
                 }}
               />
             </motion.div>
 
-            {/* 5 Dummy Tabs */}
-            {DUMMY_TAB_ORDER.map((tabKey) => {
-              const tabInfo = TAB_LABELS[tabKey];
-              const Icon = tabInfo.icon;
-              const isActive = dummyActiveTab === tabKey;
-              const isHovered = dummyHoverTab === tabKey;
-
-              return (
-                <button
-                  key={tabKey}
-                  ref={(el) => {
-                    dummyTabsRef.current[tabKey] = el;
-                  }}
-                  type="button"
-                  onClick={() => handleDummyTabSelect(tabKey)}
-                  onPointerEnter={() => setDummyHoverTab(tabKey)}
-                  onPointerLeave={() => setDummyHoverTab(null)}
-                  className="relative z-20 flex-1 h-full flex flex-col items-center justify-center gap-1 cursor-pointer outline-none touch-manipulation"
-                >
-                  <motion.div
-                    animate={{
-                      scale: isActive ? 1.15 : isHovered ? 1.05 : 1,
-                      color: isActive ? '#ffffff' : '#a3a3a3',
-                    }}
-                    transition={{ type: 'spring', stiffness: 450, damping: 25 }}
-                  >
-                    <Icon size={20} strokeWidth={isActive ? 2.3 : 1.7} />
-                  </motion.div>
-                  <span
-                    className={`text-[10px] font-medium leading-none transition-colors ${
-                      isActive ? 'text-white font-bold' : 'text-neutral-400'
-                    }`}
-                  >
-                    {tabInfo.label}
-                  </span>
-                </button>
-              );
-            })}
+            {/* 5 Tabs from Left to Right: Dòng tiền -> Thống kê -> Cá nhân -> Công nợ -> Cài đặt */}
+            <div className="flex items-center justify-between relative px-1 w-full z-10 pointer-events-none">
+              <div className="flex-1 flex justify-center pointer-events-auto">
+                <DummyNavItem tab="flow" Icon={Layers} label="Dòng tiền" />
+              </div>
+              <div className="flex-1 flex justify-center pointer-events-auto">
+                <DummyNavItem tab="statistics" Icon={PieChart} label="Thống kê" />
+              </div>
+              <div className="flex-1 flex justify-center pointer-events-auto">
+                <DummyNavItem tab="profile" Icon={User} label="Cá nhân" />
+              </div>
+              <div className="flex-1 flex justify-center pointer-events-auto">
+                <DummyNavItem tab="debts" Icon={Users} label="Công nợ" />
+              </div>
+              <div className="flex-1 flex justify-center pointer-events-auto">
+                <DummyNavItem tab="settings" Icon={Settings} label="Cài đặt" />
+              </div>
+            </div>
           </nav>
         </div>
       </div>

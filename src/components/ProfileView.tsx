@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import {
   Pencil,
   Calendar as CalendarIcon,
-  Receipt,
   TrendingUp,
   TrendingDown,
   Wallet,
@@ -14,7 +13,7 @@ import {
 } from 'lucide-react';
 import { type UserSettings, type Transaction, type BalancesSummary } from '../types';
 import { updateUserSettings } from '../db/database';
-import { formatVND, formatMonthVN, formatDateVN, getTodayString } from '../utils/formatters';
+import { formatVND, formatDateVN, getTodayString } from '../utils/formatters';
 import { ImageCropModal } from './ImageCropModal';
 
 interface ProfileViewProps {
@@ -38,10 +37,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   const nickname = userSettings?.nickname || '';
   const avatarUrl = userSettings?.avatarDataUrl;
-
-  // Today's month indicator string (e.g. "Tháng 9, 2026")
-  const today = new Date();
-  const currentMonthStr = formatMonthVN(today.getFullYear(), today.getMonth() + 1);
 
   const [reportMode, setReportMode] = useState<'today' | 'oldest'>('today');
 
@@ -256,44 +251,45 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </div>
           )}
         </div>
-
-        {/* Month Indicator */}
-        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1a1a1a] border border-neutral-800 text-xs font-bold text-neutral-300">
-          <CalendarIcon size={14} className="text-neutral-300" />
-          <span>📅 {currentMonthStr}</span>
-        </div>
       </div>
 
       {/* 2. STATISTIC CARDS SECTION */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
-            Báo cáo
-          </h3>
-          <div className="text-[10px] font-black text-neutral-500 uppercase tracking-tight">
-            Mốc: {selectedDateFormatted}
-          </div>
-        </div>
-
-        {/* Date Picker Select */}
-        <div className="bg-[#121212] rounded-2xl p-3 border border-neutral-800 shadow-sm flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 text-neutral-400">
-            <div className="w-8 h-8 rounded-lg bg-neutral-800/50 flex items-center justify-center">
-              <CalendarIcon size={14} />
+        {/* Báo cáo & Thời điểm (Không khung, tối giản) */}
+        <div className="px-1 py-1 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarIcon
+                size={16}
+                color="url(#star-pink-purple-grad)"
+                stroke="url(#star-pink-purple-grad)"
+                className="shrink-0"
+              />
+              <h3 className="text-xs sm:text-sm font-black text-neutral-200 uppercase tracking-wider">
+                Báo cáo
+              </h3>
             </div>
-            <span className="text-[11px] font-black uppercase tracking-widest text-neutral-500">Thời điểm</span>
+            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-tight">
+              Mốc: {selectedDateFormatted}
+            </div>
           </div>
-          <div className="relative">
-            <select
-              value={reportMode}
-              onChange={(e) => setReportMode(e.target.value as 'today' | 'oldest')}
-              className="bg-[#1a1a1a] text-white text-[13px] font-black py-2 pl-4 pr-8 rounded-xl border border-neutral-800 outline-none focus:border-purple-500 transition-all cursor-pointer appearance-none min-w-[180px] text-right"
-            >
-              <option value="today">Hôm nay</option>
-              <option value="oldest">Ngày xa nhất</option>
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
-              <Pencil size={10} className="rotate-90" />
+
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+              Thời điểm
+            </span>
+            <div className="relative">
+              <select
+                value={reportMode}
+                onChange={(e) => setReportMode(e.target.value as 'today' | 'oldest')}
+                className="bg-[#1a1a1a] hover:bg-[#222222] text-neutral-200 text-xs font-bold py-1.5 pl-3.5 pr-8 rounded-xl border border-neutral-800 outline-none focus:border-purple-500 transition-all cursor-pointer appearance-none min-w-[150px] text-right"
+              >
+                <option value="today">Hôm nay</option>
+                <option value="oldest">Ngày xa nhất</option>
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                <Pencil size={10} className="rotate-90" />
+              </div>
             </div>
           </div>
         </div>
@@ -302,13 +298,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           {/* HÀNG 1 */}
           {/* Card 1: Số giao dịch */}
           <div className="bg-[#121212] rounded-2xl p-4 border border-neutral-800 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between">
+            <div>
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                 Số giao dịch
               </span>
-              <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/35 flex items-center justify-center shrink-0">
-                <Receipt size={16} />
-              </div>
             </div>
             <div className="mt-3">
               <span className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight">
@@ -323,12 +316,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                 Số dư
               </span>
-              <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-500/35 flex items-center justify-center shrink-0">
-                <Wallet size={16} />
-              </div>
+              <Wallet
+                size={18}
+                color="url(#star-pink-purple-grad)"
+                stroke="url(#star-pink-purple-grad)"
+                className="shrink-0"
+              />
             </div>
             <div className="mt-3">
-              <span className="text-base sm:text-lg font-black text-white font-mono truncate block">
+              <span className="text-base sm:text-lg font-black font-mono truncate block bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400">
                 {formatVND(currentTotalBalance)}
               </span>
             </div>
@@ -341,12 +337,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                 Tiền hiện tại trong ví
               </span>
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/35 flex items-center justify-center shrink-0">
-                <Banknote size={16} />
-              </div>
+              <Banknote size={18} className="text-amber-400 shrink-0" />
             </div>
             <div className="mt-3">
-              <span className="text-base sm:text-lg font-black text-white font-mono truncate block">
+              <span className="text-base sm:text-lg font-black text-amber-400 font-mono truncate block">
                 {formatVND(currentWalletBalance)}
               </span>
             </div>
@@ -358,12 +352,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                 Tiền hiện tại trong bank
               </span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/35 flex items-center justify-center shrink-0">
-                <Building2 size={16} />
-              </div>
+              <Building2 size={18} className="text-blue-400 shrink-0" />
             </div>
             <div className="mt-3">
-              <span className="text-base sm:text-lg font-black text-white font-mono truncate block">
+              <span className="text-base sm:text-lg font-black text-blue-400 font-mono truncate block">
                 {formatVND(currentBankBalance)}
               </span>
             </div>
@@ -376,16 +368,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                 Tổng thu
               </span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 flex items-center justify-center shrink-0">
-                <TrendingUp size={16} />
-              </div>
+              <TrendingUp size={18} className="text-emerald-400 shrink-0" />
             </div>
-            <div className="mt-3 space-y-0.5">
+            <div className="mt-3">
               <span className="text-base sm:text-lg font-black text-emerald-400 font-mono truncate block">
                 {formatVND(totalIncome)}
-              </span>
-              <span className="text-[11px] font-medium text-neutral-400 italic block">
-                *Tính đến {selectedDateFormatted}*
               </span>
             </div>
           </div>
@@ -396,16 +383,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                 Tổng chi
               </span>
-              <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/35 flex items-center justify-center shrink-0">
-                <TrendingDown size={16} />
-              </div>
+              <TrendingDown size={18} className="text-rose-400 shrink-0" />
             </div>
-            <div className="mt-3 space-y-0.5">
+            <div className="mt-3">
               <span className="text-base sm:text-lg font-black text-rose-400 font-mono truncate block">
                 {formatVND(totalExpense)}
-              </span>
-              <span className="text-[11px] font-medium text-neutral-400 italic block">
-                *Tính đến {selectedDateFormatted}*
               </span>
             </div>
           </div>

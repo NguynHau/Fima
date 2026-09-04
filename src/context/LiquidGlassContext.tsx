@@ -138,6 +138,17 @@ export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const applyPreset = useCallback((preset: PresetType) => {
     if (preset === 'custom') return;
+    if (preset === 'default_custom') {
+      const userDef = getInitialDefault();
+      setConfig((prev) => {
+        pushHistory(prev);
+        return {
+          ...userDef,
+          preset: 'default_custom',
+        };
+      });
+      return;
+    }
     const presetConfig = PRESETS[preset];
     if (presetConfig) {
       setConfig((prev) => {

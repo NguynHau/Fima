@@ -18,6 +18,7 @@ import {
   Edit3,
   X,
   Sliders,
+  Database,
 } from 'lucide-react';
 import { AIManager } from '../services/ai/AIManager';
 import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
@@ -40,6 +41,52 @@ interface SettingsViewProps {
   onSetCategoryModalOpen: (open: boolean) => void;
   onOpenLiquidGlassStudio?: () => void;
 }
+
+interface SettingsCardHeaderProps {
+  icon: React.ComponentType<{
+    size?: number;
+    className?: string;
+    stroke?: string;
+    color?: string;
+    strokeWidth?: number;
+  }>;
+  title: string;
+  description: React.ReactNode;
+  isDanger?: boolean;
+}
+
+const SettingsCardHeader: React.FC<SettingsCardHeaderProps> = ({
+  icon: Icon,
+  title,
+  description,
+  isDanger = false,
+}) => (
+  <div className="space-y-1.5">
+    <div className="flex items-center gap-2">
+      {isDanger ? (
+        <Icon size={18} className="text-rose-500 shrink-0" strokeWidth={2.3} />
+      ) : (
+        <Icon
+          size={18}
+          className="shrink-0"
+          color="url(#settings-pink-purple-grad)"
+          stroke="url(#settings-pink-purple-grad)"
+          strokeWidth={2.3}
+        />
+      )}
+      <h3
+        className={`text-xs sm:text-sm font-black uppercase tracking-wider ${
+          isDanger ? 'text-rose-400' : 'text-neutral-200'
+        }`}
+      >
+        {title}
+      </h3>
+    </div>
+    <div className="text-xs sm:text-sm text-neutral-400 leading-relaxed font-medium">
+      {description}
+    </div>
+  </div>
+);
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onDataChanged,
@@ -252,15 +299,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       )}
 
+      {/* SVG Gradient Defs for Settings Logos */}
+      <svg className="w-0 h-0 absolute pointer-events-none" aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }}>
+        <defs>
+          <linearGradient id="settings-pink-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f472b6" />
+            <stop offset="50%" stopColor="#e879f9" />
+            <stop offset="100%" stopColor="#c084fc" />
+          </linearGradient>
+        </defs>
+      </svg>
+
       {/* 1. SECTION: TÀI CHÍNH */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-        <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-          <Wallet size={15} className="text-amber-400" />
-          Tài chính & Số dư ban đầu
-        </h3>
-        <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
-          Số dư ban đầu là số tiền gốc trong Ví và Ngân hàng khi bạn bắt đầu theo dõi thu chi. Việc thay đổi số dư này sẽ ảnh hưởng trực tiếp đến tổng tài sản hiện có.
-        </p>
+        <SettingsCardHeader
+          icon={Wallet}
+          title="Tài chính & Số dư ban đầu"
+          description="Số dư ban đầu là số tiền gốc trong Ví và Ngân hàng khi bạn bắt đầu theo dõi thu chi. Việc thay đổi số dư này sẽ ảnh hưởng trực tiếp đến tổng tài sản hiện có."
+        />
 
         <button
           type="button"
@@ -274,17 +330,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 2. SECTION: QUẢN LÝ DANH MỤC */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Tag size={15} className="text-amber-400" />
-              Quản lý danh mục
-            </h3>
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium mt-1">
-              Tùy chỉnh toàn bộ danh mục Thu và Chi: thêm mới, đổi tên, đổi icon, màu sắc và sắp xếp.
-            </p>
-          </div>
-        </div>
+        <SettingsCardHeader
+          icon={Tag}
+          title="Quản lý danh mục"
+          description="Tùy chỉnh toàn bộ danh mục Thu và Chi: thêm mới, đổi tên, đổi icon, màu sắc và sắp xếp."
+        />
 
         <button
           type="button"
@@ -305,7 +355,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               ))}
             </div>
             <div className="text-left">
-              <div className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+              <div className="text-sm font-bold text-white group-hover:text-pink-300 transition-colors">
                 Danh mục Thu & Chi
               </div>
               <div className="text-[11px] text-neutral-400">
@@ -321,22 +371,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </button>
       </div>
 
-      {/* 3. SECTION: TÙY CHỌN NHÀ PHÁT TRIỂN - LIQUID GLASS */}
+      {/* 3. SECTION: LIQUID GLASS STUDIO */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-bold text-emerald-400 mb-1.5">
-              <Sparkles size={11} /> Tùy chọn dành cho nhà phát triển
-            </div>
-            <h3 className="text-xs font-black text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Sliders size={15} className="text-emerald-400" />
-              Chỉnh sửa Liquid Glass (Giao diện Kính)
-            </h3>
-            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed font-medium mt-1">
-              Tinh chỉnh hiệu ứng kính quang học, độ mờ (blur), độ trong suốt, bóng đổ 3D và vật lý lò xo giọt nước của Đảo chính & vòng tròn chọn tab với Đảo giả lập thử nghiệm.
-            </p>
-          </div>
-        </div>
+        <SettingsCardHeader
+          icon={Sliders}
+          title="Chỉnh sửa Liquid Glass (Giao diện Kính)"
+          description="Tinh chỉnh hiệu ứng kính quang học, độ mờ (blur), độ trong suốt, bóng đổ 3D và vật lý lò xo giọt nước của Đảo chính & vòng tròn chọn tab với Đảo giả lập thử nghiệm."
+        />
 
         <button
           type="button"
@@ -344,11 +385,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full p-3.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 hover:border-neutral-700 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-98 group"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform shrink-0">
-              <Sliders size={18} />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500/15 via-fuchsia-500/15 to-pink-500/15 border border-purple-500/30 flex items-center justify-center text-pink-400 group-hover:scale-105 transition-transform shrink-0">
+              <Sliders size={18} color="url(#settings-pink-purple-grad)" stroke="url(#settings-pink-purple-grad)" />
             </div>
             <div className="text-left">
-              <div className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+              <div className="text-sm font-bold text-white group-hover:text-pink-300 transition-colors">
                 Mở Liquid Glass Studio
               </div>
               <div className="text-[11px] text-neutral-400">
@@ -366,12 +407,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* 4. SECTION: DỮ LIỆU */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
-        <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
-          Sao lưu & Khôi phục Dữ liệu
-        </h3>
-        <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
-          Dữ liệu và ảnh được lưu an toàn trên máy (IndexedDB). Xuất file .zip để sao lưu hoặc chuyển sang thiết bị mới.
-        </p>
+        <SettingsCardHeader
+          icon={Database}
+          title="Sao lưu & Khôi phục Dữ liệu"
+          description="Dữ liệu và ảnh được lưu an toàn trên máy (IndexedDB). Xuất file .zip để sao lưu hoặc chuyển sang thiết bị mới."
+        />
 
         <input
           ref={fileInputRef}
@@ -416,85 +456,68 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 3. SECTION: ỨNG DỤNG */}
-      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-4">
-        {/* PWA Install */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 text-white border border-white/20 flex items-center justify-center shrink-0">
-              <Smartphone size={20} />
-            </div>
-            <div>
-              <div className="text-xs sm:text-sm font-bold text-white">
-                Cài đặt Màn hình chính (PWA)
-              </div>
-              <div className="text-xs text-neutral-400 font-medium">
-                Dùng như ứng dụng native trên iPhone & Android
-              </div>
-            </div>
-          </div>
+      {/* 5. SECTION: PWA */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <SettingsCardHeader
+          icon={Smartphone}
+          title="Cài đặt Màn hình chính (PWA)"
+          description="Dùng như ứng dụng native trên iPhone & Android với trải nghiệm toàn màn hình và mở nhanh từ biểu tượng màn hình chính."
+        />
 
-          <button
-            onClick={onOpenInstallGuide}
-            className="px-3.5 py-2 rounded-xl bg-white text-black text-xs sm:text-sm font-extrabold hover:bg-neutral-200 active:scale-95 transition-all shrink-0 ml-2 cursor-pointer shadow-md"
-          >
-            Hướng dẫn
-          </button>
-        </div>
-
-        {/* Update Checker */}
-        <div className="pt-4 border-t border-neutral-800 flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 flex items-center justify-center shrink-0">
-              <RefreshCw size={20} className={updateStatus === 'checking' ? 'animate-spin' : ''} />
-            </div>
-            <div className="flex-1">
-              <div className="text-xs sm:text-sm font-bold text-white">
-                Phiên bản ứng dụng
-              </div>
-              <div className="text-xs font-medium mt-0.5">
-                {updateStatus === 'idle' && <span className="text-neutral-400">Kiểm tra bản cập nhật mới nhất</span>}
-                {updateStatus === 'checking' && <span className="text-neutral-400">Đang kiểm tra...</span>}
-                {updateStatus === 'latest' && <span className="text-emerald-400">Bạn đang sử dụng phiên bản mới nhất</span>}
-                {updateStatus === 'available' && <span className="text-amber-400 font-bold">Có phiên bản mới!</span>}
-              </div>
-            </div>
-          </div>
-
-          {updateStatus === 'available' ? (
-            <button
-              onClick={handleApplyUpdate}
-              className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-md"
-            >
-              Cập nhật ngay
-            </button>
-          ) : (
-            <button
-              onClick={checkForUpdate}
-              disabled={updateStatus === 'checking'}
-              className="w-full py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer border border-neutral-800 disabled:opacity-50"
-            >
-              Kiểm tra cập nhật
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={onOpenInstallGuide}
+          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
+        >
+          <Smartphone size={16} color="url(#settings-pink-purple-grad)" stroke="url(#settings-pink-purple-grad)" />
+          Xem hướng dẫn cài đặt
+        </button>
       </div>
 
-      {/* AI BACKEND CLOUD CONFIGURATION */}
+      {/* 6. SECTION: PHIÊN BẢN ỨNG DỤNG */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <SettingsCardHeader
+          icon={RefreshCw}
+          title="Phiên bản ứng dụng"
+          description={
+            <div>
+              {updateStatus === 'idle' && <span>Kiểm tra bản cập nhật mới nhất từ máy chủ để luôn có tính năng mới nhất.</span>}
+              {updateStatus === 'checking' && <span className="text-neutral-300">Đang kiểm tra cập nhật...</span>}
+              {updateStatus === 'latest' && <span className="text-emerald-400 font-bold">Bạn đang sử dụng phiên bản mới nhất!</span>}
+              {updateStatus === 'available' && <span className="text-amber-400 font-bold">Có phiên bản mới! Nhấn cập nhật để nâng cấp ngay.</span>}
+            </div>
+          }
+        />
+
+        {updateStatus === 'available' ? (
+          <button
+            type="button"
+            onClick={handleApplyUpdate}
+            className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-md"
+          >
+            <RefreshCw size={16} />
+            Cập nhật ngay
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={checkForUpdate}
+            disabled={updateStatus === 'checking'}
+            className="w-full py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer border border-neutral-800 disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={updateStatus === 'checking' ? 'animate-spin' : ''} />
+            Kiểm tra cập nhật
+          </button>
+        )}
+      </div>
+
+      {/* 7. SECTION: MÁY CHỦ AI */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 space-y-3.5 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
-            <Server size={18} />
-          </div>
-          <div>
-            <h3 className="text-xs font-black text-neutral-200 uppercase tracking-wider">
-              Máy chủ AI (Cloud Backend)
-            </h3>
-            <p className="text-[11px] text-neutral-400">
-              Kết nối backend Gemini để dùng AI trên GitHub Pages, di động & mạng 4G/5G
-            </p>
-          </div>
-        </div>
+        <SettingsCardHeader
+          icon={Server}
+          title="Máy chủ AI (Cloud Backend)"
+          description="Kết nối backend Gemini để dùng AI trên GitHub Pages, di động & mạng 4G/5G không cần lưu API key trên thiết bị."
+        />
 
         <div className="space-y-2">
           <label className="block text-[11px] font-bold text-neutral-300">
@@ -579,7 +602,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 4. PRIVACY */}
+      {/* 8. PRIVACY */}
       <div className="bg-white/5 rounded-2xl p-3.5 border border-white/10 flex items-start gap-2.5">
         <ShieldCheck size={18} className="text-white shrink-0 mt-0.5" />
         <div className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
@@ -587,14 +610,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 5. DANGER ZONE */}
-      <div className="bg-rose-500/10 rounded-3xl p-4 sm:p-5 border border-rose-500/25 space-y-2.5">
-        <h3 className="text-xs font-black text-rose-300 uppercase tracking-wider">
-          Xóa toàn bộ dữ liệu
-        </h3>
-        <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed font-medium">
-          Hành động này sẽ xóa vĩnh viễn toàn bộ số dư, lịch sử giao dịch và hình ảnh chứng từ trên thiết bị này.
-        </p>
+      {/* 9. DANGER ZONE */}
+      <div className="bg-rose-500/10 rounded-3xl p-4 sm:p-5 border border-rose-500/25 space-y-3">
+        <SettingsCardHeader
+          icon={Trash2}
+          title="Xóa toàn bộ dữ liệu"
+          description="Hành động này sẽ xóa vĩnh viễn toàn bộ số dư, lịch sử giao dịch và hình ảnh chứng từ trên thiết bị này."
+          isDanger={true}
+        />
 
         <button
           type="button"

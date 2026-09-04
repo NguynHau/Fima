@@ -109,6 +109,7 @@ export interface LiquidGlassConfig {
 }
 
 export type PresetType =
+  | 'default_custom'
   | 'level0_clear'
   | 'level1_subtle'
   | 'level2_default'
@@ -133,6 +134,14 @@ export interface PresetInfo {
 }
 
 export const PRESET_INFOS: PresetInfo[] = [
+  {
+    id: 'default_custom',
+    level: 0,
+    name: 'Mặc định (Hiện tại đã chỉnh)',
+    subtitle: 'Bộ thông số cân chỉnh hiện tại bạn đang lưu và áp dụng làm mặc định',
+    badge: 'Mặc định của bạn',
+    accentColor: '#10b981',
+  },
   {
     id: 'level0_clear',
     level: 0,
