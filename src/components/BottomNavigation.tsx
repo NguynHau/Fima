@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layers, PieChart, Plus, Settings, User, Users } from 'lucide-react';
+import { Layers, PieChart, Plus, Settings, User, Users, Sliders } from 'lucide-react';
 import { type ActiveTab } from '../types';
 import { motion, useMotionValue, useSpring, useVelocity, useTransform } from 'motion/react';
+import { useLiquidGlass } from '../context/LiquidGlassContext';
 
 interface BottomNavigationProps {
   activeTab: ActiveTab;
   onChangeTab: (tab: ActiveTab) => void;
   onOpenAddTransaction: () => void;
+  onOpenTuner?: () => void;
 }
 
 const TAB_ORDER: ActiveTab[] = ['flow', 'statistics', 'profile', 'debts', 'settings'];
@@ -15,7 +17,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   activeTab,
   onChangeTab,
   onOpenAddTransaction,
+  onOpenTuner,
 }) => {
+  const { config } = useLiquidGlass();
   const navRef = useRef<HTMLElement>(null);
   const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
   const isInitialRender = useRef(true);
@@ -27,7 +31,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   // 1. Core Horizontal Position Tracking
   const blobX = useMotionValue(0);
-  const animatedX = useSpring(blobX, { stiffness: 420, damping: 32, mass: 0.5 });
+  const animatedX = useSpring(blobX, {
+    stiffness: config.activeTab.moveStiffness,
+    damping: config.activeTab.moveDamping,
+    mass: 0.5,
+  });
   const velocityX = useVelocity(animatedX);
 
   // 2. Velocity-based deformation (Dynamic fluid elongation during drag / jump)
@@ -37,8 +45,16 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   // 3. Press-based "Swell" deformation (Liquid Glass expands outwards and breaks past island borders)
   const pressTargetX = useMotionValue(1);
   const pressTargetY = useMotionValue(1);
-  const pressScaleX = useSpring(pressTargetX, { stiffness: 350, damping: 22, mass: 0.5 });
-  const pressScaleY = useSpring(pressTargetY, { stiffness: 350, damping: 22, mass: 0.5 });
+  const pressScaleX = useSpring(pressTargetX, {
+    stiffness: config.activeTab.pressStiffness,
+    damping: config.activeTab.pressDamping,
+    mass: 0.5,
+  });
+  const pressScaleY = useSpring(pressTargetY, {
+    stiffness: config.activeTab.pressStiffness,
+    damping: config.activeTab.pressDamping,
+    mass: 0.5,
+  });
 
   // 4. Combined Scale outputs
   const finalScaleX = useTransform([pressScaleX, velScaleX], ([p, v]: number[]) => p * v);
@@ -97,7 +113,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   }, [activeTab]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('#nav-btn-add-transaction')) return;
+    if ((e.target as HTMLElement).closest('#nav-btn-add-transaction') || (e.target as HTMLElement).closest('#nav-btn-glass-tuner')) return;
 
     const navEl = navRef.current;
     if (!navEl) return;
@@ -108,9 +124,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     dragStartXRef.current = touchX;
     isDraggingRef.current = false;
 
-    // SWELL: Instantly trigger spring outwards beyond Island border (1.35x horizontal, 1.85x vertical)
-    pressTargetX.set(1.35);
-    pressTargetY.set(1.85);
+    // SWELL: Instantly trigger spring outwards using config swell parameters
+    pressTargetX.set(config.activeTab.swellScaleX);
+    pressTargetY.set(config.activeTab.swellScaleY);
 
     const touchedTab = getNearestTab(touchX);
     setHoverTab(touchedTab);
@@ -137,7 +153,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     }
 
     if (isDraggingRef.current) {
-      // Continuously glide following the finger with no stepping
       const clampedX = Math.max(30, Math.min(navRect.width - 30, touchX));
       blobX.set(clampedX);
 
@@ -203,14 +218,64 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     );
   };
 
+  // Main Island styles calculated from config
+  const islandBorderRadius = config.island.isCustomCorners
+    ? `${config.island.cornerTopLeft}px ${config.island.cornerTopRight}px ${config.island.cornerBottomRight}px ${config.island.cornerBottomLeft}px`
+    : `${config.island.borderRadius}px`;
+
+  const islandStyle: React.CSSProperties = {
+    width: `${config.island.widthPercent}%`,
+    minWidth: `${config.island.minWidth}px`,
+    maxWidth: `${config.island.maxWidth}px`,
+    height: `${config.island.height}px`,
+    paddingLeft: `${config.island.paddingX}px`,
+    paddingRight: `${config.island.paddingX}px`,
+    paddingTop: `${config.island.paddingY}px`,
+    paddingBottom: `${config.island.paddingY}px`,
+    borderRadius: islandBorderRadius,
+    backgroundColor: `rgba(255, 255, 255, ${config.island.bgOpacity})`,
+    backdropFilter: `blur(${config.island.blur}px) saturate(${config.island.saturation}%) brightness(${config.island.brightness}%) contrast(${config.island.contrast}%)`,
+    WebkitBackdropFilter: `blur(${config.island.blur}px) saturate(${config.island.saturation}%) brightness(${config.island.brightness}%) contrast(${config.island.contrast}%)`,
+    borderWidth: `${config.island.borderWidth}px`,
+    borderStyle: config.island.borderWidth > 0 ? 'solid' : 'none',
+    borderColor: `rgba(255, 255, 255, ${config.island.borderOpacity})`,
+    boxShadow: [
+      `${config.island.shadowX}px ${config.island.shadowY}px ${config.island.shadowBlur}px ${config.island.shadowRadius}px rgba(0, 0, 0, ${config.island.shadowOpacity})`,
+      `inset 0 1px 1px rgba(255, 255, 255, ${config.island.innerBorderOpacity})`,
+      config.island.outerGlowSize > 0 ? `0 0 ${config.island.outerGlowSize}px ${config.island.outerGlowColor}` : '',
+    ].filter(Boolean).join(', '),
+    transform: `translateX(${config.island.positionX}px) scale(${config.island.scale})`,
+    transition: `background-color ${config.island.transitionDuration}ms ease, backdrop-filter ${config.island.transitionDuration}ms ease, border-color ${config.island.transitionDuration}ms ease, box-shadow ${config.island.transitionDuration}ms ease`,
+  };
+
+  const dropletWidth = config.activeTab.width;
+  const dropletHeight = config.activeTab.height;
+  const dropletOffsetX = config.activeTab.offsetX;
+  const dropletOffsetY = config.activeTab.offsetY;
+
   return (
     <div 
       className="fixed bottom-0 left-0 right-0 z-40 flex flex-col items-center px-4 pointer-events-none"
-      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
+      style={{ paddingBottom: `max(env(safe-area-inset-bottom), ${config.island.bottomOffset}px)` }}
     >
       <div className="relative w-full max-w-[500px] flex flex-col items-end gap-2.5 pointer-events-none">
-        {/* Floating Add (+) Button on the top-right of the island with clear separation */}
-        <div className="pointer-events-auto pr-3">
+        {/* Floating Action Stack: Liquid Glass Tuner Button ABOVE the + Button */}
+        <div className="pointer-events-auto pr-3 flex flex-col items-center gap-2.5">
+          {onOpenTuner && (
+            <motion.button
+              id="nav-btn-glass-tuner"
+              onClick={onOpenTuner}
+              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.08 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="w-[48px] h-[48px] rounded-full bg-[#18181b]/90 text-emerald-400 shadow-[0_4px_16px_rgba(0,0,0,0.5)] border border-neutral-700/80 backdrop-blur-md flex items-center justify-center cursor-pointer outline-none touch-manipulation"
+              aria-label="Liquid Glass Tuner"
+              title="Cài đặt Liquid Glass Tuner"
+            >
+              <Sliders size={20} strokeWidth={2.2} />
+            </motion.button>
+          )}
+
           <motion.button
             id="nav-btn-add-transaction"
             onClick={onOpenAddTransaction}
@@ -232,16 +297,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className="w-full border rounded-full touch-none pointer-events-auto p-1.5 transition-all flex items-center relative overflow-visible"
-          style={{
-            height: '68px',
-            backgroundColor: 'rgba(255, 255, 255, var(--glass-bg-opacity))',
-            backdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
-            WebkitBackdropFilter: 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
-            borderColor: 'rgba(255, 255, 255, var(--glass-border-opacity))',
-            boxShadow: '0 15px 35px rgba(0, 0, 0, var(--glass-shadow-opacity)), inset 0 1px 1px rgba(255, 255, 255, var(--glass-inner-reflection)), 0 0 var(--glass-glow-size) var(--glass-glow-color)',
-            transform: 'scale(var(--island-scale))',
-          }}
+          className="w-full border rounded-full touch-none pointer-events-auto transition-all flex items-center relative overflow-visible"
+          style={islandStyle}
         >
           {/* LIQUID WATER DROPLET INDICATOR */}
           <motion.div
@@ -249,20 +306,23 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               x: animatedX,
               scaleX: finalScaleX,
               scaleY: finalScaleY,
-              width: 70,
-              height: 46,
+              width: dropletWidth,
+              height: dropletHeight,
+              marginTop: `calc(-${dropletHeight / 2}px + ${dropletOffsetY}px)`,
+              marginLeft: `calc(-${dropletWidth / 2}px + ${dropletOffsetX}px)`,
               willChange: 'transform',
             }}
-            className="absolute top-1/2 left-0 -mt-[23px] -ml-[35px] rounded-full z-0 pointer-events-none overflow-visible"
+            className="absolute top-1/2 left-0 rounded-full z-0 pointer-events-none overflow-visible"
           >
             <div 
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.05) 100%)',
-                backdropFilter: 'blur(20px) saturate(190%) contrast(105%)',
-                WebkitBackdropFilter: 'blur(20px) saturate(190%) contrast(105%)',
-                border: '0.5px solid rgba(255, 255, 255, 0.16)',
-                boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.30), inset 0 -1px 2px rgba(255, 255, 255, 0.08), inset 0 0 8px rgba(255, 255, 255, 0.02), 0 8px 20px -4px rgba(0, 0, 0, 0.30), 0 2px 5px rgba(0, 0, 0, 0.12)',
+                borderRadius: `${config.activeTab.borderRadius}px`,
+                background: `radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, ${config.activeTab.bgOpacity}) 0%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.05) 100%)`,
+                backdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) contrast(${config.activeTab.contrast}%)`,
+                WebkitBackdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) contrast(${config.activeTab.contrast}%)`,
+                border: `${config.activeTab.borderWidth}px solid rgba(255, 255, 255, ${config.activeTab.borderOpacity})`,
+                boxShadow: `inset 0 1px 1.5px rgba(255, 255, 255, ${config.activeTab.innerBorder}), inset 0 -1px 2px rgba(255, 255, 255, ${config.activeTab.outerBorder}), inset 0 0 ${config.activeTab.innerGlow}px rgba(255, 255, 255, 0.02), ${config.activeTab.shadowX}px ${config.activeTab.shadowY}px ${config.activeTab.shadowBlur}px ${config.activeTab.shadowSpread}px rgba(0, 0, 0, ${config.activeTab.shadowOpacity})`,
               }}
             />
           </motion.div>
@@ -280,6 +340,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     </div>
   );
 };
+
 
 
 

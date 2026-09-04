@@ -32,6 +32,8 @@ import { DayDetailModal } from './components/DayDetailModal';
 import { InitialSetupModal } from './components/InitialSetupModal';
 import { IOSInstallGuide } from './components/IOSInstallGuide';
 import { GlobalSearchView } from './components/GlobalSearchView';
+import { LiquidGlassTunerModal } from './components/LiquidGlassTunerModal';
+import { LiquidGlassProvider } from './context/LiquidGlassContext';
 import { usePWA } from './hooks/usePWA';
 import { initAutoUpdateChecker } from './services/updateService';
 import { getTodayString } from './utils/formatters';
@@ -79,6 +81,7 @@ export default function App() {
   const [showInitialSetup, setShowInitialSetup] = useState(false);
   const [isCategoryManagementOpen, setIsCategoryManagementOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isTunerOpen, setIsTunerOpen] = useState(false);
 
   // Track if camera has auto-opened on app launch
   const hasAutoOpenedCameraRef = useRef(false);
@@ -245,169 +248,178 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex justify-center text-neutral-100 font-sans selection:bg-white/20">
-      {/* Mobile-first centered phone container (max-w-md = 448px) */}
-      <div className="w-full max-w-md min-h-screen bg-black border-x border-neutral-900 flex flex-col relative shadow-2xl">
-        {/* Header - shown on Dòng tiền (home) screen */}
-        {activeTab === 'flow' && (
-          <Header
-            balances={balances}
-            nickname={userSettings?.nickname}
-            avatarDataUrl={userSettings?.avatarDataUrl}
-            onNavigateToProfile={() => setActiveTab('profile')}
-            isOnline={isOnline}
-          />
-        )}
-
-        {/* Main Content Area */}
-        <main className={`flex-1 px-3.5 sm:px-4 ${activeTab === 'flow' ? 'pt-3' : 'pt-[max(env(safe-area-inset-top,0px),20px)]'}`}>
-          {isLoading ? (
-            <div className="py-24 flex flex-col items-center justify-center gap-3 text-neutral-500">
-              <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs font-semibold tracking-wider">Đang tải dữ liệu...</span>
-            </div>
-          ) : activeTab === 'flow' ? (
-            <MonthCalendar
-              currentYear={currentYear}
-              currentMonth={currentMonth}
-              transactions={transactions}
-              accountFilter={calendarAccountFilter}
-              onAccountFilterChange={setCalendarAccountFilter}
-              onPrevMonth={handlePrevMonth}
-              onNextMonth={handleNextMonth}
-              onTodayMonth={handleTodayMonth}
-              onSelectDay={(d) => setSelectedDayDate(d)}
-            />
-          ) : activeTab === 'statistics' ? (
-            <StatisticsView
-              transactions={transactions}
+    <LiquidGlassProvider>
+      <div className="min-h-screen bg-black flex justify-center text-neutral-100 font-sans selection:bg-white/20">
+        {/* Mobile-first centered phone container (max-w-md = 448px) */}
+        <div className="w-full max-w-md min-h-screen bg-black border-x border-neutral-900 flex flex-col relative shadow-2xl">
+          {/* Header - shown on Dòng tiền (home) screen */}
+          {activeTab === 'flow' && (
+            <Header
               balances={balances}
-              userSettings={userSettings}
-              debts={debts}
-              onSelectDay={(d) => setSelectedDayDate(d)}
-              onSelectTransaction={(tx) => setEditingTransaction(tx)}
-              onOpenSearch={() => setIsSearchOpen(true)}
-            />
-          ) : activeTab === 'debts' ? (
-            <DebtsView
-              triggerAddDebtCount={triggerAddDebtCount}
-              onRefreshStats={refreshData}
-            />
-          ) : activeTab === 'settings' ? (
-            <SettingsView
-              onDataChanged={refreshData}
-              onOpenInstallGuide={() => setIsInstallGuideOpen(true)}
-              isCategoryModalOpen={isCategoryManagementOpen}
-              onSetCategoryModalOpen={setIsCategoryManagementOpen}
-            />
-          ) : (
-            <ProfileView
-              userSettings={userSettings}
-              transactions={transactions}
-              balances={balances}
-              onDataChanged={refreshData}
+              nickname={userSettings?.nickname}
+              avatarDataUrl={userSettings?.avatarDataUrl}
+              onNavigateToProfile={() => setActiveTab('profile')}
+              isOnline={isOnline}
             />
           )}
-        </main>
 
-        {/* Bottom Navigation */}
-        {!isCategoryManagementOpen && (
-          <BottomNavigation
-            activeTab={activeTab}
-            onChangeTab={(tab) => setActiveTab(tab)}
-            onOpenAddTransaction={handleAddClick}
+          {/* Main Content Area */}
+          <main className={`flex-1 px-3.5 sm:px-4 ${activeTab === 'flow' ? 'pt-3' : 'pt-[max(env(safe-area-inset-top,0px),20px)]'}`}>
+            {isLoading ? (
+              <div className="py-24 flex flex-col items-center justify-center gap-3 text-neutral-500">
+                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs font-semibold tracking-wider">Đang tải dữ liệu...</span>
+              </div>
+            ) : activeTab === 'flow' ? (
+              <MonthCalendar
+                currentYear={currentYear}
+                currentMonth={currentMonth}
+                transactions={transactions}
+                accountFilter={calendarAccountFilter}
+                onAccountFilterChange={setCalendarAccountFilter}
+                onPrevMonth={handlePrevMonth}
+                onNextMonth={handleNextMonth}
+                onTodayMonth={handleTodayMonth}
+                onSelectDay={(d) => setSelectedDayDate(d)}
+              />
+            ) : activeTab === 'statistics' ? (
+              <StatisticsView
+                transactions={transactions}
+                balances={balances}
+                userSettings={userSettings}
+                debts={debts}
+                onSelectDay={(d) => setSelectedDayDate(d)}
+                onSelectTransaction={(tx) => setEditingTransaction(tx)}
+                onOpenSearch={() => setIsSearchOpen(true)}
+              />
+            ) : activeTab === 'debts' ? (
+              <DebtsView
+                triggerAddDebtCount={triggerAddDebtCount}
+                onRefreshStats={refreshData}
+              />
+            ) : activeTab === 'settings' ? (
+              <SettingsView
+                onDataChanged={refreshData}
+                onOpenInstallGuide={() => setIsInstallGuideOpen(true)}
+                isCategoryModalOpen={isCategoryManagementOpen}
+                onSetCategoryModalOpen={setIsCategoryManagementOpen}
+              />
+            ) : (
+              <ProfileView
+                userSettings={userSettings}
+                transactions={transactions}
+                balances={balances}
+                onDataChanged={refreshData}
+              />
+            )}
+          </main>
+
+          {/* Bottom Navigation */}
+          {!isCategoryManagementOpen && (
+            <BottomNavigation
+              activeTab={activeTab}
+              onChangeTab={(tab) => setActiveTab(tab)}
+              onOpenAddTransaction={handleAddClick}
+              onOpenTuner={() => setIsTunerOpen(true)}
+            />
+          )}
+
+          {/* Liquid Glass Tuner Modal */}
+          <LiquidGlassTunerModal
+            isOpen={isTunerOpen}
+            onClose={() => setIsTunerOpen(false)}
           />
-        )}
 
-        {/* --- MODALS & WORKFLOWS --- */}
+          {/* --- MODALS & WORKFLOWS --- */}
 
-        {/* 1. Camera Capture View */}
-        <CameraCaptureModal
-          isOpen={isCameraOpen}
-          onClose={() => {
-            setIsCameraOpen(false);
-            setTransactionForPhotoChange(null);
-          }}
-          onPhotoCaptured={handlePhotoCaptured}
-        />
+          {/* 1. Camera Capture View */}
+          <CameraCaptureModal
+            isOpen={isCameraOpen}
+            onClose={() => {
+              setIsCameraOpen(false);
+              setTransactionForPhotoChange(null);
+            }}
+            onPhotoCaptured={handlePhotoCaptured}
+          />
 
-        {/* 2. New Transaction Form */}
-        <NewTransactionModal
-          isOpen={isNewTxOpen}
-          initialPhotoBlob={capturedPhotoBlob}
-          photoQuality={capturedPhotoQuality}
-          defaultDate={newTxDefaultDate}
-          defaultAccount={newTxDefaultAccount}
-          onClose={() => {
-            setIsNewTxOpen(false);
-            setCapturedPhotoBlob(null);
-            setNewTxDefaultAccount(undefined);
-          }}
-          onRetakePhoto={handleRetakePhoto}
-          onSuccess={handleNewTxSuccess}
-        />
+          {/* 2. New Transaction Form */}
+          <NewTransactionModal
+            isOpen={isNewTxOpen}
+            initialPhotoBlob={capturedPhotoBlob}
+            photoQuality={capturedPhotoQuality}
+            defaultDate={newTxDefaultDate}
+            defaultAccount={newTxDefaultAccount}
+            onClose={() => {
+              setIsNewTxOpen(false);
+              setCapturedPhotoBlob(null);
+              setNewTxDefaultAccount(undefined);
+            }}
+            onRetakePhoto={handleRetakePhoto}
+            onSuccess={handleNewTxSuccess}
+          />
 
-        {/* 3. Day Detail View */}
-        <DayDetailModal
-          isOpen={!!selectedDayDate}
-          date={selectedDayDate || ''}
-          accountFilter={calendarAccountFilter}
-          onAccountFilterChange={setCalendarAccountFilter}
-          onClose={() => setSelectedDayDate(null)}
-          onSelectTransaction={(t) => setEditingTransaction(t)}
-          onAddNewForDate={(d, acc) => {
-            setSelectedDayDate(null);
-            handleOpenAddTransaction(d, acc);
-          }}
-          allTransactions={transactions}
-          onDeleteTransaction={handleDeleteTransactionFromDay}
-        />
+          {/* 3. Day Detail View */}
+          <DayDetailModal
+            isOpen={!!selectedDayDate}
+            date={selectedDayDate || ''}
+            accountFilter={calendarAccountFilter}
+            onAccountFilterChange={setCalendarAccountFilter}
+            onClose={() => setSelectedDayDate(null)}
+            onSelectTransaction={(t) => setEditingTransaction(t)}
+            onAddNewForDate={(d, acc) => {
+              setSelectedDayDate(null);
+              handleOpenAddTransaction(d, acc);
+            }}
+            allTransactions={transactions}
+            onDeleteTransaction={handleDeleteTransactionFromDay}
+          />
 
-        {/* 4. Edit / Delete Transaction */}
-        <EditTransactionModal
-          isOpen={!!editingTransaction}
-          transaction={editingTransaction}
-          onClose={() => {
-            setEditingTransaction(null);
-            setCapturedPhotoBlob(null);
-          }}
-          onRequestChangePhoto={() => {
-            setIsCameraOpen(true);
-          }}
-          newPhotoBlob={capturedPhotoBlob}
-          photoQuality={capturedPhotoQuality}
-          onSuccess={() => {
-            handleEditTxSuccess();
-            setCapturedPhotoBlob(null);
-          }}
-        />
+          {/* 4. Edit / Delete Transaction */}
+          <EditTransactionModal
+            isOpen={!!editingTransaction}
+            transaction={editingTransaction}
+            onClose={() => {
+              setEditingTransaction(null);
+              setCapturedPhotoBlob(null);
+            }}
+            onRequestChangePhoto={() => {
+              setIsCameraOpen(true);
+            }}
+            newPhotoBlob={capturedPhotoBlob}
+            photoQuality={capturedPhotoQuality}
+            onSuccess={() => {
+              handleEditTxSuccess();
+              setCapturedPhotoBlob(null);
+            }}
+          />
 
-        {/* 5. Initial Setup Onboarding for First-Time Use */}
-        <InitialSetupModal
-          isOpen={showInitialSetup}
-          onComplete={async () => {
-            await updateUserSettings({ hasLaunchedBefore: true, isInitialSetupDone: true });
-            setShowInitialSetup(false);
-            refreshData();
-          }}
-        />
+          {/* 5. Initial Setup Onboarding for First-Time Use */}
+          <InitialSetupModal
+            isOpen={showInitialSetup}
+            onComplete={async () => {
+              await updateUserSettings({ hasLaunchedBefore: true, isInitialSetupDone: true });
+              setShowInitialSetup(false);
+              refreshData();
+            }}
+          />
 
-        {/* 6. iOS Safari PWA Install Guide */}
-        <IOSInstallGuide
-          isOpen={isInstallGuideOpen}
-          onClose={() => setIsInstallGuideOpen(false)}
-        />
+          {/* 6. iOS Safari PWA Install Guide */}
+          <IOSInstallGuide
+            isOpen={isInstallGuideOpen}
+            onClose={() => setIsInstallGuideOpen(false)}
+          />
 
-        <GlobalSearchView
-          isOpen={isSearchOpen}
-          onClose={() => setIsSearchOpen(false)}
-          transactions={transactions}
-          onSelectTransaction={(tx) => {
-            setIsSearchOpen(false);
-            setEditingTransaction(tx);
-          }}
-        />
+          <GlobalSearchView
+            isOpen={isSearchOpen}
+            onClose={() => setIsSearchOpen(false)}
+            transactions={transactions}
+            onSelectTransaction={(tx) => {
+              setIsSearchOpen(false);
+              setEditingTransaction(tx);
+            }}
+          />
+        </div>
       </div>
-    </div>
+    </LiquidGlassProvider>
   );
 }
