@@ -38,6 +38,9 @@ import {
   Users,
   Search,
   WifiOff,
+  ChevronDown,
+  ChevronUp,
+  List,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -287,6 +290,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   // 1. GLOBAL FILTERS STATE
   const [accountFilter, setAccountFilter] = useState<CalendarAccountFilter>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
+  
+  const [isTxListOpen, setIsTxListOpen] = useState(false);
+  const [txListFilter, setTxListFilter] = useState<'all' | 'expense' | 'income'>('all');
 
   const accountTabs: CalendarAccountFilter[] = ['all', 'wallet', 'bank'];
   const accountControlRef = useRef<HTMLDivElement>(null);
@@ -540,6 +546,16 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     });
     return { income, expense, net: income - expense };
   }, [filteredTransactions]);
+
+  const visibleTransactions = useMemo(() => {
+    let list = [...filteredTransactions];
+    if (txListFilter === 'expense') list = list.filter((t) => t.type === 'expense');
+    if (txListFilter === 'income') list = list.filter((t) => t.type === 'income');
+    return list.sort((a, b) => {
+      if (b.date === a.date) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return b.date.localeCompare(a.date);
+    });
+  }, [filteredTransactions, txListFilter]);
 
   const prevKPI = useMemo(() => {
     let income = 0;
@@ -1600,7 +1616,101 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         </div>
       </div>
 
-      {/* 12. DEBTS AND LOANS SUMMARY (INDEPENDENT) */}
+      {/* 12. TRANSACTION LIST (DROPDOWN) */}
+      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
+        <button
+          onClick={() => setIsTxListOpen(!isTxListOpen)}
+          className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-[#1a1a1a] transition-colors active:bg-[#222]"
+        >
+          <div className="flex items-center gap-3 text-white">
+            <div className="w-9 h-9 rounded-xl bg-neutral-800/50 flex items-center justify-center border border-neutral-700/50 text-neutral-300">
+              <List size={18} />
+            </div>
+            <div className="text-left">
+              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
+                Danh sách giao dịch
+              </h3>
+              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
+                {filteredTransactions.length} giao dịch trong kỳ
+              </p>
+            </div>
+          </div>
+          <div className="text-neutral-400 bg-[#1a1a1a] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800">
+            {isTxListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </div>
+        </button>
+
+        {isTxListOpen && (
+          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-4">
+            {/* Filter */}
+            <div className="flex p-1 bg-[#1a1a1a] rounded-xl border border-neutral-800">
+              {(['all', 'expense', 'income'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setTxListFilter(filter)}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    txListFilter === filter
+                      ? filter === 'expense'
+                        ? 'bg-rose-500/20 text-rose-300 shadow-xs'
+                        : filter === 'income'
+                        ? 'bg-emerald-500/20 text-emerald-300 shadow-xs'
+                        : 'bg-white text-black shadow-xs'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                  }`}
+                >
+                  {filter === 'all' && 'Tất cả'}
+                  {filter === 'expense' && 'Chi'}
+                  {filter === 'income' && 'Thu'}
+                </button>
+              ))}
+            </div>
+
+            {/* List */}
+            <div className="space-y-2">
+              {visibleTransactions.length === 0 ? (
+                <div className="py-8 text-center text-neutral-500 text-xs font-bold">
+                  Không có giao dịch nào
+                </div>
+              ) : (
+                visibleTransactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    onClick={() => onSelectTransaction?.(tx)}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <CategoryIcon category={tx.category} type={tx.type} size={18} />
+                      <div>
+                        <div className="text-xs sm:text-sm font-bold text-neutral-200">
+                          {tx.category}
+                        </div>
+                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 flex items-center gap-1.5">
+                          <span>{formatDateVN(tx.date)}</span>
+                          {tx.note && (
+                            <>
+                              <span className="w-1 h-1 rounded-full bg-neutral-600" />
+                              <span className="truncate max-w-[120px]">{tx.note}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`text-sm font-black font-mono ${
+                        tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {formatSignedVND(tx.amount, tx.type)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 13. DEBTS AND LOANS SUMMARY (INDEPENDENT) */}
       {debtStats && (
         <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
           <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2 border-b border-neutral-800 pb-2.5">
