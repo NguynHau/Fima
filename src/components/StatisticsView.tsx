@@ -388,6 +388,45 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     }
   };
 
+  const txFilterTabs: ('all' | 'expense' | 'income')[] = ['all', 'expense', 'income'];
+  const txControlRef = useRef<HTMLDivElement>(null);
+  const isDraggingTxRef = useRef(false);
+
+  const updateTxFromPointer = (clientX: number) => {
+    if (!txControlRef.current) return;
+    const rect = txControlRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relX = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(0.999, relX / rect.width));
+    const targetIdx = Math.floor(ratio * txFilterTabs.length);
+    const selected = txFilterTabs[targetIdx];
+    if (selected && selected !== txListFilter) {
+      setTxListFilter(selected);
+    }
+  };
+
+  const handleTxPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingTxRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updateTxFromPointer(e.clientX);
+  };
+
+  const handleTxPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingTxRef.current) return;
+    updateTxFromPointer(e.clientX);
+  };
+
+  const handleTxPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingTxRef.current) {
+      isDraggingTxRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
+
   // Reference date state for week/month/year navigation
   const [refDate, setRefDate] = useState<Date>(() => new Date());
 
@@ -1288,25 +1327,49 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                         {isTxListOpen && (
                           <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-4">
-                            <div className="flex p-1 bg-[#1a1a1a] rounded-xl border border-neutral-800">
-                              {(['all', 'expense', 'income'] as const).map((filter) => (
+                            <div
+                              ref={txControlRef}
+                              onPointerDown={handleTxPointerDown}
+                              onPointerMove={handleTxPointerMove}
+                              onPointerUp={handleTxPointerUp}
+                              onPointerCancel={handleTxPointerUp}
+                              className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
+                            >
+                              {(
+                                [
+                                  { id: 'all', label: 'Tất cả' },
+                                  { id: 'expense', label: 'Chi' },
+                                  { id: 'income', label: 'Thu' },
+                                ] as const
+                              ).map((tab) => (
                                 <button
-                                  key={filter}
+                                  key={tab.id}
                                   type="button"
-                                  onClick={() => setTxListFilter(filter)}
-                                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                                    txListFilter === filter
-                                      ? filter === 'expense'
-                                        ? 'bg-rose-500/20 text-rose-300 shadow-xs'
-                                        : filter === 'income'
-                                        ? 'bg-emerald-500/20 text-emerald-300 shadow-xs'
-                                        : 'bg-white text-black shadow-xs'
-                                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                                  onClick={() => setTxListFilter(tab.id)}
+                                  className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                                    txListFilter === tab.id
+                                      ? tab.id === 'expense'
+                                        ? 'text-rose-300 font-extrabold'
+                                        : tab.id === 'income'
+                                        ? 'text-emerald-300 font-extrabold'
+                                        : 'text-black font-extrabold'
+                                      : 'text-neutral-400 hover:text-white'
                                   }`}
                                 >
-                                  {filter === 'all' && 'Tất cả'}
-                                  {filter === 'expense' && 'Chi'}
-                                  {filter === 'income' && 'Thu'}
+                                  {txListFilter === tab.id && (
+                                    <motion.div
+                                      layoutId="stats_tx_list_filter_tab"
+                                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                                      className={`absolute inset-0 rounded-lg shadow-xs ${
+                                        tab.id === 'expense'
+                                          ? 'bg-rose-500/20 border border-rose-500/30'
+                                          : tab.id === 'income'
+                                          ? 'bg-emerald-500/20 border border-emerald-500/30'
+                                          : 'bg-white'
+                                      }`}
+                                    />
+                                  )}
+                                  <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
                                 </button>
                               ))}
                             </div>
