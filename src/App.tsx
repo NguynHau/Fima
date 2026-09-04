@@ -32,7 +32,7 @@ import { DayDetailModal } from './components/DayDetailModal';
 import { InitialSetupModal } from './components/InitialSetupModal';
 import { IOSInstallGuide } from './components/IOSInstallGuide';
 import { GlobalSearchView } from './components/GlobalSearchView';
-import { LiquidGlassTunerModal } from './components/LiquidGlassTunerModal';
+import { LiquidGlassStudioView } from './components/LiquidGlassStudioView';
 import { LiquidGlassProvider } from './context/LiquidGlassContext';
 import { usePWA } from './hooks/usePWA';
 import { initAutoUpdateChecker } from './services/updateService';
@@ -303,6 +303,7 @@ export default function App() {
                 onOpenInstallGuide={() => setIsInstallGuideOpen(true)}
                 isCategoryModalOpen={isCategoryManagementOpen}
                 onSetCategoryModalOpen={setIsCategoryManagementOpen}
+                onOpenLiquidGlassStudio={() => setIsTunerOpen(true)}
               />
             ) : (
               <ProfileView
@@ -320,12 +321,11 @@ export default function App() {
               activeTab={activeTab}
               onChangeTab={(tab) => setActiveTab(tab)}
               onOpenAddTransaction={handleAddClick}
-              onOpenTuner={() => setIsTunerOpen(true)}
             />
           )}
 
-          {/* Liquid Glass Tuner Modal */}
-          <LiquidGlassTunerModal
+          {/* Liquid Glass Studio Full-Page View */}
+          <LiquidGlassStudioView
             isOpen={isTunerOpen}
             onClose={() => setIsTunerOpen(false)}
           />

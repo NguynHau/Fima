@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layers, PieChart, Plus, Settings, User, Users, Sliders } from 'lucide-react';
+import { Layers, PieChart, Plus, Settings, User, Users } from 'lucide-react';
 import { type ActiveTab } from '../types';
 import { motion, useMotionValue, useSpring, useVelocity, useTransform } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
@@ -8,7 +8,6 @@ interface BottomNavigationProps {
   activeTab: ActiveTab;
   onChangeTab: (tab: ActiveTab) => void;
   onOpenAddTransaction: () => void;
-  onOpenTuner?: () => void;
 }
 
 const TAB_ORDER: ActiveTab[] = ['flow', 'statistics', 'profile', 'debts', 'settings'];
@@ -17,7 +16,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   activeTab,
   onChangeTab,
   onOpenAddTransaction,
-  onOpenTuner,
 }) => {
   const { config } = useLiquidGlass();
   const navRef = useRef<HTMLElement>(null);
@@ -113,7 +111,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   }, [activeTab]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('#nav-btn-add-transaction') || (e.target as HTMLElement).closest('#nav-btn-glass-tuner')) return;
+    if ((e.target as HTMLElement).closest('#nav-btn-add-transaction')) return;
 
     const navEl = navRef.current;
     if (!navEl) return;
@@ -259,23 +257,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       style={{ paddingBottom: `max(env(safe-area-inset-bottom), ${config.island.bottomOffset}px)` }}
     >
       <div className="relative w-full max-w-[500px] flex flex-col items-end gap-2.5 pointer-events-none">
-        {/* Floating Action Stack: Liquid Glass Tuner Button ABOVE the + Button */}
-        <div className="pointer-events-auto pr-3 flex flex-col items-center gap-2.5">
-          {onOpenTuner && (
-            <motion.button
-              id="nav-btn-glass-tuner"
-              onClick={onOpenTuner}
-              whileTap={{ scale: 0.88 }}
-              whileHover={{ scale: 1.08 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className="w-[48px] h-[48px] rounded-full bg-[#18181b]/90 text-emerald-400 shadow-[0_4px_16px_rgba(0,0,0,0.5)] border border-neutral-700/80 backdrop-blur-md flex items-center justify-center cursor-pointer outline-none touch-manipulation"
-              aria-label="Liquid Glass Tuner"
-              title="Cài đặt Liquid Glass Tuner"
-            >
-              <Sliders size={20} strokeWidth={2.2} />
-            </motion.button>
-          )}
-
+        {/* Floating Action: + Button */}
+        <div className="pointer-events-auto pr-3 flex flex-col items-center">
           <motion.button
             id="nav-btn-add-transaction"
             onClick={onOpenAddTransaction}

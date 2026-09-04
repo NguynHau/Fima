@@ -18,14 +18,43 @@ interface LiquidGlassContextType {
   resetIsland: () => void;
   resetActiveTab: () => void;
   resetAll: () => void;
+  resetToOriginalDefault: () => void;
+  saveCurrentConfig: () => void;
+  setAsNewDefault: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  isDirty: boolean;
 }
 
 const STORAGE_KEY = 'fima_liquid_glass_config_v1';
+const USER_DEFAULT_KEY = 'fima_liquid_glass_user_default_v1';
 
 const LiquidGlassContext = createContext<LiquidGlassContextType | null>(null);
 
 export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<LiquidGlassConfig>(() => {
+  // Helper to load user's custom default or standard default
+  const getInitialDefault = (): LiquidGlassConfig => {
+    try {
+      const userDef = localStorage.getItem(USER_DEFAULT_KEY);
+      if (userDef) {
+        const parsed = JSON.parse(userDef);
+        if (parsed && parsed.island && parsed.activeTab) {
+          return {
+            preset: parsed.preset || 'custom',
+            island: { ...DEFAULT_ISLAND_CONFIG, ...parsed.island },
+            activeTab: { ...DEFAULT_ACTIVE_TAB_CONFIG, ...parsed.activeTab },
+          };
+        }
+      }
+    } catch (e) {
+      console.error('Error loading custom default', e);
+    }
+    return DEFAULT_LIQUID_GLASS_CONFIG;
+  };
+
+  const [savedConfig, setSavedConfig] = useState<LiquidGlassConfig>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -41,19 +70,22 @@ export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } catch (e) {
       console.error('Error loading liquid glass config from storage', e);
     }
-    return DEFAULT_LIQUID_GLASS_CONFIG;
+    return getInitialDefault();
   });
 
-  // Persist to localStorage on change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    } catch (e) {
-      console.error('Error saving liquid glass config', e);
-    }
-  }, [config]);
+  const [config, setConfig] = useState<LiquidGlassConfig>(savedConfig);
 
-  // Sync key values to root CSS variables for global styles
+  // History stacks for Undo / Redo
+  const [history, setHistory] = useState<LiquidGlassConfig[]>([]);
+  const [future, setFuture] = useState<LiquidGlassConfig[]>([]);
+
+  // Push current config to history before state update
+  const pushHistory = (currentCfg: LiquidGlassConfig) => {
+    setHistory((prev) => [...prev.slice(-20), currentCfg]); // Keep last 20 steps
+    setFuture([]); // clear future on new action
+  };
+
+  // Sync to root CSS variables for instant visual update
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--glass-bg-opacity', config.island.bgOpacity.toString());
@@ -67,55 +99,133 @@ export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ c
     root.style.setProperty('--island-scale', config.island.scale.toString());
   }, [config]);
 
+  // Persist to storage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    } catch (e) {
+      console.error('Error saving liquid glass config', e);
+    }
+  }, [config]);
+
   const updateIsland = useCallback((partial: Partial<IslandConfig>) => {
-    setConfig((prev) => ({
-      ...prev,
-      preset: 'custom',
-      island: {
-        ...prev.island,
-        ...partial,
-      },
-    }));
+    setConfig((prev) => {
+      pushHistory(prev);
+      return {
+        ...prev,
+        preset: 'custom',
+        island: {
+          ...prev.island,
+          ...partial,
+        },
+      };
+    });
   }, []);
 
   const updateActiveTab = useCallback((partial: Partial<ActiveTabConfig>) => {
-    setConfig((prev) => ({
-      ...prev,
-      preset: 'custom',
-      activeTab: {
-        ...prev.activeTab,
-        ...partial,
-      },
-    }));
+    setConfig((prev) => {
+      pushHistory(prev);
+      return {
+        ...prev,
+        preset: 'custom',
+        activeTab: {
+          ...prev.activeTab,
+          ...partial,
+        },
+      };
+    });
   }, []);
 
   const applyPreset = useCallback((preset: PresetType) => {
     if (preset === 'custom') return;
     const presetConfig = PRESETS[preset];
     if (presetConfig) {
-      setConfig(presetConfig);
+      setConfig((prev) => {
+        pushHistory(prev);
+        return presetConfig;
+      });
     }
   }, []);
 
   const resetIsland = useCallback(() => {
-    setConfig((prev) => ({
-      ...prev,
-      preset: 'custom',
-      island: DEFAULT_ISLAND_CONFIG,
-    }));
+    setConfig((prev) => {
+      pushHistory(prev);
+      const def = getInitialDefault();
+      return {
+        ...prev,
+        preset: 'custom',
+        island: def.island,
+      };
+    });
   }, []);
 
   const resetActiveTab = useCallback(() => {
-    setConfig((prev) => ({
-      ...prev,
-      preset: 'custom',
-      activeTab: DEFAULT_ACTIVE_TAB_CONFIG,
-    }));
+    setConfig((prev) => {
+      pushHistory(prev);
+      const def = getInitialDefault();
+      return {
+        ...prev,
+        preset: 'custom',
+        activeTab: def.activeTab,
+      };
+    });
   }, []);
 
   const resetAll = useCallback(() => {
-    setConfig(DEFAULT_LIQUID_GLASS_CONFIG);
+    setConfig((prev) => {
+      pushHistory(prev);
+      return getInitialDefault();
+    });
   }, []);
+
+  const resetToOriginalDefault = useCallback(() => {
+    setConfig((prev) => {
+      pushHistory(prev);
+      try {
+        localStorage.removeItem(USER_DEFAULT_KEY);
+      } catch (e) {
+        console.error(e);
+      }
+      return DEFAULT_LIQUID_GLASS_CONFIG;
+    });
+  }, []);
+
+  const saveCurrentConfig = useCallback(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      setSavedConfig(config);
+    } catch (e) {
+      console.error('Error explicitly saving config', e);
+    }
+  }, [config]);
+
+  const setAsNewDefault = useCallback(() => {
+    try {
+      localStorage.setItem(USER_DEFAULT_KEY, JSON.stringify(config));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      setSavedConfig(config);
+    } catch (e) {
+      console.error('Error saving user default', e);
+    }
+  }, [config]);
+
+  const undo = useCallback(() => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setHistory((prev) => prev.slice(0, prev.length - 1));
+    setFuture((prev) => [config, ...prev]);
+    setConfig(previous);
+  }, [history, config]);
+
+  const redo = useCallback(() => {
+    if (future.length === 0) return;
+    const next = future[0];
+    setFuture((prev) => prev.slice(1));
+    setHistory((prev) => [...prev, config]);
+    setConfig(next);
+  }, [future, config]);
+
+  const isDirty = JSON.stringify(config) !== JSON.stringify(savedConfig);
 
   return (
     <LiquidGlassContext.Provider
@@ -127,6 +237,14 @@ export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ c
         resetIsland,
         resetActiveTab,
         resetAll,
+        resetToOriginalDefault,
+        saveCurrentConfig,
+        setAsNewDefault,
+        undo,
+        redo,
+        canUndo: history.length > 0,
+        canRedo: future.length > 0,
+        isDirty,
       }}
     >
       {children}

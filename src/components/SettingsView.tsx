@@ -17,6 +17,7 @@ import {
   Activity,
   Edit3,
   X,
+  Sliders,
 } from 'lucide-react';
 import { AIManager } from '../services/ai/AIManager';
 import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
@@ -37,6 +38,7 @@ interface SettingsViewProps {
   onOpenInstallGuide: () => void;
   isCategoryModalOpen: boolean;
   onSetCategoryModalOpen: (open: boolean) => void;
+  onOpenLiquidGlassStudio?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -44,6 +46,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onOpenInstallGuide,
   isCategoryModalOpen,
   onSetCategoryModalOpen,
+  onOpenLiquidGlassStudio,
 }) => {
   const [walletStr, setWalletStr] = useState('');
   const [bankStr, setBankStr] = useState('');
@@ -318,7 +321,50 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </button>
       </div>
 
-      {/* 3. SECTION: DỮ LIỆU */}
+      {/* 3. SECTION: TÙY CHỌN NHÀ PHÁT TRIỂN - LIQUID GLASS */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-bold text-emerald-400 mb-1.5">
+              <Sparkles size={11} /> Tùy chọn dành cho nhà phát triển
+            </div>
+            <h3 className="text-xs font-black text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Sliders size={15} className="text-emerald-400" />
+              Chỉnh sửa Liquid Glass (Giao diện Kính)
+            </h3>
+            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed font-medium mt-1">
+              Tinh chỉnh hiệu ứng kính quang học, độ mờ (blur), độ trong suốt, bóng đổ 3D và vật lý lò xo giọt nước của Đảo chính & vòng tròn chọn tab với Đảo giả lập thử nghiệm.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenLiquidGlassStudio}
+          className="w-full p-3.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 hover:border-neutral-700 text-white rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer shadow-xs active:scale-98 group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform shrink-0">
+              <Sliders size={18} />
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+                Mở Liquid Glass Studio
+              </div>
+              <div className="text-[11px] text-neutral-400">
+                Toàn trang • Đảo giả lập thử nghiệm chuyển động
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-neutral-400 group-hover:text-white transition-colors">
+            <span className="text-xs font-semibold">Tùy chỉnh</span>
+            <ChevronRight size={16} />
+          </div>
+        </button>
+      </div>
+
+      {/* 4. SECTION: DỮ LIỆU */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
           Sao lưu & Khôi phục Dữ liệu

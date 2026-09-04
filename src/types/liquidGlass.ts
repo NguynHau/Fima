@@ -108,7 +108,80 @@ export interface LiquidGlassConfig {
   activeTab: ActiveTabConfig;
 }
 
-export type PresetType = 'default' | 'soft' | 'strong' | 'clear' | 'ios' | 'custom';
+export type PresetType =
+  | 'level0_clear'
+  | 'level1_subtle'
+  | 'level2_default'
+  | 'level3_frosted'
+  | 'level4_cyber'
+  | 'level5_heavy'
+  | 'custom'
+  // Legacy aliases for backward compatibility
+  | 'default'
+  | 'soft'
+  | 'strong'
+  | 'clear'
+  | 'ios';
+
+export interface PresetInfo {
+  id: PresetType;
+  level: number;
+  name: string;
+  subtitle: string;
+  badge: string;
+  accentColor: string;
+}
+
+export const PRESET_INFOS: PresetInfo[] = [
+  {
+    id: 'level0_clear',
+    level: 0,
+    name: 'Mức 0: Siêu trong suốt',
+    subtitle: 'Kính mỏng tối giản, gần như tàng hình không chiếm tầm nhìn',
+    badge: 'Ultra Clear',
+    accentColor: '#38bdf8',
+  },
+  {
+    id: 'level1_subtle',
+    level: 1,
+    name: 'Mức 1: Kính mờ thanh lịch',
+    subtitle: 'Độ mờ chuẩn Apple iOS, bão hòa dịu nhẹ và phản chiếu tự nhiên',
+    badge: 'Subtle Frosted',
+    accentColor: '#a78bfa',
+  },
+  {
+    id: 'level2_default',
+    level: 2,
+    name: 'Mức 2: Kính lỏng tiêu chuẩn',
+    subtitle: 'Fima Tiêu chuẩn cân bằng, giọt nước phồng hữu cơ và bóng đổ sâu',
+    badge: 'Standard Liquid',
+    accentColor: '#10b981',
+  },
+  {
+    id: 'level3_frosted',
+    level: 3,
+    name: 'Mức 3: Thủy tinh đậm khối',
+    subtitle: 'Kính băng nhám dày, độ tương phản cao và đường viền sắc nét',
+    badge: 'Deep Frosted',
+    accentColor: '#f59e0b',
+  },
+  {
+    id: 'level4_cyber',
+    level: 4,
+    name: 'Mức 4: Hào quang Neon',
+    subtitle: 'Phát sáng Outer Glow màu tím cyan huyền ảo, phong cách Cyberpunk',
+    badge: 'Cyber Glow',
+    accentColor: '#ec4899',
+  },
+  {
+    id: 'level5_heavy',
+    level: 5,
+    name: 'Mức 5: Thủy tinh khối 3D',
+    subtitle: 'Hiệu ứng kính cực đại, giọt nước siêu nảy và bóng đổ nổi bật',
+    badge: 'Extreme 3D',
+    accentColor: '#ef4444',
+  },
+];
 
 export const DEFAULT_ISLAND_CONFIG: IslandConfig = {
   widthPercent: 100,
@@ -201,116 +274,203 @@ export const DEFAULT_ACTIVE_TAB_CONFIG: ActiveTabConfig = {
 };
 
 export const DEFAULT_LIQUID_GLASS_CONFIG: LiquidGlassConfig = {
-  preset: 'default',
+  preset: 'level2_default',
   island: DEFAULT_ISLAND_CONFIG,
   activeTab: DEFAULT_ACTIVE_TAB_CONFIG,
 };
 
-export const PRESETS: Record<Exclude<PresetType, 'custom'>, LiquidGlassConfig> = {
-  default: DEFAULT_LIQUID_GLASS_CONFIG,
-  soft: {
-    preset: 'soft',
+export const PRESETS: Record<string, LiquidGlassConfig> = {
+  level0_clear: {
+    preset: 'level0_clear',
+    island: {
+      ...DEFAULT_ISLAND_CONFIG,
+      bgOpacity: 0.02,
+      blur: 2.0,
+      saturation: 100,
+      borderWidth: 0.5,
+      borderOpacity: 0.12,
+      innerBorderOpacity: 0.08,
+      shadowOpacity: 0.12,
+      shadowBlur: 14,
+      shadowY: 8,
+      outerGlowSize: 0,
+    },
+    activeTab: {
+      ...DEFAULT_ACTIVE_TAB_CONFIG,
+      bgOpacity: 0.09,
+      blur: 8,
+      saturation: 120,
+      borderWidth: 0.5,
+      borderOpacity: 0.15,
+      innerBorder: 0.18,
+      outerBorder: 0.04,
+      shadowOpacity: 0.14,
+      shadowBlur: 10,
+      swellScaleX: 1.25,
+      swellScaleY: 1.6,
+    },
+  },
+  level1_subtle: {
+    preset: 'level1_subtle',
     island: {
       ...DEFAULT_ISLAND_CONFIG,
       bgOpacity: 0.08,
       blur: 16,
       saturation: 130,
+      brightness: 102,
       borderWidth: 0.8,
-      borderOpacity: 0.14,
-      shadowOpacity: 0.20,
-      shadowBlur: 25,
-      highlightOpacity: 0.22,
-      innerGlow: 4,
-    },
-    activeTab: {
-      ...DEFAULT_ACTIVE_TAB_CONFIG,
-      bgOpacity: 0.25,
-      blur: 28,
-      saturation: 210,
-      innerBorder: 0.40,
-      shadowOpacity: 0.25,
-      innerGlow: 12,
-    },
-  },
-  strong: {
-    preset: 'strong',
-    island: {
-      ...DEFAULT_ISLAND_CONFIG,
-      bgOpacity: 0.18,
-      blur: 30,
-      saturation: 200,
-      contrast: 110,
-      borderWidth: 1.5,
-      borderOpacity: 0.25,
-      innerBorderOpacity: 0.35,
-      shadowOpacity: 0.55,
-      shadowBlur: 45,
-      highlightOpacity: 0.30,
-      innerGlow: 8,
-    },
-    activeTab: {
-      ...DEFAULT_ACTIVE_TAB_CONFIG,
-      bgOpacity: 0.38,
-      blur: 35,
-      saturation: 250,
-      contrast: 115,
-      borderWidth: 1.0,
-      borderOpacity: 0.30,
-      innerBorder: 0.50,
-      outerBorder: 0.20,
-      shadowOpacity: 0.50,
-      shadowBlur: 28,
-    },
-  },
-  clear: {
-    preset: 'clear',
-    island: {
-      ...DEFAULT_ISLAND_CONFIG,
-      bgOpacity: 0.02,
-      blur: 2,
-      saturation: 100,
-      borderWidth: 0.5,
-      borderOpacity: 0.18,
-      innerBorderOpacity: 0.10,
-      shadowOpacity: 0.15,
-      shadowBlur: 15,
-      highlightOpacity: 0.10,
-    },
-    activeTab: {
-      ...DEFAULT_ACTIVE_TAB_CONFIG,
-      bgOpacity: 0.10,
-      blur: 8,
-      saturation: 120,
-      borderWidth: 0.5,
-      borderOpacity: 0.20,
-      innerBorder: 0.20,
-      shadowOpacity: 0.15,
-    },
-  },
-  ios: {
-    preset: 'ios',
-    island: {
-      ...DEFAULT_ISLAND_CONFIG,
-      bgOpacity: 0.12,
-      blur: 22,
-      saturation: 180,
-      brightness: 105,
-      borderWidth: 1.0,
-      borderOpacity: 0.18,
+      borderOpacity: 0.15,
       innerBorderOpacity: 0.20,
-      shadowOpacity: 0.35,
-      shadowBlur: 30,
-      highlightOpacity: 0.25,
+      shadowOpacity: 0.22,
+      shadowBlur: 24,
+      shadowY: 12,
+      outerGlowSize: 0,
     },
     activeTab: {
       ...DEFAULT_ACTIVE_TAB_CONFIG,
       bgOpacity: 0.22,
-      blur: 25,
-      saturation: 200,
-      borderWidth: 0.8,
-      borderOpacity: 0.22,
+      blur: 24,
+      saturation: 190,
+      borderWidth: 0.7,
+      borderOpacity: 0.20,
       innerBorder: 0.35,
-      shadowOpacity: 0.30,
+      outerBorder: 0.10,
+      shadowOpacity: 0.25,
+      shadowBlur: 18,
+      swellScaleX: 1.30,
+      swellScaleY: 1.75,
     },
+  },
+  level2_default: DEFAULT_LIQUID_GLASS_CONFIG,
+  level3_frosted: {
+    preset: 'level3_frosted',
+    island: {
+      ...DEFAULT_ISLAND_CONFIG,
+      bgOpacity: 0.18,
+      blur: 32,
+      saturation: 200,
+      contrast: 110,
+      borderWidth: 1.4,
+      borderOpacity: 0.25,
+      innerBorderOpacity: 0.32,
+      shadowOpacity: 0.50,
+      shadowBlur: 40,
+      shadowY: 18,
+      outerGlowSize: 0,
+    },
+    activeTab: {
+      ...DEFAULT_ACTIVE_TAB_CONFIG,
+      bgOpacity: 0.36,
+      blur: 32,
+      saturation: 240,
+      contrast: 115,
+      borderWidth: 1.0,
+      borderOpacity: 0.30,
+      innerBorder: 0.48,
+      outerBorder: 0.18,
+      shadowOpacity: 0.45,
+      shadowBlur: 26,
+      swellScaleX: 1.40,
+      swellScaleY: 1.95,
+    },
+  },
+  level4_cyber: {
+    preset: 'level4_cyber',
+    island: {
+      ...DEFAULT_ISLAND_CONFIG,
+      bgOpacity: 0.12,
+      blur: 24,
+      saturation: 220,
+      brightness: 110,
+      borderWidth: 1.2,
+      borderOpacity: 0.35,
+      innerBorderOpacity: 0.40,
+      shadowOpacity: 0.60,
+      shadowBlur: 45,
+      shadowY: 16,
+      outerGlowSize: 18,
+      outerGlowColor: 'rgba(168, 85, 247, 0.35)',
+    },
+    activeTab: {
+      ...DEFAULT_ACTIVE_TAB_CONFIG,
+      bgOpacity: 0.28,
+      blur: 26,
+      saturation: 260,
+      contrast: 120,
+      borderWidth: 1.0,
+      borderOpacity: 0.40,
+      innerBorder: 0.55,
+      outerBorder: 0.25,
+      shadowOpacity: 0.50,
+      shadowBlur: 25,
+      innerGlow: 15,
+      swellScaleX: 1.45,
+      swellScaleY: 2.05,
+    },
+  },
+  level5_heavy: {
+    preset: 'level5_heavy',
+    island: {
+      ...DEFAULT_ISLAND_CONFIG,
+      bgOpacity: 0.25,
+      blur: 45,
+      saturation: 250,
+      brightness: 115,
+      contrast: 120,
+      borderWidth: 2.0,
+      borderOpacity: 0.45,
+      innerBorderOpacity: 0.50,
+      shadowOpacity: 0.70,
+      shadowBlur: 55,
+      shadowY: 22,
+      outerGlowSize: 12,
+      outerGlowColor: 'rgba(255, 255, 255, 0.20)',
+      springStiffness: 480,
+      springDamping: 28,
+    },
+    activeTab: {
+      ...DEFAULT_ACTIVE_TAB_CONFIG,
+      width: 76,
+      height: 50,
+      bgOpacity: 0.45,
+      blur: 40,
+      saturation: 280,
+      contrast: 130,
+      borderWidth: 1.5,
+      borderOpacity: 0.50,
+      innerBorder: 0.65,
+      outerBorder: 0.30,
+      shadowOpacity: 0.60,
+      shadowBlur: 35,
+      innerGlow: 18,
+      swellScaleX: 1.55,
+      swellScaleY: 2.20,
+      moveStiffness: 480,
+      moveDamping: 28,
+      pressStiffness: 400,
+      pressDamping: 20,
+    },
+  },
+  // Legacy mappings for backwards compatibility
+  default: DEFAULT_LIQUID_GLASS_CONFIG,
+  soft: {
+    preset: 'level1_subtle',
+    island: { ...DEFAULT_ISLAND_CONFIG, bgOpacity: 0.08, blur: 16 },
+    activeTab: { ...DEFAULT_ACTIVE_TAB_CONFIG, bgOpacity: 0.22, blur: 24 },
+  },
+  strong: {
+    preset: 'level3_frosted',
+    island: { ...DEFAULT_ISLAND_CONFIG, bgOpacity: 0.18, blur: 32 },
+    activeTab: { ...DEFAULT_ACTIVE_TAB_CONFIG, bgOpacity: 0.36, blur: 32 },
+  },
+  clear: {
+    preset: 'level0_clear',
+    island: { ...DEFAULT_ISLAND_CONFIG, bgOpacity: 0.02, blur: 2 },
+    activeTab: { ...DEFAULT_ACTIVE_TAB_CONFIG, bgOpacity: 0.09, blur: 8 },
+  },
+  ios: {
+    preset: 'level1_subtle',
+    island: { ...DEFAULT_ISLAND_CONFIG, bgOpacity: 0.12, blur: 22 },
+    activeTab: { ...DEFAULT_ACTIVE_TAB_CONFIG, bgOpacity: 0.22, blur: 25 },
   },
 };
