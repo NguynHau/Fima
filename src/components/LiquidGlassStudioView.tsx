@@ -1645,7 +1645,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                           },
                         });
                       }}
-                      className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs text-neutral-200 font-mono"
+                      className="w-[78px] shrink-0 bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-1 text-xs text-neutral-200 font-mono text-center uppercase"
                       placeholder="#a855f7"
                     />
                     {/* Quick swatches */}
@@ -1712,7 +1712,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                           },
                         });
                       }}
-                      className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs text-neutral-200 font-mono"
+                      className="w-[78px] shrink-0 bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-1 text-xs text-neutral-200 font-mono text-center uppercase"
                       placeholder="#ec4899"
                     />
                     {/* Quick swatches */}

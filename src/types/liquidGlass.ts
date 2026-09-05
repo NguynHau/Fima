@@ -246,8 +246,8 @@ export const DEFAULT_ISLAND_CONFIG: IslandConfig = {
   tintColor: '#ffffff',
 
   borderWidth: 0.2,
-  borderOpacity: 0.03,
-  innerBorderOpacity: 0.12,
+  borderOpacity: 0.15,
+  innerBorderOpacity: 0,
   outerBorderOpacity: 0,
   borderColor: '#ffffff',
   borderGlowSpread: 1,
@@ -265,20 +265,20 @@ export const DEFAULT_ISLAND_CONFIG: IslandConfig = {
   outerGlowColor: 'rgba(139, 92, 246, 0.20)',
 
   transitionDuration: 300,
-  springStiffness: 420,
-  springDamping: 32,
+  springStiffness: 100,
+  springDamping: 10,
   springMass: 0.5,
   tapScale: 0.99,
 };
 
 export const DEFAULT_ACTIVE_TAB_CONFIG: ActiveTabConfig = {
-  width: 82,
-  height: 48,
+  width: 71,
+  height: 54,
   sizeScale: 1,
   offsetX: 0,
   offsetY: 0,
-  swellScaleX: 1.2,
-  swellScaleY: 1.7,
+  swellScaleX: 1.35,
+  swellScaleY: 1.4,
 
   borderRadius: 9999,
   roundnessPercent: 100,
@@ -291,21 +291,21 @@ export const DEFAULT_ACTIVE_TAB_CONFIG: ActiveTabConfig = {
   tintIntensity: 0,
   tintColor: '#ffffff',
 
-  borderWidth: 0.2,
-  borderOpacity: 0.41,
+  borderWidth: 0,
+  borderOpacity: 0,
   innerBorder: 0,
-  outerBorder: 0.51,
+  outerBorder: 0,
   borderColor: '#ffffff',
-  topHighlightOpacity: 0.25,
+  topHighlightOpacity: 0.17,
 
   // Droplet Reflected Edge (Secondary reversed optical reflection)
-  reflectedEdgeOpacity: 0.28,
-  reflectedEdgeWidth: 1.2,
-  reflectedEdgeBlur: 2.5,
+  reflectedEdgeOpacity: 0.48,
+  reflectedEdgeWidth: 0,
+  reflectedEdgeBlur: 0,
   reflectedEdgeOffset: 1.5,
-  reflectedEdgeDirection: 'bottom',
+  reflectedEdgeDirection: 'bottom-left',
 
-  // Active Tab Gradient (Purple -> Pink default, replaces white active tab)
+  // Active Tab Gradient (Purple -> Pink default)
   activeTabGradient: {
     startColor: '#a855f7',
     endColor: '#ec4899',
@@ -322,14 +322,20 @@ export const DEFAULT_ACTIVE_TAB_CONFIG: ActiveTabConfig = {
   shadowY: -20,
 
   highlightOpacity: 0.3,
-  innerGlow: 8,
-  glassShine: 20,
+  innerGlow: 0,
+  glassShine: 0,
 
-  springStiffness: 420,
-  springDamping: 32,
-  iconActiveScale: 1.18,
-  moveStiffness: 420,
-  moveDamping: 32,
+  springStiffness: 1000,
+  springDamping: 21,
+  iconActiveScale: 1,
+  moveStiffness: 1000,
+  moveDamping: 21,
+  moveMass: 0.5,
+  pressStiffness: 100,
+  pressDamping: 10,
+  pressMass: 0.5,
+  velocityStretch: 1.3,
+  velocitySquash: 0.8,
 };
 
 export const DEFAULT_LIQUID_GLASS_CONFIG: LiquidGlassConfig = {
