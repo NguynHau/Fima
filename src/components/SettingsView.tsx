@@ -33,6 +33,7 @@ import { parseAmountInput } from '../utils/formatters';
 import { useCategories } from '../hooks/useCategories';
 import { CategoryManagementModal } from './CategoryManagementModal';
 import { CategoryIcon } from './CategoryIcon';
+import { LiquidGlassStudioLogo } from './LiquidGlassStudioLogo';
 
 interface SettingsViewProps {
   onDataChanged: () => void;
@@ -43,13 +44,14 @@ interface SettingsViewProps {
 }
 
 interface SettingsCardHeaderProps {
-  icon: React.ComponentType<{
+  icon?: React.ComponentType<{
     size?: number;
     className?: string;
     stroke?: string;
     color?: string;
     strokeWidth?: number;
   }>;
+  customIcon?: React.ReactNode;
   title: string;
   description: React.ReactNode;
   isDanger?: boolean;
@@ -57,22 +59,25 @@ interface SettingsCardHeaderProps {
 
 const SettingsCardHeader: React.FC<SettingsCardHeaderProps> = ({
   icon: Icon,
+  customIcon,
   title,
   description,
   isDanger = false,
 }) => (
   <div className="space-y-1.5">
     <div className="flex items-center gap-2">
-      {isDanger ? (
+      {customIcon ? (
+        customIcon
+      ) : isDanger && Icon ? (
         <Icon size={18} className="text-rose-500 shrink-0" strokeWidth={2.3} />
-      ) : (
+      ) : Icon ? (
         <Icon
           size={18}
           className="shrink-0"
           stroke="url(#settings-pink-purple-grad)"
           strokeWidth={2.3}
         />
-      )}
+      ) : null}
       <h3
         className={`text-xs sm:text-sm font-black uppercase tracking-wider ${
           isDanger ? 'text-rose-400' : 'text-neutral-200'
@@ -299,7 +304,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
 
       {/* SVG Gradient Defs for Settings Logos */}
-      <svg className="w-0 h-0 absolute pointer-events-none" aria-hidden="true">
+      <svg width="0" height="0" style={{ position: 'absolute', pointerEvents: 'none', opacity: 0 }} aria-hidden="true">
         <defs>
           <linearGradient id="settings-pink-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#f472b6" />
@@ -348,8 +353,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 3. SECTION: LIQUID GLASS STUDIO */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
-          icon={Sliders}
-          title="Liquid Glass"
+          customIcon={<LiquidGlassStudioLogo size={20} />}
+          title="Liquid Glass Studio"
           description="Tinh chỉnh hiệu ứng kính quang học, độ mờ (blur), độ trong suốt, bóng đổ 3D và vật lý lò xo giọt nước của Đảo chính & vòng tròn chọn tab với Đảo giả lập thử nghiệm."
         />
 
@@ -358,7 +363,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           onClick={onOpenLiquidGlassStudio}
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
-          <Sliders size={16} className="text-neutral-300 shrink-0" />
+          <LiquidGlassStudioLogo size={16} />
           <span>Mở liquid glass studio</span>
         </button>
       </div>

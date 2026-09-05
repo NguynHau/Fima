@@ -20,11 +20,13 @@ import {
   EyeOff,
   Palette,
 } from 'lucide-react';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
 import { PRESET_INFOS, PresetType } from '../types/liquidGlass';
 import { type ActiveTab } from '../types';
 import { getSvgGradientCoords, getReflectedEdgeBoxShadow } from '../utils/liquidGlassOptical';
+import { SegmentedTabs } from './SegmentedTabs';
+import { LiquidGlassStudioLogo } from './LiquidGlassStudioLogo';
 
 interface LiquidGlassStudioViewProps {
   isOpen: boolean;
@@ -358,13 +360,16 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
             >
               <X size={18} />
             </button>
-            <div>
-              <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
-                Liquid Glass Studio
-              </h1>
-              <p className="text-[11px] text-neutral-400">
-                Tinh chỉnh quang học & vật lý Đảo điều hướng
-              </p>
+            <div className="flex items-center gap-2">
+              <LiquidGlassStudioLogo size={22} />
+              <div>
+                <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
+                  Liquid Glass Studio
+                </h1>
+                <p className="text-[11px] text-neutral-400">
+                  Tinh chỉnh quang học & vật lý Đảo điều hướng
+                </p>
+              </div>
             </div>
           </div>
 
@@ -417,150 +422,57 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
           </div>
         </div>
 
-        {/* CHỦ ĐỀ THEO MỨC ĐỘ & TÙY CHỈNH NẰM TRONG 1 THẺ */}
+        {/* CONTAINER 1: CHỦ ĐỀ & TÙY CHỈNH THEO DESIGN SYSTEM */}
         <div className="px-4 pt-1.5 pb-2">
-          <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm">
-            <div className="grid grid-cols-2 gap-1.5 relative select-none">
-              <button
-                type="button"
-                onClick={() => setMainTab('presets')}
-                className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                  mainTab === 'presets' ? 'text-black' : 'text-neutral-400'
-                }`}
-              >
-                {mainTab === 'presets' && (
-                  <motion.div
-                    layoutId="liquid_studio_main_tab"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute inset-0 bg-white rounded-xl shadow-sm"
-                  />
-                )}
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  <Sparkles
-                    size={16}
-                    className={mainTab === 'presets' ? 'text-black' : 'text-neutral-400'}
-                  />
-                  <span>Chủ đề theo mức độ</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMainTab('custom')}
-                className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                  mainTab === 'custom' ? 'text-black' : 'text-neutral-400'
-                }`}
-              >
-                {mainTab === 'custom' && (
-                  <motion.div
-                    layoutId="liquid_studio_main_tab"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute inset-0 bg-white rounded-xl shadow-sm"
-                  />
-                )}
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  <Sliders
-                    size={16}
-                    className={mainTab === 'custom' ? 'text-black' : 'text-neutral-400'}
-                  />
-                  <span>Tùy chỉnh</span>
-                </span>
-              </button>
-            </div>
-          </div>
+          <SegmentedTabs
+            layoutId="liquid_studio_main_tab"
+            activeId={mainTab}
+            onChange={(id) => setMainTab(id as 'presets' | 'custom')}
+            tabs={[
+              { id: 'presets', label: 'Chủ đề', icon: Sparkles },
+              { id: 'custom', label: 'Tùy chỉnh', icon: Sliders },
+            ]}
+          />
         </div>
 
-        {/* KHI ẤN QUA TÙY CHỈNH: ĐẢO CHÍNH - GIỌT NƯỚC - MÃ CSS NẰM TRONG 1 THẺ (STYLE TƯƠNG TỰ) */}
-        {mainTab === 'custom' && (
-          <div className="px-4 pb-2.5 space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
-            <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm">
-              <div className="grid grid-cols-3 gap-1.5 relative select-none">
-                <button
-                  type="button"
-                  onClick={() => setCustomSubTab('island')}
-                  className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    customSubTab === 'island' ? 'text-black' : 'text-neutral-400'
-                  }`}
-                >
-                  {customSubTab === 'island' && (
-                    <motion.div
-                      layoutId="liquid_studio_custom_subtab"
-                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                      className="absolute inset-0 bg-white rounded-xl shadow-sm"
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center justify-center gap-1.5">
-                    <Sliders
-                      size={15}
-                      className={customSubTab === 'island' ? 'text-black' : 'text-neutral-400'}
-                    />
-                    <span>Đảo chính</span>
-                  </span>
-                </button>
+        {/* CONTAINER 2: ĐẢO CHÍNH - GIỌT NƯỚC - MÃ CSS CŨNG DÙNG SEGMENTED TABS THEO DESIGN SYSTEM */}
+        <AnimatePresence initial={false}>
+          {mainTab === 'custom' && (
+            <motion.div
+              key="custom-subtab-container"
+              initial={{ opacity: 0, height: 0, y: -4 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -4 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+              className="px-4 pb-2.5 space-y-2 overflow-hidden"
+            >
+              <SegmentedTabs
+                layoutId="liquid_studio_custom_subtab"
+                activeId={customSubTab}
+                onChange={(id) => setCustomSubTab(id as 'island' | 'droplet' | 'export')}
+                tabs={[
+                  { id: 'island', label: 'Đảo chính', icon: Sliders },
+                  { id: 'droplet', label: 'Giọt nước', icon: Layers },
+                  { id: 'export', label: 'Mã CSS', icon: Copy },
+                ]}
+              />
 
+              <div className="flex items-center justify-end px-1">
                 <button
                   type="button"
-                  onClick={() => setCustomSubTab('droplet')}
-                  className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    customSubTab === 'droplet' ? 'text-black' : 'text-neutral-400'
-                  }`}
+                  onClick={() => setShowControls((prev) => !prev)}
+                  className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                  title={showControls ? 'Thu gọn bảng để quan sát rộng hơn' : 'Hiện bảng điều khiển'}
                 >
-                  {customSubTab === 'droplet' && (
-                    <motion.div
-                      layoutId="liquid_studio_custom_subtab"
-                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                      className="absolute inset-0 bg-white rounded-xl shadow-sm"
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center justify-center gap-1.5">
-                    <Layers
-                      size={15}
-                      className={customSubTab === 'droplet' ? 'text-black' : 'text-neutral-400'}
-                    />
-                    <span>Giọt nước</span>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCustomSubTab('export')}
-                  className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    customSubTab === 'export' ? 'text-black' : 'text-neutral-400'
-                  }`}
-                >
-                  {customSubTab === 'export' && (
-                    <motion.div
-                      layoutId="liquid_studio_custom_subtab"
-                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                      className="absolute inset-0 bg-white rounded-xl shadow-sm"
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center justify-center gap-1.5">
-                    <Copy
-                      size={15}
-                      className={customSubTab === 'export' ? 'text-black' : 'text-neutral-400'}
-                    />
-                    <span>Mã CSS</span>
-                  </span>
+                  {showControls ? <EyeOff size={12} /> : <Eye size={12} />}
+                  <span>{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
                 </button>
               </div>
-            </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <div className="flex items-center justify-end px-1">
-              <button
-                type="button"
-                onClick={() => setShowControls((prev) => !prev)}
-                className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                title={showControls ? 'Thu gọn bảng để quan sát rộng hơn' : 'Hiện bảng điều khiển'}
-              >
-                {showControls ? <EyeOff size={12} /> : <Eye size={12} />}
-                <span>{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Khi ở Chủ đề theo mức độ: Hàng tinh gọn với nút ẩn/hiện bảng */}
+        {/* Khi ở Chủ đề: Hàng tinh gọn với nút ẩn/hiện bảng */}
         {mainTab === 'presets' && (
           <div className="flex items-center justify-between px-4 pb-2 text-[11px] text-neutral-400">
             <span>Chọn mức độ kính ({PRESET_INFOS.length} cấp độ):</span>
