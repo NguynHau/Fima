@@ -259,10 +259,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     minWidth: `${config.island.minWidth}px`,
     maxWidth: `${config.island.maxWidth}px`,
     height: `${config.island.height}px`,
-    paddingLeft: `${config.island.paddingX}px`,
-    paddingRight: `${config.island.paddingX}px`,
-    paddingTop: `${config.island.paddingY}px`,
-    paddingBottom: `${config.island.paddingY}px`,
     borderRadius: islandBorderRadius,
     backgroundColor: `rgba(255, 255, 255, ${config.island.bgOpacity})`,
     backdropFilter: `blur(${config.island.blur}px) saturate(${config.island.saturation}%) brightness(${config.island.brightness}%) contrast(${config.island.contrast}%)`,
@@ -390,19 +386,28 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           </motion.div>
 
           {/* LAYER 1: BASE TAB LAYER (Interactive, inactive gray colors) */}
-          <div className="flex items-center justify-between relative px-1 w-full z-10 pointer-events-none">
+          <div
+            className="absolute inset-0 flex items-center justify-between pointer-events-none z-10"
+            style={{
+              paddingLeft: `${config.island.paddingX}px`,
+              paddingRight: `${config.island.paddingX}px`,
+              paddingTop: `${config.island.paddingY}px`,
+              paddingBottom: `${config.island.paddingY}px`,
+            }}
+          >
             {TABS_NAV_ITEMS.map(({ tab, Icon, label }) => {
               const isCurrentActive = activeTab === tab;
               const isHovered = hoverTab === tab;
               const isVisuallyActive = hoverTab !== null ? isHovered : isCurrentActive;
 
               return (
-                <div key={tab} className="flex-1 flex justify-center pointer-events-auto">
+                <div key={tab} className="flex-1 h-full flex items-center justify-center pointer-events-auto">
                   <button
                     ref={(el) => { tabsRef.current[tab] = el; }}
                     id={`nav-btn-${tab}`}
                     type="button"
-                    className="relative flex items-center justify-center flex-1 h-full cursor-pointer outline-none touch-manipulation select-none"
+                    onClick={() => onChangeTab(tab)}
+                    className="relative flex items-center justify-center w-full h-full cursor-pointer outline-none touch-manipulation select-none p-0 m-0 bg-transparent border-none appearance-none"
                     aria-label={label}
                     title={label}
                   >
@@ -411,7 +416,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
                       transition={{ type: 'spring', stiffness: 500, damping: 28 }}
                       className="p-2 flex items-center justify-center text-neutral-500 hover:text-neutral-300 transition-colors"
                     >
-                      <Icon size={22} strokeWidth={isVisuallyActive ? 2.5 : 2} />
+                      <Icon size={22} strokeWidth={isVisuallyActive ? 2.3 : 2} />
                     </motion.div>
                   </button>
                 </div>
@@ -425,8 +430,12 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             style={{
               clipPath: dropletClipPath,
               WebkitClipPath: dropletClipPath,
+              paddingLeft: `${config.island.paddingX}px`,
+              paddingRight: `${config.island.paddingX}px`,
+              paddingTop: `${config.island.paddingY}px`,
+              paddingBottom: `${config.island.paddingY}px`,
             }}
-            className="absolute inset-0 flex items-center justify-between px-1 w-full z-20 pointer-events-none select-none"
+            className="absolute inset-0 flex items-center justify-between pointer-events-none select-none z-20"
             aria-hidden="true"
           >
             {TABS_NAV_ITEMS.map(({ tab, Icon }) => {
@@ -435,18 +444,20 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               const isVisuallyActive = hoverTab !== null ? isHovered : isCurrentActive;
 
               return (
-                <div key={`active-${tab}`} className="flex-1 flex justify-center">
-                  <motion.div
-                    animate={{ scale: isVisuallyActive ? (config.activeTab.iconActiveScale ?? 1.18) : 1 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-                    className="p-2 flex items-center justify-center"
-                  >
-                    <Icon
-                      size={22}
-                      stroke="url(#bottom-nav-active-gradient)"
-                      strokeWidth={isVisuallyActive ? 2.5 : 2}
-                    />
-                  </motion.div>
+                <div key={`active-${tab}`} className="flex-1 h-full flex items-center justify-center pointer-events-none">
+                  <div className="relative flex items-center justify-center w-full h-full p-0 m-0 bg-transparent border-none select-none">
+                    <motion.div
+                      animate={{ scale: isVisuallyActive ? (config.activeTab.iconActiveScale ?? 1.18) : 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                      className="p-2 flex items-center justify-center"
+                    >
+                      <Icon
+                        size={22}
+                        stroke="url(#bottom-nav-active-gradient)"
+                        strokeWidth={isVisuallyActive ? 2.5 : 2}
+                      />
+                    </motion.div>
+                  </div>
                 </div>
               );
             })}

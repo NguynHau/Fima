@@ -259,7 +259,8 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         }}
         id={`dummy-nav-btn-${tab}`}
         type="button"
-        className="relative flex items-center justify-center flex-1 h-full cursor-pointer outline-none touch-manipulation z-10 select-none"
+        onClick={() => setDummyActiveTab(tab)}
+        className="relative flex items-center justify-center w-full h-full cursor-pointer outline-none touch-manipulation select-none p-0 m-0 bg-transparent border-none appearance-none"
         aria-label={label}
         title={label}
       >
@@ -268,13 +269,11 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
           transition={{ type: 'spring', stiffness: 500, damping: 28 }}
           className="p-2 transition-colors flex items-center justify-center text-neutral-500 hover:text-neutral-300"
         >
-          <Icon size={22} strokeWidth={isVisuallyActive ? 2.5 : 2} />
+          <Icon size={22} strokeWidth={isVisuallyActive ? 2.3 : 2} />
         </motion.div>
       </button>
     );
   };
-
-  if (!isOpen) return null;
 
   // Island styles calculated from config matching BottomNavigation
   const islandBorderRadius = config.island.isCustomCorners
@@ -286,10 +285,6 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
     minWidth: `${config.island.minWidth}px`,
     maxWidth: `${config.island.maxWidth}px`,
     height: `${config.island.height}px`,
-    paddingLeft: `${config.island.paddingX}px`,
-    paddingRight: `${config.island.paddingX}px`,
-    paddingTop: `${config.island.paddingY}px`,
-    paddingBottom: `${config.island.paddingY}px`,
     borderRadius: islandBorderRadius,
     backgroundColor: `rgba(255, 255, 255, ${config.island.bgOpacity})`,
     backdropFilter: `blur(${config.island.blur}px) saturate(${config.island.saturation}%) brightness(${config.island.brightness}%) contrast(${config.island.contrast}%)`,
@@ -358,6 +353,8 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   const gradDirection = config.activeTab.activeTabGradient?.direction ?? config.activeTab.gradientDirection ?? 'to right';
   const gradCoords = getSvgGradientCoords(gradDirection);
   const reflectedEdgeShadow = getReflectedEdgeBoxShadow(config.activeTab);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0b0d] text-neutral-100 flex flex-col overflow-hidden select-none">
@@ -2164,20 +2161,28 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
             </motion.div>
 
             {/* LAYER 1: BASE TAB LAYER (Interactive, neutral gray icons) */}
-            <div className="flex items-center justify-between relative px-1 w-full z-10 pointer-events-none">
-              <div className="flex-1 flex justify-center pointer-events-auto">
+            <div
+              className="absolute inset-0 flex items-center justify-between pointer-events-none z-10"
+              style={{
+                paddingLeft: `${config.island.paddingX}px`,
+                paddingRight: `${config.island.paddingX}px`,
+                paddingTop: `${config.island.paddingY}px`,
+                paddingBottom: `${config.island.paddingY}px`,
+              }}
+            >
+              <div className="flex-1 h-full flex items-center justify-center pointer-events-auto">
                 <DummyNavItem tab="flow" Icon={Layers} label="Dòng tiền" />
               </div>
-              <div className="flex-1 flex justify-center pointer-events-auto">
+              <div className="flex-1 h-full flex items-center justify-center pointer-events-auto">
                 <DummyNavItem tab="statistics" Icon={PieChart} label="Thống kê" />
               </div>
-              <div className="flex-1 flex justify-center pointer-events-auto">
+              <div className="flex-1 h-full flex items-center justify-center pointer-events-auto">
                 <DummyNavItem tab="profile" Icon={User} label="Cá nhân" />
               </div>
-              <div className="flex-1 flex justify-center pointer-events-auto">
+              <div className="flex-1 h-full flex items-center justify-center pointer-events-auto">
                 <DummyNavItem tab="debts" Icon={Users} label="Công nợ" />
               </div>
-              <div className="flex-1 flex justify-center pointer-events-auto">
+              <div className="flex-1 h-full flex items-center justify-center pointer-events-auto">
                 <DummyNavItem tab="settings" Icon={Settings} label="Cài đặt" />
               </div>
             </div>
@@ -2187,8 +2192,12 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
               style={{
                 clipPath: dropletClipPath,
                 WebkitClipPath: dropletClipPath,
+                paddingLeft: `${config.island.paddingX}px`,
+                paddingRight: `${config.island.paddingX}px`,
+                paddingTop: `${config.island.paddingY}px`,
+                paddingBottom: `${config.island.paddingY}px`,
               }}
-              className="absolute inset-0 flex items-center justify-between px-1 w-full z-20 pointer-events-none select-none"
+              className="absolute inset-0 flex items-center justify-between pointer-events-none select-none z-20"
               aria-hidden="true"
             >
               {[
@@ -2203,18 +2212,20 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                 const isVisuallyActive = dummyHoverTab !== null ? isHovered : isCurrentActive;
 
                 return (
-                  <div key={`dummy-active-${tab}`} className="flex-1 flex justify-center">
-                    <motion.div
-                      animate={{ scale: isVisuallyActive ? (config.activeTab.iconActiveScale ?? 1.18) : 1 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-                      className="p-2 flex items-center justify-center"
-                    >
-                      <Icon
-                        size={22}
-                        stroke="url(#dummy-nav-active-gradient)"
-                        strokeWidth={isVisuallyActive ? 2.5 : 2}
-                      />
-                    </motion.div>
+                  <div key={`dummy-active-${tab}`} className="flex-1 h-full flex items-center justify-center pointer-events-none">
+                    <div className="relative flex items-center justify-center w-full h-full p-0 m-0 bg-transparent border-none select-none">
+                      <motion.div
+                        animate={{ scale: isVisuallyActive ? (config.activeTab.iconActiveScale ?? 1.18) : 1 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                        className="p-2 flex items-center justify-center"
+                      >
+                        <Icon
+                          size={22}
+                          stroke="url(#dummy-nav-active-gradient)"
+                          strokeWidth={isVisuallyActive ? 2.5 : 2}
+                        />
+                      </motion.div>
+                    </div>
                   </div>
                 );
               })}

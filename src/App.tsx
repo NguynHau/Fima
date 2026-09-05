@@ -316,7 +316,7 @@ export default function App() {
           </main>
 
           {/* Bottom Navigation */}
-          {!isCategoryManagementOpen && (
+          {!isCategoryManagementOpen && !isTunerOpen && (
             <BottomNavigation
               activeTab={activeTab}
               onChangeTab={(tab) => setActiveTab(tab)}
@@ -325,10 +325,12 @@ export default function App() {
           )}
 
           {/* Liquid Glass Studio Full-Page View */}
-          <LiquidGlassStudioView
-            isOpen={isTunerOpen}
-            onClose={() => setIsTunerOpen(false)}
-          />
+          {isTunerOpen && (
+            <LiquidGlassStudioView
+              isOpen={isTunerOpen}
+              onClose={() => setIsTunerOpen(false)}
+            />
+          )}
 
           {/* --- MODALS & WORKFLOWS --- */}
 
