@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Layers, PieChart, Plus, Settings, User, Users } from 'lucide-react';
 import { type ActiveTab } from '../types';
-import { motion, useMotionValue, useSpring, useVelocity, useTransform } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
 import { getSvgGradientCoords, getReflectedEdgeBoxShadow } from '../utils/liquidGlassOptical';
 
@@ -29,38 +29,25 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const dragStartXRef = useRef(0);
   const isDraggingRef = useRef(false);
 
-  // 1. Core Horizontal Position Tracking
+  // 1. Core Horizontal Position Tracking - Butter smooth initial spring (không rung giật)
   const blobX = useMotionValue(0);
   const animatedX = useSpring(blobX, {
-    stiffness: config.activeTab.moveStiffness,
-    damping: config.activeTab.moveDamping,
-    mass: config.activeTab.moveMass ?? 0.5,
+    stiffness: config.activeTab.springStiffness ?? config.activeTab.moveStiffness ?? 420,
+    damping: config.activeTab.springDamping ?? config.activeTab.moveDamping ?? 32,
+    mass: 0.5,
   });
-  const velocityX = useVelocity(animatedX);
 
-  // 2. Velocity-based deformation (Dynamic fluid elongation during drag / jump)
-  const vStretch = config.activeTab.velocityStretch ?? 1.3;
-  const vSquash = config.activeTab.velocitySquash ?? 0.8;
-  const velScaleX = useTransform(velocityX, [-700, 0, 700], [vStretch, 1, vStretch]);
-  const velScaleY = useTransform(velocityX, [-700, 0, 700], [vSquash, 1, vSquash]);
-
-  // 3. Press-based "Swell" deformation (Liquid Glass expands outwards and breaks past island borders)
+  // 2. Press-based "Swell" deformation (Mở rộng hữu cơ khi nhấn giữ, loại bỏ hoàn toàn velocity rung giật)
   const pressTargetX = useMotionValue(1);
   const pressTargetY = useMotionValue(1);
   const pressScaleX = useSpring(pressTargetX, {
-    stiffness: config.activeTab.pressStiffness,
-    damping: config.activeTab.pressDamping,
-    mass: config.activeTab.pressMass ?? 0.5,
+    stiffness: 350,
+    damping: 25,
   });
   const pressScaleY = useSpring(pressTargetY, {
-    stiffness: config.activeTab.pressStiffness,
-    damping: config.activeTab.pressDamping,
-    mass: config.activeTab.pressMass ?? 0.5,
+    stiffness: 350,
+    damping: 25,
   });
-
-  // 4. Combined Scale outputs
-  const finalScaleX = useTransform([pressScaleX, velScaleX], ([p, v]: number[]) => p * v);
-  const finalScaleY = useTransform([pressScaleY, velScaleY], ([p, v]: number[]) => p * v);
 
   const dropletWidth = config.activeTab.width;
   const dropletHeight = config.activeTab.height;
@@ -86,11 +73,10 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     return () => ro.disconnect();
   }, []);
 
-  // 5. Dynamic Droplet Mask / Clip-Path
-  // The purple-to-pink gradient layer is strictly clipped by this exact droplet silhouette.
-  // It follows position (animatedX), stretch/squash (finalScaleX/Y), and press swell continuously.
+  // 3. Dynamic Droplet Mask / Clip-Path
+  // Strictly clipped by this droplet silhouette, following animatedX and smooth pressScale
   const dropletClipPath = useTransform(
-    [animatedX, finalScaleX, finalScaleY],
+    [animatedX, pressScaleX, pressScaleY],
     ([x, sx, sy]: number[]) => {
       const w = dropletWidth * sx;
       const h = dropletHeight * sy;
@@ -340,8 +326,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           <motion.div
             style={{
               x: animatedX,
-              scaleX: finalScaleX,
-              scaleY: finalScaleY,
+              scaleX: pressScaleX,
+              scaleY: pressScaleY,
               width: dropletWidth,
               height: dropletHeight,
               marginTop: `calc(-${dropletHeight / 2}px + ${dropletOffsetY}px)`,

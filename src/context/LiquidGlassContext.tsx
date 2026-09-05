@@ -44,10 +44,17 @@ export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.island && parsed.activeTab) {
+          const activeTabLoaded = { ...DEFAULT_ACTIVE_TAB_CONFIG, ...parsed.activeTab };
+          if (!parsed.activeTab.springStiffness || parsed.activeTab.moveStiffness >= 800) {
+            activeTabLoaded.springStiffness = DEFAULT_ACTIVE_TAB_CONFIG.springStiffness;
+            activeTabLoaded.springDamping = DEFAULT_ACTIVE_TAB_CONFIG.springDamping;
+            activeTabLoaded.moveStiffness = DEFAULT_ACTIVE_TAB_CONFIG.springStiffness;
+            activeTabLoaded.moveDamping = DEFAULT_ACTIVE_TAB_CONFIG.springDamping;
+          }
           return {
             preset: parsed.preset || 'custom',
             island: { ...DEFAULT_ISLAND_CONFIG, ...parsed.island },
-            activeTab: { ...DEFAULT_ACTIVE_TAB_CONFIG, ...parsed.activeTab },
+            activeTab: activeTabLoaded,
           };
         }
       }

@@ -20,7 +20,7 @@ import {
   EyeOff,
   Palette,
 } from 'lucide-react';
-import { motion, useMotionValue, useSpring, useTransform, useVelocity } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
 import { PRESET_INFOS, PresetType } from '../types/liquidGlass';
 import { type ActiveTab } from '../types';
@@ -86,38 +86,25 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   const dragStartXRef = useRef(0);
   const isDraggingRef = useRef(false);
 
-  // 1. Core Horizontal Position Tracking
+  // 1. Core Horizontal Position Tracking - Clean initial spring without jitter
   const blobX = useMotionValue(0);
   const animatedX = useSpring(blobX, {
-    stiffness: config.activeTab.moveStiffness,
-    damping: config.activeTab.moveDamping,
-    mass: config.activeTab.moveMass ?? 0.5,
+    stiffness: config.activeTab.springStiffness ?? config.activeTab.moveStiffness ?? 420,
+    damping: config.activeTab.springDamping ?? config.activeTab.moveDamping ?? 32,
+    mass: 0.5,
   });
-  const velocityX = useVelocity(animatedX);
 
-  // 2. Velocity-based deformation (Dynamic fluid elongation during drag / jump)
-  const vStretch = config.activeTab.velocityStretch ?? 1.3;
-  const vSquash = config.activeTab.velocitySquash ?? 0.8;
-  const velScaleX = useTransform(velocityX, [-700, 0, 700], [vStretch, 1, vStretch]);
-  const velScaleY = useTransform(velocityX, [-700, 0, 700], [vSquash, 1, vSquash]);
-
-  // 3. Press-based "Swell" deformation (Liquid Glass expands outwards)
+  // 2. Press-based "Swell" deformation (Smooth organic expansion on touch/drag, zero jitter)
   const pressTargetX = useMotionValue(1);
   const pressTargetY = useMotionValue(1);
   const pressScaleX = useSpring(pressTargetX, {
-    stiffness: config.activeTab.pressStiffness,
-    damping: config.activeTab.pressDamping,
-    mass: config.activeTab.pressMass ?? 0.5,
+    stiffness: 350,
+    damping: 25,
   });
   const pressScaleY = useSpring(pressTargetY, {
-    stiffness: config.activeTab.pressStiffness,
-    damping: config.activeTab.pressDamping,
-    mass: config.activeTab.pressMass ?? 0.5,
+    stiffness: 350,
+    damping: 25,
   });
-
-  // 4. Combined Scale outputs
-  const finalScaleX = useTransform([pressScaleX, velScaleX], ([p, v]: number[]) => p * v);
-  const finalScaleY = useTransform([pressScaleY, velScaleY], ([p, v]: number[]) => p * v);
 
   const getTabCenter = (tab: ActiveTab): number => {
     const el = dummyTabsRef.current[tab];
@@ -329,7 +316,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   }, [isOpen]);
 
   const dropletClipPath = useTransform(
-    [animatedX, finalScaleX, finalScaleY],
+    [animatedX, pressScaleX, pressScaleY],
     ([x, sx, sy]: number[]) => {
       const w = dropletWidth * sx;
       const h = dropletHeight * sy;
@@ -1518,146 +1505,54 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
               </div>
             </div>
 
-            {/* Nhóm Động lực học & Vật lý Lò xo Đàn hồi (MỞ RỘNG) */}
+            {/* Nhóm Động lực học & Vật lý Lò xo Đàn hồi (Thu gọn về chuẩn ban đầu mượt mà) */}
             <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800/80 space-y-3">
               <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Sliders size={13} className="text-emerald-400" />
-                Vật lý Lò xo & Đàn hồi Biến dạng Lỏng (Fluid Springs)
+                Vật lý Lò xo Giọt nước (Droplet Spring Physics)
               </h3>
 
               <div className="space-y-3 text-xs">
-                {/* Lò xo di chuyển */}
+                {/* Lò xo độ căng/nảy */}
                 <div>
                   <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Độ nảy lò xo di chuyển (Move Stiffness)</span>
-                    <span className="font-mono text-emerald-400">{config.activeTab.moveStiffness}</span>
+                    <span>Độ nảy lò xo giọt nước (Spring Stiffness)</span>
+                    <span className="font-mono text-emerald-400">
+                      {config.activeTab.springStiffness ?? config.activeTab.moveStiffness ?? 420}
+                    </span>
                   </div>
                   <input
                     type="range"
-                    min="150"
-                    max="1200"
+                    min="100"
+                    max="1000"
                     step="10"
-                    value={config.activeTab.moveStiffness}
-                    onChange={(e) => updateActiveTab({ moveStiffness: Number(e.target.value) })}
+                    value={config.activeTab.springStiffness ?? config.activeTab.moveStiffness ?? 420}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      updateActiveTab({ springStiffness: val, moveStiffness: val });
+                    }}
                     className="w-full accent-emerald-500 cursor-pointer"
                   />
                 </div>
 
-                {/* Giảm chấn di chuyển */}
+                {/* Giảm chấn phanh khi đến tab */}
                 <div>
                   <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Độ hãm phanh khi đến tab (Move Damping)</span>
-                    <span className="font-mono text-emerald-400">{config.activeTab.moveDamping}</span>
+                    <span>Độ hãm phanh khi đến tab (Spring Damping)</span>
+                    <span className="font-mono text-emerald-400">
+                      {config.activeTab.springDamping ?? config.activeTab.moveDamping ?? 32}
+                    </span>
                   </div>
                   <input
                     type="range"
                     min="10"
                     max="80"
-                    step="2"
-                    value={config.activeTab.moveDamping}
-                    onChange={(e) => updateActiveTab({ moveDamping: Number(e.target.value) })}
-                    className="w-full accent-emerald-500 cursor-pointer"
-                  />
-                </div>
-
-                {/* Khối lượng quán tính khi trượt */}
-                <div>
-                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Khối lượng quán tính trượt (Move Mass)</span>
-                    <span className="font-mono text-emerald-400">{(config.activeTab.moveMass ?? 0.5).toFixed(1)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="2.0"
-                    step="0.1"
-                    value={config.activeTab.moveMass ?? 0.5}
-                    onChange={(e) => updateActiveTab({ moveMass: Number(e.target.value) })}
-                    className="w-full accent-emerald-500 cursor-pointer"
-                  />
-                </div>
-
-                {/* Độ đàn hồi nén phồng */}
-                <div>
-                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Độ đàn hồi phồng to khi chạm (Press Stiffness)</span>
-                    <span className="font-mono text-emerald-400">{config.activeTab.pressStiffness}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="50"
-                    max="500"
-                    step="10"
-                    value={config.activeTab.pressStiffness}
-                    onChange={(e) => updateActiveTab({ pressStiffness: Number(e.target.value) })}
-                    className="w-full accent-emerald-500 cursor-pointer"
-                  />
-                </div>
-
-                {/* Độ hãm nhún phồng */}
-                <div>
-                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Độ hãm nhún khi giữ/thả (Press Damping)</span>
-                    <span className="font-mono text-emerald-400">{config.activeTab.pressDamping}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="40"
                     step="1"
-                    value={config.activeTab.pressDamping}
-                    onChange={(e) => updateActiveTab({ pressDamping: Number(e.target.value) })}
-                    className="w-full accent-emerald-500 cursor-pointer"
-                  />
-                </div>
-
-                {/* Khối lượng đàn hồi nén phồng */}
-                <div>
-                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Khối lượng nén đàn hồi phồng (Press Mass)</span>
-                    <span className="font-mono text-emerald-400">{(config.activeTab.pressMass ?? 0.5).toFixed(1)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1.5"
-                    step="0.1"
-                    value={config.activeTab.pressMass ?? 0.5}
-                    onChange={(e) => updateActiveTab({ pressMass: Number(e.target.value) })}
-                    className="w-full accent-emerald-500 cursor-pointer"
-                  />
-                </div>
-
-                {/* Hệ số kéo giãn giọt nước theo vận tốc trượt */}
-                <div>
-                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Hệ số kéo dãn theo vận tốc (Velocity Stretch X)</span>
-                    <span className="font-mono text-emerald-400">{(config.activeTab.velocityStretch ?? 1.3).toFixed(2)}x</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="2.5"
-                    step="0.05"
-                    value={config.activeTab.velocityStretch ?? 1.3}
-                    onChange={(e) => updateActiveTab({ velocityStretch: Number(e.target.value) })}
-                    className="w-full accent-emerald-500 cursor-pointer"
-                  />
-                </div>
-
-                {/* Hệ số dẹt dọc theo vận tốc */}
-                <div>
-                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Hệ số dẹt dọc theo vận tốc (Velocity Squash Y)</span>
-                    <span className="font-mono text-emerald-400">{(config.activeTab.velocitySquash ?? 0.8).toFixed(2)}x</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.4"
-                    max="1.0"
-                    step="0.05"
-                    value={config.activeTab.velocitySquash ?? 0.8}
-                    onChange={(e) => updateActiveTab({ velocitySquash: Number(e.target.value) })}
+                    value={config.activeTab.springDamping ?? config.activeTab.moveDamping ?? 32}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      updateActiveTab({ springDamping: val, moveDamping: val });
+                    }}
                     className="w-full accent-emerald-500 cursor-pointer"
                   />
                 </div>
@@ -2115,8 +2010,8 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
             <motion.div
               style={{
                 x: animatedX,
-                scaleX: finalScaleX,
-                scaleY: finalScaleY,
+                scaleX: pressScaleX,
+                scaleY: pressScaleY,
                 width: dropletWidth,
                 height: dropletHeight,
                 marginTop: `calc(-${dropletHeight / 2}px + ${dropletOffsetY}px)`,

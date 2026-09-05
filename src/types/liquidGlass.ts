@@ -120,16 +120,20 @@ export interface ActiveTabConfig {
   innerGlow: number; // 0px - 20px, default 8
   glassShine: number; // 0 - 100%, default 20
 
-  // Animation & Elasticity
-  moveStiffness: number; // 100 - 1000, default 420
-  moveDamping: number; // 10 - 100, default 32
-  moveMass?: number; // 0.1 - 2.0, default 0.5
-  pressStiffness: number; // 100 - 1000, default 350
-  pressDamping: number; // 10 - 100, default 22
-  pressMass?: number; // 0.1 - 2.0, default 0.5
-  velocityStretch?: number; // 0.5 - 2.5, default 1.3
-  velocitySquash?: number; // 0.4 - 1.0, default 0.8
+  // Animation & Elasticity (Quay về lò xo ban đầu mượt mà, không giật)
+  springStiffness: number; // 100 - 1000, default 420
+  springDamping: number; // 10 - 100, default 32
   iconActiveScale?: number; // 1.0 - 1.5, default 1.18
+
+  // Backward compatibility fields
+  moveStiffness?: number;
+  moveDamping?: number;
+  moveMass?: number;
+  pressStiffness?: number;
+  pressDamping?: number;
+  pressMass?: number;
+  velocityStretch?: number;
+  velocitySquash?: number;
 }
 
 export interface LiquidGlassConfig {
@@ -261,8 +265,8 @@ export const DEFAULT_ISLAND_CONFIG: IslandConfig = {
   outerGlowColor: 'rgba(139, 92, 246, 0.20)',
 
   transitionDuration: 300,
-  springStiffness: 100,
-  springDamping: 10,
+  springStiffness: 420,
+  springDamping: 32,
   springMass: 0.5,
   tapScale: 0.99,
 };
@@ -321,15 +325,11 @@ export const DEFAULT_ACTIVE_TAB_CONFIG: ActiveTabConfig = {
   innerGlow: 8,
   glassShine: 20,
 
-  moveStiffness: 1000,
-  moveDamping: 50,
-  moveMass: 0.5,
-  pressStiffness: 100,
-  pressDamping: 10,
-  pressMass: 0.5,
-  velocityStretch: 1.3,
-  velocitySquash: 0.8,
+  springStiffness: 420,
+  springDamping: 32,
   iconActiveScale: 1.18,
+  moveStiffness: 420,
+  moveDamping: 32,
 };
 
 export const DEFAULT_LIQUID_GLASS_CONFIG: LiquidGlassConfig = {
