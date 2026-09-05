@@ -363,7 +363,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           onClick={onOpenLiquidGlassStudio}
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
-          <LiquidGlassStudioLogo size={16} />
+          <LiquidGlassStudioLogo size={16} hasColor={false} className="text-neutral-300" />
           <span>Mở liquid glass studio</span>
         </button>
       </div>

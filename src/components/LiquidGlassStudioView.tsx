@@ -440,33 +440,35 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
           {mainTab === 'custom' && (
             <motion.div
               key="custom-subtab-container"
-              initial={{ opacity: 0, height: 0, y: -4 }}
-              animate={{ opacity: 1, height: 'auto', y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -4 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
               transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-              className="px-4 pb-2.5 space-y-2 overflow-hidden"
+              className="overflow-hidden"
             >
-              <SegmentedTabs
-                layoutId="liquid_studio_custom_subtab"
-                activeId={customSubTab}
-                onChange={(id) => setCustomSubTab(id as 'island' | 'droplet' | 'export')}
-                tabs={[
-                  { id: 'island', label: 'Đảo chính', icon: Sliders },
-                  { id: 'droplet', label: 'Giọt nước', icon: Layers },
-                  { id: 'export', label: 'Mã CSS', icon: Copy },
-                ]}
-              />
+              <div className="px-4 pb-2.5 space-y-2">
+                <SegmentedTabs
+                  layoutId="liquid_studio_custom_subtab"
+                  activeId={customSubTab}
+                  onChange={(id) => setCustomSubTab(id as 'island' | 'droplet' | 'export')}
+                  tabs={[
+                    { id: 'island', label: 'Đảo chính', icon: Sliders },
+                    { id: 'droplet', label: 'Giọt nước', icon: Layers },
+                    { id: 'export', label: 'Mã CSS', icon: Copy },
+                  ]}
+                />
 
-              <div className="flex items-center justify-end px-1">
-                <button
-                  type="button"
-                  onClick={() => setShowControls((prev) => !prev)}
-                  className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                  title={showControls ? 'Thu gọn bảng để quan sát rộng hơn' : 'Hiện bảng điều khiển'}
-                >
-                  {showControls ? <EyeOff size={12} /> : <Eye size={12} />}
-                  <span>{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
-                </button>
+                <div className="flex items-center justify-end px-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowControls((prev) => !prev)}
+                    className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                    title={showControls ? 'Thu gọn bảng để quan sát rộng hơn' : 'Hiện bảng điều khiển'}
+                  >
+                    {showControls ? <EyeOff size={12} /> : <Eye size={12} />}
+                    <span>{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
