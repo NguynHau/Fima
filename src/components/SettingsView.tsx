@@ -66,24 +66,12 @@ const SettingsCardHeader: React.FC<SettingsCardHeaderProps> = ({
       {isDanger ? (
         <Icon size={18} className="text-rose-500 shrink-0" strokeWidth={2.3} />
       ) : (
-        <span className="relative shrink-0 flex items-center justify-center">
-          <svg className="w-0 h-0 absolute pointer-events-none" aria-hidden="true">
-            <defs>
-              <linearGradient id="settings-pink-purple-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24">
-                <stop offset="0%" stopColor="#f472b6" />
-                <stop offset="50%" stopColor="#e879f9" />
-                <stop offset="100%" stopColor="#c084fc" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <Icon
-            size={18}
-            className="shrink-0"
-            color="url(#settings-pink-purple-grad)"
-            stroke="url(#settings-pink-purple-grad)"
-            strokeWidth={2.3}
-          />
-        </span>
+        <Icon
+          size={18}
+          className="shrink-0"
+          stroke="url(#settings-pink-purple-grad)"
+          strokeWidth={2.3}
+        />
       )}
       <h3
         className={`text-xs sm:text-sm font-black uppercase tracking-wider ${
@@ -311,9 +299,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
 
       {/* SVG Gradient Defs for Settings Logos */}
-      <svg className="w-0 h-0 absolute pointer-events-none" aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0 }}>
+      <svg className="w-0 h-0 absolute pointer-events-none" aria-hidden="true">
         <defs>
-          <linearGradient id="settings-pink-purple-grad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24">
+          <linearGradient id="settings-pink-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#f472b6" />
             <stop offset="50%" stopColor="#e879f9" />
             <stop offset="100%" stopColor="#c084fc" />
@@ -334,7 +322,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           onClick={() => setShowWarningModal(true)}
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
-          <Edit3 size={16} className="text-neutral-300" />
+          <Wallet size={16} className="text-neutral-300 shrink-0" />
           <span>Chỉnh sửa</span>
         </button>
       </div>
@@ -361,7 +349,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
           icon={Sliders}
-          title="Chỉnh sửa Liquid Glass (Giao diện Kính)"
+          title="Liquid Glass"
           description="Tinh chỉnh hiệu ứng kính quang học, độ mờ (blur), độ trong suốt, bóng đổ 3D và vật lý lò xo giọt nước của Đảo chính & vòng tròn chọn tab với Đảo giả lập thử nghiệm."
         />
 
@@ -370,7 +358,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           onClick={onOpenLiquidGlassStudio}
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
-          <Sliders size={16} className="text-neutral-300" />
+          <Sliders size={16} className="text-neutral-300 shrink-0" />
           <span>Mở liquid glass studio</span>
         </button>
       </div>

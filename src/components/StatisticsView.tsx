@@ -388,7 +388,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     }
   };
 
-  const txFilterTabs: ('all' | 'expense' | 'income')[] = ['all', 'expense', 'income'];
+  const txFilterTabs: ('all' | 'income' | 'expense')[] = ['all', 'income', 'expense'];
   const txControlRef = useRef<HTMLDivElement>(null);
   const isDraggingTxRef = useRef(false);
 
@@ -1338,8 +1338,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                               {(
                                 [
                                   { id: 'all', label: 'Tất cả' },
-                                  { id: 'expense', label: 'Chi' },
                                   { id: 'income', label: 'Thu' },
+                                  { id: 'expense', label: 'Chi' },
                                 ] as const
                               ).map((tab) => (
                                 <button
@@ -1348,25 +1348,15 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                   onClick={() => setTxListFilter(tab.id)}
                                   className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
                                     txListFilter === tab.id
-                                      ? tab.id === 'expense'
-                                        ? 'text-rose-300 font-extrabold'
-                                        : tab.id === 'income'
-                                        ? 'text-emerald-300 font-extrabold'
-                                        : 'text-black font-extrabold'
-                                      : 'text-neutral-400 hover:text-white'
+                                      ? 'text-black font-extrabold'
+                                      : 'text-neutral-300 hover:text-white'
                                   }`}
                                 >
                                   {txListFilter === tab.id && (
                                     <motion.div
                                       layoutId="stats_tx_list_filter_tab"
                                       transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                                      className={`absolute inset-0 rounded-lg shadow-xs ${
-                                        tab.id === 'expense'
-                                          ? 'bg-rose-500/20 border border-rose-500/30'
-                                          : tab.id === 'income'
-                                          ? 'bg-emerald-500/20 border border-emerald-500/30'
-                                          : 'bg-white'
-                                      }`}
+                                      className="absolute inset-0 bg-white rounded-lg shadow-xs"
                                     />
                                   )}
                                   <span className="relative z-10 flex items-center justify-center">{tab.label}</span>

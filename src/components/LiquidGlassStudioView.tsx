@@ -18,11 +18,13 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Palette,
 } from 'lucide-react';
 import { motion, useMotionValue, useSpring, useTransform, useVelocity } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
 import { PRESET_INFOS, PresetType } from '../types/liquidGlass';
 import { type ActiveTab } from '../types';
+import { getSvgGradientCoords, getReflectedEdgeBoxShadow } from '../utils/liquidGlassOptical';
 
 interface LiquidGlassStudioViewProps {
   isOpen: boolean;
@@ -89,13 +91,15 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   const animatedX = useSpring(blobX, {
     stiffness: config.activeTab.moveStiffness,
     damping: config.activeTab.moveDamping,
-    mass: 0.5,
+    mass: config.activeTab.moveMass ?? 0.5,
   });
   const velocityX = useVelocity(animatedX);
 
   // 2. Velocity-based deformation (Dynamic fluid elongation during drag / jump)
-  const velScaleX = useTransform(velocityX, [-700, 0, 700], [1.3, 1, 1.3]);
-  const velScaleY = useTransform(velocityX, [-700, 0, 700], [0.8, 1, 0.8]);
+  const vStretch = config.activeTab.velocityStretch ?? 1.3;
+  const vSquash = config.activeTab.velocitySquash ?? 0.8;
+  const velScaleX = useTransform(velocityX, [-700, 0, 700], [vStretch, 1, vStretch]);
+  const velScaleY = useTransform(velocityX, [-700, 0, 700], [vSquash, 1, vSquash]);
 
   // 3. Press-based "Swell" deformation (Liquid Glass expands outwards)
   const pressTargetX = useMotionValue(1);
@@ -103,12 +107,12 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   const pressScaleX = useSpring(pressTargetX, {
     stiffness: config.activeTab.pressStiffness,
     damping: config.activeTab.pressDamping,
-    mass: 0.5,
+    mass: config.activeTab.pressMass ?? 0.5,
   });
   const pressScaleY = useSpring(pressTargetY, {
     stiffness: config.activeTab.pressStiffness,
     damping: config.activeTab.pressDamping,
-    mass: 0.5,
+    mass: config.activeTab.pressMass ?? 0.5,
   });
 
   // 4. Combined Scale outputs
@@ -260,11 +264,9 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         title={label}
       >
         <motion.div
-          animate={{ scale: isVisuallyActive ? 1.18 : 1 }}
+          animate={{ scale: isVisuallyActive ? (config.activeTab.iconActiveScale ?? 1.18) : 1 }}
           transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-          className={`p-2 transition-colors flex items-center justify-center ${
-            isVisuallyActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
-          }`}
+          className="p-2 transition-colors flex items-center justify-center text-neutral-500 hover:text-neutral-300"
         >
           <Icon size={22} strokeWidth={isVisuallyActive ? 2.5 : 2} />
         </motion.div>
@@ -294,10 +296,13 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
     WebkitBackdropFilter: `blur(${config.island.blur}px) saturate(${config.island.saturation}%) brightness(${config.island.brightness}%) contrast(${config.island.contrast}%)`,
     borderWidth: `${config.island.borderWidth}px`,
     borderStyle: config.island.borderWidth > 0 ? 'solid' : 'none',
-    borderColor: `rgba(255, 255, 255, ${config.island.borderOpacity})`,
+    borderColor: config.island.borderColor
+      ? `${config.island.borderColor}${Math.min(255, Math.max(0, Math.round(config.island.borderOpacity * 255))).toString(16).padStart(2, '0')}`
+      : `rgba(255, 255, 255, ${config.island.borderOpacity})`,
     boxShadow: [
       `${config.island.shadowX}px ${config.island.shadowY}px ${config.island.shadowBlur}px ${config.island.shadowRadius}px rgba(0, 0, 0, ${config.island.shadowOpacity})`,
-      `inset 0 1px 1px rgba(255, 255, 255, ${config.island.innerBorderOpacity})`,
+      `inset 0 1px ${config.island.borderGlowSpread ?? 1}px rgba(255, 255, 255, ${config.island.innerBorderOpacity})`,
+      (config.island.outerBorderOpacity ?? 0) > 0 ? `0 0 0 1px rgba(255, 255, 255, ${config.island.outerBorderOpacity})` : '',
       config.island.outerGlowSize > 0 ? `0 0 ${config.island.outerGlowSize}px ${config.island.outerGlowColor}` : '',
     ].filter(Boolean).join(', '),
     transform: `translateX(${config.island.positionX}px) scale(${config.island.scale})`,
@@ -308,6 +313,51 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   const dropletHeight = config.activeTab.height;
   const dropletOffsetX = config.activeTab.offsetX;
   const dropletOffsetY = config.activeTab.offsetY;
+
+  const dummyNavWidthRef = useRef<number>(500);
+
+  useEffect(() => {
+    const el = dummyNavRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          dummyNavWidthRef.current = entry.contentRect.width;
+        }
+      }
+    });
+    ro.observe(el);
+    if (el.offsetWidth > 0) {
+      dummyNavWidthRef.current = el.offsetWidth;
+    }
+    return () => ro.disconnect();
+  }, [isOpen]);
+
+  const dropletClipPath = useTransform(
+    [animatedX, finalScaleX, finalScaleY],
+    ([x, sx, sy]: number[]) => {
+      const w = dropletWidth * sx;
+      const h = dropletHeight * sy;
+      const islandH = config.island.height;
+      const centerY = islandH / 2 + dropletOffsetY;
+      const nw = dummyNavRef.current?.offsetWidth || dummyNavWidthRef.current || 500;
+      dummyNavWidthRef.current = nw;
+
+      const left = x + dropletOffsetX - w / 2;
+      const top = centerY - h / 2;
+      const right = nw - (left + w);
+      const bottom = islandH - (top + h);
+      const r = Math.min(config.activeTab.borderRadius, w / 2, h / 2);
+
+      return `inset(${top.toFixed(2)}px ${right.toFixed(2)}px ${bottom.toFixed(2)}px ${left.toFixed(2)}px round ${r.toFixed(1)}px)`;
+    }
+  );
+
+  const gradStart = config.activeTab.activeTabGradient?.startColor ?? config.activeTab.gradientStart ?? '#a855f7';
+  const gradEnd = config.activeTab.activeTabGradient?.endColor ?? config.activeTab.gradientEnd ?? '#ec4899';
+  const gradDirection = config.activeTab.activeTabGradient?.direction ?? config.activeTab.gradientDirection ?? 'to right';
+  const gradCoords = getSvgGradientCoords(gradDirection);
+  const reflectedEdgeShadow = getReflectedEdgeBoxShadow(config.activeTab);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0b0d] text-neutral-100 flex flex-col overflow-hidden select-none">
@@ -391,9 +441,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                 type="button"
                 onClick={() => setMainTab('presets')}
                 className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                  mainTab === 'presets'
-                    ? 'text-black'
-                    : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                  mainTab === 'presets' ? 'text-black' : 'text-neutral-400'
                 }`}
               >
                 {mainTab === 'presets' && (
@@ -416,9 +464,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                 type="button"
                 onClick={() => setMainTab('custom')}
                 className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                  mainTab === 'custom'
-                    ? 'text-black'
-                    : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                  mainTab === 'custom' ? 'text-black' : 'text-neutral-400'
                 }`}
               >
                 {mainTab === 'custom' && (
@@ -449,9 +495,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                   type="button"
                   onClick={() => setCustomSubTab('island')}
                   className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    customSubTab === 'island'
-                      ? 'text-black'
-                      : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                    customSubTab === 'island' ? 'text-black' : 'text-neutral-400'
                   }`}
                 >
                   {customSubTab === 'island' && (
@@ -474,9 +518,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                   type="button"
                   onClick={() => setCustomSubTab('droplet')}
                   className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    customSubTab === 'droplet'
-                      ? 'text-black'
-                      : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                    customSubTab === 'droplet' ? 'text-black' : 'text-neutral-400'
                   }`}
                 >
                   {customSubTab === 'droplet' && (
@@ -499,9 +541,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                   type="button"
                   onClick={() => setCustomSubTab('export')}
                   className={`relative py-2 px-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                    customSubTab === 'export'
-                      ? 'text-black'
-                      : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
+                    customSubTab === 'export' ? 'text-black' : 'text-neutral-400'
                   }`}
                 >
                   {customSubTab === 'export' && (
@@ -800,6 +840,23 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
               </h3>
 
               <div className="space-y-3 text-xs">
+                {/* Độ dày viền đảo */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ dày viền ngoài (Border Width)</span>
+                    <span className="font-mono text-amber-400">{config.island.borderWidth.toFixed(1)}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="4"
+                    step="0.1"
+                    value={config.island.borderWidth}
+                    onChange={(e) => updateIsland({ borderWidth: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
                 {/* Viền ngoài */}
                 <div>
                   <div className="flex justify-between font-medium text-neutral-300 mb-1">
@@ -810,7 +867,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                     type="range"
                     min="0"
                     max="0.80"
-                    step="0.02"
+                    step="0.01"
                     value={config.island.borderOpacity}
                     onChange={(e) => updateIsland({ borderOpacity: Number(e.target.value) })}
                     className="w-full accent-amber-500 cursor-pointer"
@@ -827,11 +884,68 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                     type="range"
                     min="0"
                     max="0.80"
-                    step="0.02"
+                    step="0.01"
                     value={config.island.innerBorderOpacity}
                     onChange={(e) => updateIsland({ innerBorderOpacity: Number(e.target.value) })}
                     className="w-full accent-amber-500 cursor-pointer"
                   />
+                </div>
+
+                {/* Lan tỏa viền phản chiếu */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ lan tỏa dải sáng viền trên (Top Glow Spread)</span>
+                    <span className="font-mono text-amber-400">{config.island.borderGlowSpread ?? 1}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="6"
+                    step="0.5"
+                    value={config.island.borderGlowSpread ?? 1}
+                    onChange={(e) => updateIsland({ borderGlowSpread: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Viền bao ngoài thứ cấp */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Viền bao ngoài thứ cấp (Outer Border Ring)</span>
+                    <span className="font-mono text-amber-400">{((config.island.outerBorderOpacity ?? 0) * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="0.50"
+                    step="0.01"
+                    value={config.island.outerBorderOpacity ?? 0}
+                    onChange={(e) => updateIsland({ outerBorderOpacity: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Màu sắc đường viền đảo */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Màu sắc đường viền đảo (Border Color)</span>
+                    <span className="font-mono text-amber-400 uppercase">{config.island.borderColor ?? '#ffffff'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.island.borderColor ?? '#ffffff'}
+                      onChange={(e) => updateIsland({ borderColor: e.target.value })}
+                      className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border border-neutral-700 p-0.5 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.island.borderColor ?? '#ffffff'}
+                      onChange={(e) => updateIsland({ borderColor: e.target.value })}
+                      className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs text-neutral-200 font-mono"
+                      placeholder="#ffffff"
+                    />
+                  </div>
                 </div>
 
                 {/* Bóng đổ */}
@@ -851,6 +965,74 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                   />
                 </div>
 
+                {/* Độ nhòe bóng đổ */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ nhòe bóng đổ (Shadow Blur)</span>
+                    <span className="font-mono text-amber-400">{config.island.shadowBlur}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="60"
+                    step="2"
+                    value={config.island.shadowBlur}
+                    onChange={(e) => updateIsland({ shadowBlur: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ lệch trục dọc bóng đổ */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ lệch dọc bóng đổ viền (Shadow Y)</span>
+                    <span className="font-mono text-amber-400">{config.island.shadowY}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-30"
+                    max="50"
+                    step="1"
+                    value={config.island.shadowY}
+                    onChange={(e) => updateIsland({ shadowY: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ lệch trục ngang bóng đổ */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ lệch ngang bóng đổ viền (Shadow X)</span>
+                    <span className="font-mono text-amber-400">{config.island.shadowX}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-30"
+                    max="30"
+                    step="1"
+                    value={config.island.shadowX}
+                    onChange={(e) => updateIsland({ shadowX: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ lan tỏa bóng đổ */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ lan tỏa bóng đổ viền (Shadow Radius / Spread)</span>
+                    <span className="font-mono text-amber-400">{config.island.shadowRadius ?? 0}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-10"
+                    max="25"
+                    step="1"
+                    value={config.island.shadowRadius ?? 0}
+                    onChange={(e) => updateIsland({ shadowRadius: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
                 {/* Hào quang Outer Glow */}
                 <div>
                   <div className="flex justify-between font-medium text-neutral-300 mb-1">
@@ -865,6 +1047,101 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                     value={config.island.outerGlowSize}
                     onChange={(e) => updateIsland({ outerGlowSize: Number(e.target.value) })}
                     className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Nhóm Vật lý Đàn hồi Đảo */}
+            <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800/80 space-y-3">
+              <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Sliders size={13} className="text-emerald-400" />
+                Vật lý Đàn hồi Đảo (Island Elasticity & Spring)
+              </h3>
+
+              <div className="space-y-3 text-xs">
+                {/* Lò xo độ cứng */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ căng lò xo đảo (Spring Stiffness)</span>
+                    <span className="font-mono text-emerald-400">{config.island.springStiffness}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="600"
+                    step="10"
+                    value={config.island.springStiffness}
+                    onChange={(e) => updateIsland({ springStiffness: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Lò xo giảm chấn */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ giảm chấn phanh đảo (Spring Damping)</span>
+                    <span className="font-mono text-emerald-400">{config.island.springDamping}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="50"
+                    step="1"
+                    value={config.island.springDamping}
+                    onChange={(e) => updateIsland({ springDamping: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Khối lượng lò xo */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Khối lượng vật lý / Quán tính (Spring Mass)</span>
+                    <span className="font-mono text-emerald-400">{(config.island.springMass ?? 0.5).toFixed(1)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="2.0"
+                    step="0.1"
+                    value={config.island.springMass ?? 0.5}
+                    onChange={(e) => updateIsland({ springMass: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ nhún đàn hồi khi chạm đảo */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ nhún co lại khi chạm đảo (Tap Scale)</span>
+                    <span className="font-mono text-emerald-400">{(config.island.tapScale ?? 0.99).toFixed(2)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.90"
+                    max="1.00"
+                    step="0.01"
+                    value={config.island.tapScale ?? 0.99}
+                    onChange={(e) => updateIsland({ tapScale: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Thời gian chuyển đổi */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Thời gian chuyển sắc thái kính (Transition Duration)</span>
+                    <span className="font-mono text-emerald-400">{config.island.transitionDuration}ms</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="100"
+                    max="800"
+                    step="50"
+                    value={config.island.transitionDuration}
+                    onChange={(e) => updateIsland({ transitionDuration: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
                   />
                 </div>
               </div>
@@ -960,6 +1237,23 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                     className="w-full accent-blue-500 cursor-pointer"
                   />
                 </div>
+
+                {/* Lệch dọc Offset Y */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Lệch vị trí trục dọc (Offset Y)</span>
+                    <span className="font-mono text-blue-400">{config.activeTab.offsetY}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-15"
+                    max="15"
+                    step="1"
+                    value={config.activeTab.offsetY}
+                    onChange={(e) => updateActiveTab({ offsetY: Number(e.target.value) })}
+                    className="w-full accent-blue-500 cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1024,18 +1318,221 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
               </div>
             </div>
 
-            {/* Nhóm Động lực học Lò xo */}
+            {/* Nhóm Đường viền & Khúc xạ viền giọt nước (MỚI BỔ SUNG) */}
+            <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800/80 space-y-3">
+              <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Layers size={13} className="text-amber-400" />
+                Đường viền & Khúc xạ viền giọt nước
+              </h3>
+
+              <div className="space-y-3 text-xs">
+                {/* Độ dày viền giọt nước */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ dày viền giọt nước (Border Width)</span>
+                    <span className="font-mono text-amber-400">{config.activeTab.borderWidth.toFixed(1)}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="3"
+                    step="0.1"
+                    value={config.activeTab.borderWidth}
+                    onChange={(e) => updateActiveTab({ borderWidth: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ mờ viền giọt nước */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ mờ viền ngoài (Border Opacity)</span>
+                    <span className="font-mono text-amber-400">{(config.activeTab.borderOpacity * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1.0"
+                    step="0.01"
+                    value={config.activeTab.borderOpacity}
+                    onChange={(e) => updateActiveTab({ borderOpacity: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Khúc xạ viền trong đỉnh (Inner Border Inset) */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Khúc xạ viền trong đỉnh (Top Inset Border)</span>
+                    <span className="font-mono text-amber-400">{(config.activeTab.innerBorder * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1.0"
+                    step="0.01"
+                    value={config.activeTab.innerBorder}
+                    onChange={(e) => updateActiveTab({ innerBorder: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Viền nổi quang học đáy (Outer Border Inset) */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Viền nổi quang học đáy (Bottom Inset Border)</span>
+                    <span className="font-mono text-amber-400">{(config.activeTab.outerBorder * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1.0"
+                    step="0.01"
+                    value={config.activeTab.outerBorder}
+                    onChange={(e) => updateActiveTab({ outerBorder: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Dải lóa sáng mép trên */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Dải lóa sáng mép trên (Top Highlight Reflection)</span>
+                    <span className="font-mono text-amber-400">{((config.activeTab.topHighlightOpacity ?? 0.25) * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1.0"
+                    step="0.01"
+                    value={config.activeTab.topHighlightOpacity ?? 0.25}
+                    onChange={(e) => updateActiveTab({ topHighlightOpacity: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ bóng kính Specular Shine */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ bóng kính phản quang (Specular Shine)</span>
+                    <span className="font-mono text-amber-400">{config.activeTab.glassShine}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={config.activeTab.glassShine}
+                    onChange={(e) => updateActiveTab({ glassShine: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Màu sắc viền giọt nước */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Màu sắc viền giọt nước (Droplet Border Color)</span>
+                    <span className="font-mono text-amber-400 uppercase">{config.activeTab.borderColor ?? '#ffffff'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.activeTab.borderColor ?? '#ffffff'}
+                      onChange={(e) => updateActiveTab({ borderColor: e.target.value })}
+                      className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border border-neutral-700 p-0.5 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={config.activeTab.borderColor ?? '#ffffff'}
+                      onChange={(e) => updateActiveTab({ borderColor: e.target.value })}
+                      className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs text-neutral-200 font-mono"
+                      placeholder="#ffffff"
+                    />
+                  </div>
+                </div>
+
+                {/* Độ mờ bóng đổ giọt nước */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ mờ bóng đổ giọt nước (Shadow Opacity)</span>
+                    <span className="font-mono text-amber-400">{(config.activeTab.shadowOpacity * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1.0"
+                    step="0.02"
+                    value={config.activeTab.shadowOpacity}
+                    onChange={(e) => updateActiveTab({ shadowOpacity: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ nhòe bóng giọt nước */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ nhòe bóng giọt nước (Shadow Blur)</span>
+                    <span className="font-mono text-amber-400">{config.activeTab.shadowBlur}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="40"
+                    step="1"
+                    value={config.activeTab.shadowBlur}
+                    onChange={(e) => updateActiveTab({ shadowBlur: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ lệch dọc bóng đổ giọt nước */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ lệch dọc bóng đổ giọt nước (Shadow Y)</span>
+                    <span className="font-mono text-amber-400">{config.activeTab.shadowY}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-20"
+                    max="30"
+                    step="1"
+                    value={config.activeTab.shadowY}
+                    onChange={(e) => updateActiveTab({ shadowY: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ lan tỏa bóng giọt nước */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ lan tỏa bóng giọt nước (Shadow Spread)</span>
+                    <span className="font-mono text-amber-400">{config.activeTab.shadowSpread}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-10"
+                    max="20"
+                    step="1"
+                    value={config.activeTab.shadowSpread}
+                    onChange={(e) => updateActiveTab({ shadowSpread: Number(e.target.value) })}
+                    className="w-full accent-amber-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Nhóm Động lực học & Vật lý Lò xo Đàn hồi (MỞ RỘNG) */}
             <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800/80 space-y-3">
               <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Sliders size={13} className="text-emerald-400" />
-                Vật lý Lò xo (Spring Physics)
+                Vật lý Lò xo & Đàn hồi Biến dạng Lỏng (Fluid Springs)
               </h3>
 
               <div className="space-y-3 text-xs">
                 {/* Lò xo di chuyển */}
                 <div>
                   <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Độ nảy di chuyển (Move Stiffness)</span>
+                    <span>Độ nảy lò xo di chuyển (Move Stiffness)</span>
                     <span className="font-mono text-emerald-400">{config.activeTab.moveStiffness}</span>
                   </div>
                   <input
@@ -1052,18 +1549,463 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                 {/* Giảm chấn di chuyển */}
                 <div>
                   <div className="flex justify-between font-medium text-neutral-300 mb-1">
-                    <span>Độ hãm phanh (Move Damping)</span>
+                    <span>Độ hãm phanh khi đến tab (Move Damping)</span>
                     <span className="font-mono text-emerald-400">{config.activeTab.moveDamping}</span>
                   </div>
                   <input
                     type="range"
-                    min="12"
-                    max="60"
+                    min="10"
+                    max="80"
                     step="2"
                     value={config.activeTab.moveDamping}
                     onChange={(e) => updateActiveTab({ moveDamping: Number(e.target.value) })}
                     className="w-full accent-emerald-500 cursor-pointer"
                   />
+                </div>
+
+                {/* Khối lượng quán tính khi trượt */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Khối lượng quán tính trượt (Move Mass)</span>
+                    <span className="font-mono text-emerald-400">{(config.activeTab.moveMass ?? 0.5).toFixed(1)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="2.0"
+                    step="0.1"
+                    value={config.activeTab.moveMass ?? 0.5}
+                    onChange={(e) => updateActiveTab({ moveMass: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ đàn hồi nén phồng */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ đàn hồi phồng to khi chạm (Press Stiffness)</span>
+                    <span className="font-mono text-emerald-400">{config.activeTab.pressStiffness}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="500"
+                    step="10"
+                    value={config.activeTab.pressStiffness}
+                    onChange={(e) => updateActiveTab({ pressStiffness: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ hãm nhún phồng */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ hãm nhún khi giữ/thả (Press Damping)</span>
+                    <span className="font-mono text-emerald-400">{config.activeTab.pressDamping}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="40"
+                    step="1"
+                    value={config.activeTab.pressDamping}
+                    onChange={(e) => updateActiveTab({ pressDamping: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Khối lượng đàn hồi nén phồng */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Khối lượng nén đàn hồi phồng (Press Mass)</span>
+                    <span className="font-mono text-emerald-400">{(config.activeTab.pressMass ?? 0.5).toFixed(1)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1.5"
+                    step="0.1"
+                    value={config.activeTab.pressMass ?? 0.5}
+                    onChange={(e) => updateActiveTab({ pressMass: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Hệ số kéo giãn giọt nước theo vận tốc trượt */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Hệ số kéo dãn theo vận tốc (Velocity Stretch X)</span>
+                    <span className="font-mono text-emerald-400">{(config.activeTab.velocityStretch ?? 1.3).toFixed(2)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.5"
+                    step="0.05"
+                    value={config.activeTab.velocityStretch ?? 1.3}
+                    onChange={(e) => updateActiveTab({ velocityStretch: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Hệ số dẹt dọc theo vận tốc */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Hệ số dẹt dọc theo vận tốc (Velocity Squash Y)</span>
+                    <span className="font-mono text-emerald-400">{(config.activeTab.velocitySquash ?? 0.8).toFixed(2)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.4"
+                    max="1.0"
+                    step="0.05"
+                    value={config.activeTab.velocitySquash ?? 0.8}
+                    onChange={(e) => updateActiveTab({ velocitySquash: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Độ phóng to icon khi tab kích hoạt */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ phóng to biểu tượng tab chọn (Active Icon Scale)</span>
+                    <span className="font-mono text-emerald-400">{(config.activeTab.iconActiveScale ?? 1.18).toFixed(2)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1.0"
+                    max="1.4"
+                    step="0.02"
+                    value={config.activeTab.iconActiveScale ?? 1.18}
+                    onChange={(e) => updateActiveTab({ iconActiveScale: Number(e.target.value) })}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Nhóm Dải chuyển màu Tab kích hoạt (Active Tab Gradient) - NEW */}
+            <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800/80 space-y-3">
+              <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Palette size={13} className="text-purple-400" />
+                Dải chuyển màu Tab kích hoạt (Active Tab Gradient)
+              </h3>
+              <p className="text-[11px] text-neutral-400">
+                Màu chuyển tiếp Tím → Hồng áp dụng theo ranh giới mặt cắt giọt nước thực tế, thay thế màu trắng cũ.
+              </p>
+
+              {/* Preview strip */}
+              <div 
+                className="h-9 rounded-xl border border-white/10 flex items-center justify-between px-3 text-xs font-bold text-white shadow-inner"
+                style={{
+                  background: `linear-gradient(${gradDirection}, ${gradStart}, ${gradEnd})`,
+                }}
+              >
+                <span className="text-[10px] text-white/90 drop-shadow-sm flex items-center gap-1.5">
+                  <Sparkles size={12} />
+                  Hiển thị thực tế ({gradStart} → {gradEnd})
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Layers size={11} className="text-white" />
+                  </div>
+                  <div className="w-5 h-5 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <PieChart size={11} className="text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                {/* Start Color */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1.5">
+                    <span>Màu bắt đầu (Gradient Start)</span>
+                    <span className="font-mono text-purple-400 uppercase">{gradStart}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={gradStart}
+                      onChange={(e) => {
+                        const newStart = e.target.value;
+                        updateActiveTab({
+                          gradientStart: newStart,
+                          activeTabGradient: {
+                            startColor: newStart,
+                            endColor: gradEnd,
+                            direction: gradDirection,
+                          },
+                        });
+                      }}
+                      className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border border-neutral-700 p-0.5 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={gradStart}
+                      onChange={(e) => {
+                        const newStart = e.target.value;
+                        updateActiveTab({
+                          gradientStart: newStart,
+                          activeTabGradient: {
+                            startColor: newStart,
+                            endColor: gradEnd,
+                            direction: gradDirection,
+                          },
+                        });
+                      }}
+                      className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs text-neutral-200 font-mono"
+                      placeholder="#a855f7"
+                    />
+                    {/* Quick swatches */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {['#a855f7', '#6366f1', '#8b5cf6', '#3b82f6', '#06b6d4', '#10b981'].map((c) => (
+                        <button
+                          key={`start-${c}`}
+                          type="button"
+                          onClick={() => {
+                            updateActiveTab({
+                              gradientStart: c,
+                              activeTabGradient: {
+                                startColor: c,
+                                endColor: gradEnd,
+                                direction: gradDirection,
+                              },
+                            });
+                          }}
+                          className={`w-5 h-5 rounded-md border transition-transform hover:scale-110 cursor-pointer ${
+                            gradStart.toLowerCase() === c.toLowerCase() ? 'border-white scale-110' : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: c }}
+                          title={c}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* End Color */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1.5">
+                    <span>Màu kết thúc (Gradient End)</span>
+                    <span className="font-mono text-pink-400 uppercase">{gradEnd}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={gradEnd}
+                      onChange={(e) => {
+                        const newEnd = e.target.value;
+                        updateActiveTab({
+                          gradientEnd: newEnd,
+                          activeTabGradient: {
+                            startColor: gradStart,
+                            endColor: newEnd,
+                            direction: gradDirection,
+                          },
+                        });
+                      }}
+                      className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border border-neutral-700 p-0.5 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={gradEnd}
+                      onChange={(e) => {
+                        const newEnd = e.target.value;
+                        updateActiveTab({
+                          gradientEnd: newEnd,
+                          activeTabGradient: {
+                            startColor: gradStart,
+                            endColor: newEnd,
+                            direction: gradDirection,
+                          },
+                        });
+                      }}
+                      className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs text-neutral-200 font-mono"
+                      placeholder="#ec4899"
+                    />
+                    {/* Quick swatches */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {['#ec4899', '#f43f5e', '#d946ef', '#f59e0b', '#f97316', '#ef4444'].map((c) => (
+                        <button
+                          key={`end-${c}`}
+                          type="button"
+                          onClick={() => {
+                            updateActiveTab({
+                              gradientEnd: c,
+                              activeTabGradient: {
+                                startColor: gradStart,
+                                endColor: c,
+                                direction: gradDirection,
+                              },
+                            });
+                          }}
+                          className={`w-5 h-5 rounded-md border transition-transform hover:scale-110 cursor-pointer ${
+                            gradEnd.toLowerCase() === c.toLowerCase() ? 'border-white scale-110' : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: c }}
+                          title={c}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Direction */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1.5">
+                    <span>Hướng dải màu (Gradient Direction)</span>
+                    <span className="font-mono text-purple-400">{gradDirection}</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {[
+                      { id: 'to right', label: 'Ngang →' },
+                      { id: 'to bottom right', label: 'Chéo ↘' },
+                      { id: 'to bottom', label: 'Dọc ↓' },
+                      { id: 'to top right', label: 'Chéo ↗' },
+                    ].map((dir) => (
+                      <button
+                        key={dir.id}
+                        type="button"
+                        onClick={() => {
+                          updateActiveTab({
+                            gradientDirection: dir.id,
+                            activeTabGradient: {
+                              startColor: gradStart,
+                              endColor: gradEnd,
+                              direction: dir.id,
+                            },
+                          });
+                        }}
+                        className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          gradDirection === dir.id
+                            ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50'
+                            : 'bg-neutral-900/60 hover:bg-neutral-800 text-neutral-400 border border-neutral-800'
+                        }`}
+                      >
+                        {dir.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Nhóm Lớp viền phản chiếu quang học thứ cấp (Droplet Reflected Edge) - NEW */}
+            <div className="bg-[#121418] rounded-2xl p-4 border border-neutral-800/80 space-y-3">
+              <h3 className="text-xs font-black text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles size={13} className="text-rose-400" />
+                Lớp viền phản chiếu quang học thứ cấp (Droplet Reflected Edge)
+              </h3>
+              <p className="text-[11px] text-neutral-400">
+                Hiệu ứng phản xạ ngược chiều ở mép cong giọt nước, tạo độ cong quang học 3D đồng bộ chuyển động.
+              </p>
+
+              <div className="space-y-3 text-xs">
+                {/* Reflected Edge Opacity */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ mờ phản chiếu (Reflected Edge Opacity)</span>
+                    <span className="font-mono text-rose-400">
+                      {(((config.activeTab.reflectedEdgeOpacity ?? 0.28) * 100)).toFixed(0)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1.0"
+                    step="0.02"
+                    value={config.activeTab.reflectedEdgeOpacity ?? 0.28}
+                    onChange={(e) => updateActiveTab({ reflectedEdgeOpacity: Number(e.target.value) })}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Reflected Edge Width */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ dày viền phản chiếu (Reflected Edge Width)</span>
+                    <span className="font-mono text-rose-400">
+                      {(config.activeTab.reflectedEdgeWidth ?? 1.2).toFixed(1)}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="5.0"
+                    step="0.1"
+                    value={config.activeTab.reflectedEdgeWidth ?? 1.2}
+                    onChange={(e) => updateActiveTab({ reflectedEdgeWidth: Number(e.target.value) })}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Reflected Edge Blur */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ nhòe quang học viền (Reflected Edge Blur)</span>
+                    <span className="font-mono text-rose-400">
+                      {(config.activeTab.reflectedEdgeBlur ?? 2.5).toFixed(1)}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10.0"
+                    step="0.2"
+                    value={config.activeTab.reflectedEdgeBlur ?? 2.5}
+                    onChange={(e) => updateActiveTab({ reflectedEdgeBlur: Number(e.target.value) })}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Reflected Edge Offset */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1">
+                    <span>Độ lệch phản chiếu (Reflected Edge Offset)</span>
+                    <span className="font-mono text-rose-400">
+                      {(config.activeTab.reflectedEdgeOffset ?? 1.5).toFixed(1)}px
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-10.0"
+                    max="10.0"
+                    step="0.5"
+                    value={config.activeTab.reflectedEdgeOffset ?? 1.5}
+                    onChange={(e) => updateActiveTab({ reflectedEdgeOffset: Number(e.target.value) })}
+                    className="w-full accent-rose-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Reflected Edge Direction */}
+                <div>
+                  <div className="flex justify-between font-medium text-neutral-300 mb-1.5">
+                    <span>Hướng phản chiếu ngược (Reflection Side)</span>
+                    <span className="font-mono text-rose-400">
+                      {config.activeTab.reflectedEdgeDirection ?? 'bottom'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {[
+                      { id: 'bottom', label: 'Mép đáy (Đáy)' },
+                      { id: 'bottom-right', label: 'Chéo đáy phải' },
+                      { id: 'bottom-left', label: 'Chéo đáy trái' },
+                      { id: 'top', label: 'Mép đỉnh' },
+                    ].map((dir) => (
+                      <button
+                        key={dir.id}
+                        type="button"
+                        onClick={() => updateActiveTab({ reflectedEdgeDirection: dir.id })}
+                        className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          (config.activeTab.reflectedEdgeDirection ?? 'bottom') === dir.id
+                            ? 'bg-rose-600/30 text-rose-300 border border-rose-500/50'
+                            : 'bg-neutral-900/60 hover:bg-neutral-800 text-neutral-400 border border-neutral-800'
+                        }`}
+                      >
+                        {dir.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1142,11 +2084,13 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
 
         <div className="relative w-full max-w-[500px] flex flex-col items-end gap-2.5 pointer-events-none">
           {/* Dummy Island Navigation - 100% Identical Parity with Real Island */}
-          <nav
+          <motion.nav
             ref={dummyNavRef}
             id="dummy-island-navigation"
             role="navigation"
             aria-label="Đảo giả lập quan sát"
+            whileTap={{ scale: config.island.tapScale ?? 0.99 }}
+            transition={{ type: 'spring', stiffness: config.island.springStiffness, damping: config.island.springDamping, mass: config.island.springMass ?? 0.5 }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -1154,6 +2098,22 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
             className="w-full border rounded-full touch-none pointer-events-auto transition-all flex items-center relative overflow-visible"
             style={islandStyles}
           >
+            {/* SVG Gradient Definition for Active Tab Icons */}
+            <svg className="absolute w-0 h-0 pointer-events-none opacity-0" aria-hidden="true">
+              <defs>
+                <linearGradient
+                  id="dummy-nav-active-gradient"
+                  x1={gradCoords.x1}
+                  y1={gradCoords.y1}
+                  x2={gradCoords.x2}
+                  y2={gradCoords.y2}
+                >
+                  <stop offset="0%" stopColor={gradStart} />
+                  <stop offset="100%" stopColor={gradEnd} />
+                </linearGradient>
+              </defs>
+            </svg>
+
             {/* LIQUID WATER DROPLET INDICATOR */}
             <motion.div
               style={{
@@ -1168,6 +2128,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
               }}
               className="absolute top-1/2 left-0 rounded-full z-0 pointer-events-none overflow-visible"
             >
+              {/* 1. Base Glass Droplet Body */}
               <div 
                 className="absolute inset-0 rounded-full"
                 style={{
@@ -1175,13 +2136,34 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                   background: `radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, ${config.activeTab.bgOpacity}) 0%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.05) 100%)`,
                   backdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) brightness(${config.activeTab.brightness}%) contrast(${config.activeTab.contrast}%)`,
                   WebkitBackdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) brightness(${config.activeTab.brightness}%) contrast(${config.activeTab.contrast}%)`,
-                  border: `${config.activeTab.borderWidth}px solid rgba(255, 255, 255, ${config.activeTab.borderOpacity})`,
-                  boxShadow: `inset 0 1px 1.5px rgba(255, 255, 255, ${config.activeTab.innerBorder}), inset 0 -1px 2px rgba(255, 255, 255, ${config.activeTab.outerBorder}), inset 0 0 ${config.activeTab.innerGlow}px rgba(255, 255, 255, 0.02), ${config.activeTab.shadowX}px ${config.activeTab.shadowY}px ${config.activeTab.shadowBlur}px ${config.activeTab.shadowSpread}px rgba(0, 0, 0, ${config.activeTab.shadowOpacity})`,
+                  border: `${config.activeTab.borderWidth}px solid ${
+                    config.activeTab.borderColor
+                      ? `${config.activeTab.borderColor}${Math.min(255, Math.max(0, Math.round(config.activeTab.borderOpacity * 255))).toString(16).padStart(2, '0')}`
+                      : `rgba(255, 255, 255, ${config.activeTab.borderOpacity})`
+                  }`,
+                  boxShadow: [
+                    `inset 0 1px 1.5px rgba(255, 255, 255, ${config.activeTab.innerBorder})`,
+                    `inset 0 -1px 2px rgba(255, 255, 255, ${config.activeTab.outerBorder})`,
+                    `inset 0 0 ${config.activeTab.innerGlow}px rgba(255, 255, 255, 0.02)`,
+                    (config.activeTab.topHighlightOpacity ?? 0) > 0 ? `inset 0 2px 3px rgba(255, 255, 255, ${config.activeTab.topHighlightOpacity})` : '',
+                    `${config.activeTab.shadowX}px ${config.activeTab.shadowY}px ${config.activeTab.shadowBlur}px ${config.activeTab.shadowSpread}px rgba(0, 0, 0, ${config.activeTab.shadowOpacity})`,
+                  ].filter(Boolean).join(', '),
                 }}
               />
+
+              {/* 2. Secondary Reflected Edge Layer */}
+              {reflectedEdgeShadow && (
+                <div
+                  className="absolute inset-0 rounded-full pointer-events-none transition-all"
+                  style={{
+                    borderRadius: `${config.activeTab.borderRadius}px`,
+                    boxShadow: reflectedEdgeShadow,
+                  }}
+                />
+              )}
             </motion.div>
 
-            {/* 5 Tabs from Left to Right: Dòng tiền -> Thống kê -> Cá nhân -> Công nợ -> Cài đặt */}
+            {/* LAYER 1: BASE TAB LAYER (Interactive, neutral gray icons) */}
             <div className="flex items-center justify-between relative px-1 w-full z-10 pointer-events-none">
               <div className="flex-1 flex justify-center pointer-events-auto">
                 <DummyNavItem tab="flow" Icon={Layers} label="Dòng tiền" />
@@ -1199,7 +2181,45 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                 <DummyNavItem tab="settings" Icon={Settings} label="Cài đặt" />
               </div>
             </div>
-          </nav>
+
+            {/* LAYER 2: MASKED ACTIVE GRADIENT LAYER (Strictly clipped to droplet) */}
+            <motion.div
+              style={{
+                clipPath: dropletClipPath,
+                WebkitClipPath: dropletClipPath,
+              }}
+              className="absolute inset-0 flex items-center justify-between px-1 w-full z-20 pointer-events-none select-none"
+              aria-hidden="true"
+            >
+              {[
+                { tab: 'flow' as ActiveTab, Icon: Layers },
+                { tab: 'statistics' as ActiveTab, Icon: PieChart },
+                { tab: 'profile' as ActiveTab, Icon: User },
+                { tab: 'debts' as ActiveTab, Icon: Users },
+                { tab: 'settings' as ActiveTab, Icon: Settings },
+              ].map(({ tab, Icon }) => {
+                const isCurrentActive = dummyActiveTab === tab;
+                const isHovered = dummyHoverTab === tab;
+                const isVisuallyActive = dummyHoverTab !== null ? isHovered : isCurrentActive;
+
+                return (
+                  <div key={`dummy-active-${tab}`} className="flex-1 flex justify-center">
+                    <motion.div
+                      animate={{ scale: isVisuallyActive ? (config.activeTab.iconActiveScale ?? 1.18) : 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                      className="p-2 flex items-center justify-center"
+                    >
+                      <Icon
+                        size={22}
+                        stroke="url(#dummy-nav-active-gradient)"
+                        strokeWidth={isVisuallyActive ? 2.5 : 2}
+                      />
+                    </motion.div>
+                  </div>
+                );
+              })}
+            </motion.div>
+          </motion.nav>
         </div>
       </div>
     </div>

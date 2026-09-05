@@ -3,6 +3,7 @@ import { Layers, PieChart, Plus, Settings, User, Users } from 'lucide-react';
 import { type ActiveTab } from '../types';
 import { motion, useMotionValue, useSpring, useVelocity, useTransform } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
+import { getSvgGradientCoords, getReflectedEdgeBoxShadow } from '../utils/liquidGlassOptical';
 
 interface BottomNavigationProps {
   activeTab: ActiveTab;
@@ -21,6 +22,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const navRef = useRef<HTMLElement>(null);
   const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
   const isInitialRender = useRef(true);
+  const navWidthRef = useRef<number>(500);
 
   const [hoverTab, setHoverTab] = useState<ActiveTab | null>(null);
   const isPressingRef = useRef(false);
@@ -32,13 +34,15 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const animatedX = useSpring(blobX, {
     stiffness: config.activeTab.moveStiffness,
     damping: config.activeTab.moveDamping,
-    mass: 0.5,
+    mass: config.activeTab.moveMass ?? 0.5,
   });
   const velocityX = useVelocity(animatedX);
 
   // 2. Velocity-based deformation (Dynamic fluid elongation during drag / jump)
-  const velScaleX = useTransform(velocityX, [-700, 0, 700], [1.3, 1, 1.3]);
-  const velScaleY = useTransform(velocityX, [-700, 0, 700], [0.8, 1, 0.8]);
+  const vStretch = config.activeTab.velocityStretch ?? 1.3;
+  const vSquash = config.activeTab.velocitySquash ?? 0.8;
+  const velScaleX = useTransform(velocityX, [-700, 0, 700], [vStretch, 1, vStretch]);
+  const velScaleY = useTransform(velocityX, [-700, 0, 700], [vSquash, 1, vSquash]);
 
   // 3. Press-based "Swell" deformation (Liquid Glass expands outwards and breaks past island borders)
   const pressTargetX = useMotionValue(1);
@@ -46,17 +50,73 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const pressScaleX = useSpring(pressTargetX, {
     stiffness: config.activeTab.pressStiffness,
     damping: config.activeTab.pressDamping,
-    mass: 0.5,
+    mass: config.activeTab.pressMass ?? 0.5,
   });
   const pressScaleY = useSpring(pressTargetY, {
     stiffness: config.activeTab.pressStiffness,
     damping: config.activeTab.pressDamping,
-    mass: 0.5,
+    mass: config.activeTab.pressMass ?? 0.5,
   });
 
   // 4. Combined Scale outputs
   const finalScaleX = useTransform([pressScaleX, velScaleX], ([p, v]: number[]) => p * v);
   const finalScaleY = useTransform([pressScaleY, velScaleY], ([p, v]: number[]) => p * v);
+
+  const dropletWidth = config.activeTab.width;
+  const dropletHeight = config.activeTab.height;
+  const dropletOffsetX = config.activeTab.offsetX;
+  const dropletOffsetY = config.activeTab.offsetY;
+  const dropletRadius = config.activeTab.borderRadius;
+
+  // Measure and track island container width for responsive pixel-perfect clipping
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          navWidthRef.current = entry.contentRect.width;
+        }
+      }
+    });
+    ro.observe(el);
+    if (el.offsetWidth > 0) {
+      navWidthRef.current = el.offsetWidth;
+    }
+    return () => ro.disconnect();
+  }, []);
+
+  // 5. Dynamic Droplet Mask / Clip-Path
+  // The purple-to-pink gradient layer is strictly clipped by this exact droplet silhouette.
+  // It follows position (animatedX), stretch/squash (finalScaleX/Y), and press swell continuously.
+  const dropletClipPath = useTransform(
+    [animatedX, finalScaleX, finalScaleY],
+    ([x, sx, sy]: number[]) => {
+      const w = dropletWidth * sx;
+      const h = dropletHeight * sy;
+      const islandH = config.island.height;
+      const centerY = islandH / 2 + dropletOffsetY;
+      const nw = navRef.current?.offsetWidth || navWidthRef.current || 500;
+      navWidthRef.current = nw;
+
+      const left = x + dropletOffsetX - w / 2;
+      const top = centerY - h / 2;
+      const right = nw - (left + w);
+      const bottom = islandH - (top + h);
+      const r = Math.min(dropletRadius, w / 2, h / 2);
+
+      return `inset(${top.toFixed(2)}px ${right.toFixed(2)}px ${bottom.toFixed(2)}px ${left.toFixed(2)}px round ${r.toFixed(1)}px)`;
+    }
+  );
+
+  // Gradient configuration from Studio
+  const gradStart = config.activeTab.activeTabGradient?.startColor ?? config.activeTab.gradientStart ?? '#a855f7';
+  const gradEnd = config.activeTab.activeTabGradient?.endColor ?? config.activeTab.gradientEnd ?? '#ec4899';
+  const gradDirection = config.activeTab.activeTabGradient?.direction ?? config.activeTab.gradientDirection ?? 'to right';
+  const gradCoords = getSvgGradientCoords(gradDirection);
+
+  // Secondary reflected optical edge
+  const reflectedEdgeShadow = getReflectedEdgeBoxShadow(config.activeTab);
 
   const getTabCenter = (tab: ActiveTab): number => {
     const el = tabsRef.current[tab];
@@ -189,33 +249,6 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     }
   };
 
-  const NavItem = ({ tab, Icon, label }: { tab: ActiveTab; Icon: any; label: string }) => {
-    const isCurrentActive = activeTab === tab;
-    const isHovered = hoverTab === tab;
-    const isVisuallyActive = hoverTab !== null ? isHovered : isCurrentActive;
-
-    return (
-      <button
-        ref={(el) => { tabsRef.current[tab] = el; }}
-        id={`nav-btn-${tab}`}
-        type="button"
-        className="relative flex items-center justify-center flex-1 h-full cursor-pointer outline-none touch-manipulation z-10 select-none"
-        aria-label={label}
-        title={label}
-      >
-        <motion.div
-          animate={{ scale: isVisuallyActive ? 1.18 : 1 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-          className={`p-2 transition-colors flex items-center justify-center ${
-            isVisuallyActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
-          }`}
-        >
-          <Icon size={22} strokeWidth={isVisuallyActive ? 2.5 : 2} />
-        </motion.div>
-      </button>
-    );
-  };
-
   // Main Island styles calculated from config
   const islandBorderRadius = config.island.isCustomCorners
     ? `${config.island.cornerTopLeft}px ${config.island.cornerTopRight}px ${config.island.cornerBottomRight}px ${config.island.cornerBottomLeft}px`
@@ -236,20 +269,26 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     WebkitBackdropFilter: `blur(${config.island.blur}px) saturate(${config.island.saturation}%) brightness(${config.island.brightness}%) contrast(${config.island.contrast}%)`,
     borderWidth: `${config.island.borderWidth}px`,
     borderStyle: config.island.borderWidth > 0 ? 'solid' : 'none',
-    borderColor: `rgba(255, 255, 255, ${config.island.borderOpacity})`,
+    borderColor: config.island.borderColor
+      ? `${config.island.borderColor}${Math.min(255, Math.max(0, Math.round(config.island.borderOpacity * 255))).toString(16).padStart(2, '0')}`
+      : `rgba(255, 255, 255, ${config.island.borderOpacity})`,
     boxShadow: [
       `${config.island.shadowX}px ${config.island.shadowY}px ${config.island.shadowBlur}px ${config.island.shadowRadius}px rgba(0, 0, 0, ${config.island.shadowOpacity})`,
-      `inset 0 1px 1px rgba(255, 255, 255, ${config.island.innerBorderOpacity})`,
+      `inset 0 1px ${config.island.borderGlowSpread ?? 1}px rgba(255, 255, 255, ${config.island.innerBorderOpacity})`,
+      (config.island.outerBorderOpacity ?? 0) > 0 ? `0 0 0 1px rgba(255, 255, 255, ${config.island.outerBorderOpacity})` : '',
       config.island.outerGlowSize > 0 ? `0 0 ${config.island.outerGlowSize}px ${config.island.outerGlowColor}` : '',
     ].filter(Boolean).join(', '),
     transform: `translateX(${config.island.positionX}px) scale(${config.island.scale})`,
     transition: `background-color ${config.island.transitionDuration}ms ease, backdrop-filter ${config.island.transitionDuration}ms ease, border-color ${config.island.transitionDuration}ms ease, box-shadow ${config.island.transitionDuration}ms ease`,
   };
 
-  const dropletWidth = config.activeTab.width;
-  const dropletHeight = config.activeTab.height;
-  const dropletOffsetX = config.activeTab.offsetX;
-  const dropletOffsetY = config.activeTab.offsetY;
+  const TABS_NAV_ITEMS = [
+    { tab: 'flow' as ActiveTab, Icon: Layers, label: 'Dòng tiền' },
+    { tab: 'statistics' as ActiveTab, Icon: PieChart, label: 'Thống kê' },
+    { tab: 'profile' as ActiveTab, Icon: User, label: 'Cá nhân' },
+    { tab: 'debts' as ActiveTab, Icon: Users, label: 'Công nợ' },
+    { tab: 'settings' as ActiveTab, Icon: Settings, label: 'Cài đặt' },
+  ];
 
   return (
     <div 
@@ -274,8 +313,10 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         </div>
 
         {/* The 5-Tab Island Navigation */}
-        <nav
+        <motion.nav
           ref={navRef}
+          whileTap={{ scale: config.island.tapScale ?? 0.99 }}
+          transition={{ type: 'spring', stiffness: config.island.springStiffness, damping: config.island.springDamping, mass: config.island.springMass ?? 0.5 }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -283,6 +324,22 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
           className="w-full border rounded-full touch-none pointer-events-auto transition-all flex items-center relative overflow-visible"
           style={islandStyle}
         >
+          {/* SVG Gradient Definition for Active Tab Icons */}
+          <svg className="absolute w-0 h-0 pointer-events-none opacity-0" aria-hidden="true">
+            <defs>
+              <linearGradient
+                id="bottom-nav-active-gradient"
+                x1={gradCoords.x1}
+                y1={gradCoords.y1}
+                x2={gradCoords.x2}
+                y2={gradCoords.y2}
+              >
+                <stop offset="0%" stopColor={gradStart} />
+                <stop offset="100%" stopColor={gradEnd} />
+              </linearGradient>
+            </defs>
+          </svg>
+
           {/* LIQUID WATER DROPLET INDICATOR */}
           <motion.div
             style={{
@@ -297,6 +354,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             }}
             className="absolute top-1/2 left-0 rounded-full z-0 pointer-events-none overflow-visible"
           >
+            {/* 1. Base Glass Droplet Body */}
             <div 
               className="absolute inset-0 rounded-full"
               style={{
@@ -304,21 +362,96 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
                 background: `radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, ${config.activeTab.bgOpacity}) 0%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.05) 100%)`,
                 backdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) contrast(${config.activeTab.contrast}%)`,
                 WebkitBackdropFilter: `blur(${config.activeTab.blur}px) saturate(${config.activeTab.saturation}%) contrast(${config.activeTab.contrast}%)`,
-                border: `${config.activeTab.borderWidth}px solid rgba(255, 255, 255, ${config.activeTab.borderOpacity})`,
-                boxShadow: `inset 0 1px 1.5px rgba(255, 255, 255, ${config.activeTab.innerBorder}), inset 0 -1px 2px rgba(255, 255, 255, ${config.activeTab.outerBorder}), inset 0 0 ${config.activeTab.innerGlow}px rgba(255, 255, 255, 0.02), ${config.activeTab.shadowX}px ${config.activeTab.shadowY}px ${config.activeTab.shadowBlur}px ${config.activeTab.shadowSpread}px rgba(0, 0, 0, ${config.activeTab.shadowOpacity})`,
+                border: `${config.activeTab.borderWidth}px solid ${
+                  config.activeTab.borderColor
+                    ? `${config.activeTab.borderColor}${Math.min(255, Math.max(0, Math.round(config.activeTab.borderOpacity * 255))).toString(16).padStart(2, '0')}`
+                    : `rgba(255, 255, 255, ${config.activeTab.borderOpacity})`
+                }`,
+                boxShadow: [
+                  `inset 0 1px 1.5px rgba(255, 255, 255, ${config.activeTab.innerBorder})`,
+                  `inset 0 -1px 2px rgba(255, 255, 255, ${config.activeTab.outerBorder})`,
+                  `inset 0 0 ${config.activeTab.innerGlow}px rgba(255, 255, 255, 0.02)`,
+                  (config.activeTab.topHighlightOpacity ?? 0) > 0 ? `inset 0 2px 3px rgba(255, 255, 255, ${config.activeTab.topHighlightOpacity})` : '',
+                  `${config.activeTab.shadowX}px ${config.activeTab.shadowY}px ${config.activeTab.shadowBlur}px ${config.activeTab.shadowSpread}px rgba(0, 0, 0, ${config.activeTab.shadowOpacity})`,
+                ].filter(Boolean).join(', '),
               }}
             />
+
+            {/* 2. Secondary Reversed / Reflected Optical Edge Layer */}
+            {reflectedEdgeShadow && (
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none transition-all"
+                style={{
+                  borderRadius: `${config.activeTab.borderRadius}px`,
+                  boxShadow: reflectedEdgeShadow,
+                }}
+              />
+            )}
           </motion.div>
 
-          {/* 5 Tabs from Left to Right: Dòng tiền -> Thống kê -> Cá nhân -> Công nợ -> Cài đặt */}
+          {/* LAYER 1: BASE TAB LAYER (Interactive, inactive gray colors) */}
           <div className="flex items-center justify-between relative px-1 w-full z-10 pointer-events-none">
-            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="flow" Icon={Layers} label="Dòng tiền" /></div>
-            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="statistics" Icon={PieChart} label="Thống kê" /></div>
-            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="profile" Icon={User} label="Cá nhân" /></div>
-            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="debts" Icon={Users} label="Công nợ" /></div>
-            <div className="flex-1 flex justify-center pointer-events-auto"><NavItem tab="settings" Icon={Settings} label="Cài đặt" /></div>
+            {TABS_NAV_ITEMS.map(({ tab, Icon, label }) => {
+              const isCurrentActive = activeTab === tab;
+              const isHovered = hoverTab === tab;
+              const isVisuallyActive = hoverTab !== null ? isHovered : isCurrentActive;
+
+              return (
+                <div key={tab} className="flex-1 flex justify-center pointer-events-auto">
+                  <button
+                    ref={(el) => { tabsRef.current[tab] = el; }}
+                    id={`nav-btn-${tab}`}
+                    type="button"
+                    className="relative flex items-center justify-center flex-1 h-full cursor-pointer outline-none touch-manipulation select-none"
+                    aria-label={label}
+                    title={label}
+                  >
+                    <motion.div
+                      animate={{ scale: isVisuallyActive ? (config.activeTab.iconActiveScale ?? 1.18) : 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                      className="p-2 flex items-center justify-center text-neutral-500 hover:text-neutral-300 transition-colors"
+                    >
+                      <Icon size={22} strokeWidth={isVisuallyActive ? 2.5 : 2} />
+                    </motion.div>
+                  </button>
+                </div>
+              );
+            })}
           </div>
-        </nav>
+
+          {/* LAYER 2: MASKED ACTIVE GRADIENT LAYER */}
+          {/* Strictly clipped by droplet's exact real-time shape, position, and deformation */}
+          <motion.div
+            style={{
+              clipPath: dropletClipPath,
+              WebkitClipPath: dropletClipPath,
+            }}
+            className="absolute inset-0 flex items-center justify-between px-1 w-full z-20 pointer-events-none select-none"
+            aria-hidden="true"
+          >
+            {TABS_NAV_ITEMS.map(({ tab, Icon }) => {
+              const isCurrentActive = activeTab === tab;
+              const isHovered = hoverTab === tab;
+              const isVisuallyActive = hoverTab !== null ? isHovered : isCurrentActive;
+
+              return (
+                <div key={`active-${tab}`} className="flex-1 flex justify-center">
+                  <motion.div
+                    animate={{ scale: isVisuallyActive ? (config.activeTab.iconActiveScale ?? 1.18) : 1 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                    className="p-2 flex items-center justify-center"
+                  >
+                    <Icon
+                      size={22}
+                      stroke="url(#bottom-nav-active-gradient)"
+                      strokeWidth={isVisuallyActive ? 2.5 : 2}
+                    />
+                  </motion.div>
+                </div>
+              );
+            })}
+          </motion.div>
+        </motion.nav>
       </div>
     </div>
   );

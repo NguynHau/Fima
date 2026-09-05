@@ -29,10 +29,12 @@ export interface IslandConfig {
   tintColor: string; // hex color e.g. '#ffffff'
 
   // Border
-  borderWidth: number; // 0px - 6px, default 1.0
-  borderOpacity: number; // 0.00 - 1.00, default 0.09
-  innerBorderOpacity: number; // 0.00 - 1.00, default 0.15
+  borderWidth: number; // 0px - 6px, default 0.2
+  borderOpacity: number; // 0.00 - 1.00, default 0.03
+  innerBorderOpacity: number; // 0.00 - 1.00, default 0.12
   outerBorderOpacity: number; // 0.00 - 1.00, default 0.00
+  borderColor?: string; // hex color, default '#ffffff'
+  borderGlowSpread?: number; // 0px - 10px, default 1
 
   // Shadow
   shadowOpacity: number; // 0.00 - 1.00, default 0.31
@@ -48,10 +50,18 @@ export interface IslandConfig {
   outerGlowSize: number; // 0px - 30px, default 0
   outerGlowColor: string; // rgba string e.g. 'rgba(139, 92, 246, 0.20)'
 
-  // Animation
+  // Animation & Elasticity
   transitionDuration: number; // 100ms - 1000ms, default 300
   springStiffness: number; // 100 - 1000, default 420
   springDamping: number; // 10 - 100, default 32
+  springMass?: number; // 0.1 - 2.0, default 0.5
+  tapScale?: number; // 0.90 - 1.00, default 0.99
+}
+
+export interface ActiveTabGradientConfig {
+  startColor: string; // hex e.g. '#a855f7' (Purple)
+  endColor: string; // hex e.g. '#ec4899' (Pink)
+  direction: string; // 'to right' | 'to bottom right' | 'to bottom' | 'to top right'
 }
 
 export interface ActiveTabConfig {
@@ -77,11 +87,26 @@ export interface ActiveTabConfig {
   tintIntensity: number; // 0 - 100%, default 0
   tintColor: string; // hex color e.g. '#ffffff'
 
-  // Border
+  // Border & Optics
   borderWidth: number; // 0px - 5px, default 0.5
   borderOpacity: number; // 0.00 - 1.00, default 0.16
   innerBorder: number; // 0.00 - 1.00, default 0.30
   outerBorder: number; // 0.00 - 1.00, default 0.08
+  borderColor?: string; // hex color, default '#ffffff'
+  topHighlightOpacity?: number; // 0.00 - 1.00, default 0.25
+
+  // Droplet Reflected Edge (Secondary reversed optical reflection)
+  reflectedEdgeOpacity?: number; // 0.00 - 1.00, default 0.28
+  reflectedEdgeWidth?: number; // 0px - 5px, default 1.2
+  reflectedEdgeBlur?: number; // 0px - 10px, default 2.5
+  reflectedEdgeOffset?: number; // -10px - 10px, default 1.5
+  reflectedEdgeDirection?: string; // 'bottom' | 'top' | 'opposite' | 'bottom-right', default 'bottom'
+
+  // Active Tab Gradient (Purple -> Pink default, replaces white active tab)
+  activeTabGradient?: ActiveTabGradientConfig;
+  gradientStart?: string; // default '#a855f7' (Purple)
+  gradientEnd?: string; // default '#ec4899' (Pink)
+  gradientDirection?: string; // default 'to right'
 
   // Shadow
   shadowOpacity: number; // 0.00 - 1.00, default 0.30
@@ -95,11 +120,16 @@ export interface ActiveTabConfig {
   innerGlow: number; // 0px - 20px, default 8
   glassShine: number; // 0 - 100%, default 20
 
-  // Animation
+  // Animation & Elasticity
   moveStiffness: number; // 100 - 1000, default 420
   moveDamping: number; // 10 - 100, default 32
+  moveMass?: number; // 0.1 - 2.0, default 0.5
   pressStiffness: number; // 100 - 1000, default 350
   pressDamping: number; // 10 - 100, default 22
+  pressMass?: number; // 0.1 - 2.0, default 0.5
+  velocityStretch?: number; // 0.5 - 2.5, default 1.3
+  velocitySquash?: number; // 0.4 - 1.0, default 0.8
+  iconActiveScale?: number; // 1.0 - 1.5, default 1.18
 }
 
 export interface LiquidGlassConfig {
@@ -215,6 +245,8 @@ export const DEFAULT_ISLAND_CONFIG: IslandConfig = {
   borderOpacity: 0.03,
   innerBorderOpacity: 0.12,
   outerBorderOpacity: 0,
+  borderColor: '#ffffff',
+  borderGlowSpread: 1,
 
   shadowOpacity: 0,
   shadowBlur: 0,
@@ -231,6 +263,8 @@ export const DEFAULT_ISLAND_CONFIG: IslandConfig = {
   transitionDuration: 300,
   springStiffness: 100,
   springDamping: 10,
+  springMass: 0.5,
+  tapScale: 0.99,
 };
 
 export const DEFAULT_ACTIVE_TAB_CONFIG: ActiveTabConfig = {
@@ -257,6 +291,25 @@ export const DEFAULT_ACTIVE_TAB_CONFIG: ActiveTabConfig = {
   borderOpacity: 0.41,
   innerBorder: 0,
   outerBorder: 0.51,
+  borderColor: '#ffffff',
+  topHighlightOpacity: 0.25,
+
+  // Droplet Reflected Edge (Secondary reversed optical reflection)
+  reflectedEdgeOpacity: 0.28,
+  reflectedEdgeWidth: 1.2,
+  reflectedEdgeBlur: 2.5,
+  reflectedEdgeOffset: 1.5,
+  reflectedEdgeDirection: 'bottom',
+
+  // Active Tab Gradient (Purple -> Pink default, replaces white active tab)
+  activeTabGradient: {
+    startColor: '#a855f7',
+    endColor: '#ec4899',
+    direction: 'to right',
+  },
+  gradientStart: '#a855f7',
+  gradientEnd: '#ec4899',
+  gradientDirection: 'to right',
 
   shadowOpacity: 0,
   shadowBlur: 0,
@@ -270,8 +323,13 @@ export const DEFAULT_ACTIVE_TAB_CONFIG: ActiveTabConfig = {
 
   moveStiffness: 1000,
   moveDamping: 50,
+  moveMass: 0.5,
   pressStiffness: 100,
   pressDamping: 10,
+  pressMass: 0.5,
+  velocityStretch: 1.3,
+  velocitySquash: 0.8,
+  iconActiveScale: 1.18,
 };
 
 export const DEFAULT_LIQUID_GLASS_CONFIG: LiquidGlassConfig = {
