@@ -1,10 +1,18 @@
 export const UI_TRANSPARENCY_STORAGE_KEY = 'fima_ui_transparency_v1';
 
 /**
- * Retrieves the stored UI transparency (0 to 100).
- * Defaults to 0 (completely opaque).
+ * Retrieves the default UI transparency based on wallpaper presence:
+ * 50% if custom wallpaper is active, 0% if no wallpaper.
  */
-export function getStoredUiTransparency(): number {
+export function getDefaultUiTransparency(hasWallpaper: boolean = false): number {
+  return hasWallpaper ? 50 : 0;
+}
+
+/**
+ * Retrieves the stored UI transparency (0 to 100).
+ * Defaults to 50 if hasWallpaper is true, otherwise 0.
+ */
+export function getStoredUiTransparency(hasWallpaper: boolean = false): number {
   try {
     const val = localStorage.getItem(UI_TRANSPARENCY_STORAGE_KEY);
     if (val !== null) {
@@ -14,14 +22,14 @@ export function getStoredUiTransparency(): number {
       }
     }
   } catch {
-    // Fallback to 0
+    // Fallback
   }
-  return 0;
+  return getDefaultUiTransparency(hasWallpaper);
 }
 
 /**
  * Applies UI transparency CSS variables and state attribute to the document.
- * This dynamically controls the transparency and backdrop-blur of in-app cards
+ * This dynamically controls the transparency and backdrop-blur of in-app cards and header
  * across Dòng tiền, Thống kê, Cá nhân, Công nợ, and Cài đặt.
  *
  * IMPORTANT: Strictly does NOT modify or touch Main Island, which uses independent
@@ -40,10 +48,10 @@ export function applyUiTransparency(transparency: number): void {
     root.style.removeProperty('--ui-card-blur');
   } else {
     body.setAttribute('data-ui-transparency', 'active');
-    // Calculate card alpha: 0% -> 1.0, 50% -> 0.625, 100% -> 0.25
-    const alpha = (1 - (clamped / 100) * 0.75).toFixed(3);
-    const subAlpha = (1 - (clamped / 100) * 0.65).toFixed(3);
-    const blurPx = Math.round(4 + (clamped / 100) * 14);
+    // Calculate card alpha: 0% -> 1.0, 50% -> 0.55, 100% -> 0.15
+    const alpha = (1 - (clamped / 100) * 0.85).toFixed(3);
+    const subAlpha = (1 - (clamped / 100) * 0.75).toFixed(3);
+    const blurPx = Math.round(3 + (clamped / 100) * 16);
 
     root.style.setProperty('--ui-glass-transparency', clamped.toString());
     root.style.setProperty('--ui-card-alpha', alpha);
@@ -68,8 +76,9 @@ export function setStoredUiTransparency(transparency: number): void {
 /**
  * Initializes UI transparency on app launch.
  */
-export function initUiTransparency(persistedDbValue?: number): number {
-  const transparency = persistedDbValue !== undefined ? persistedDbValue : getStoredUiTransparency();
+export function initUiTransparency(persistedDbValue?: number, hasWallpaper: boolean = false): number {
+  const transparency = persistedDbValue !== undefined ? persistedDbValue : getStoredUiTransparency(hasWallpaper);
   applyUiTransparency(transparency);
   return transparency;
 }
+

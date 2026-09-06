@@ -51,7 +51,6 @@ interface SettingsViewProps {
   onOpenLiquidGlassStudio?: () => void;
   userSettings?: UserSettings | null;
   activeWallpaper?: string | null;
-  onStartPreviewWallpaper?: (url: string) => void;
   onClearWallpaper?: () => Promise<void>;
   onApplyWallpaper?: (url: string) => Promise<void>;
 }
@@ -113,7 +112,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onOpenLiquidGlassStudio,
   userSettings,
   activeWallpaper,
-  onStartPreviewWallpaper,
   onClearWallpaper,
   onApplyWallpaper,
 }) => {
@@ -136,7 +134,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // UI Transparency state (persisted)
   const [uiTransparency, setUiTransparency] = useState<number>(() => {
-    return userSettings?.uiTransparency ?? getStoredUiTransparency();
+    return userSettings?.uiTransparency ?? getStoredUiTransparency(Boolean(activeWallpaper));
   });
 
   useEffect(() => {
@@ -179,17 +177,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setIsProcessingWallpaper(true);
     try {
       const optimized = await optimizeWallpaper(rawCroppedUrl);
-      if (onStartPreviewWallpaper) {
-        onStartPreviewWallpaper(optimized);
-      } else if (onApplyWallpaper) {
+      if (onApplyWallpaper) {
         await onApplyWallpaper(optimized);
       } else {
         await updateUserSettings({ wallpaperDataUrl: optimized });
         setCachedWallpaper(optimized);
         onDataChanged();
       }
-      setStatusMessage({ type: 'success', text: 'Hình nền đã sẵn sàng và đang xem trước trực tiếp!' });
-      setTimeout(() => setStatusMessage(null), 3500);
+
+      // Default UI transparency to 50% if currently 0% when adding wallpaper
+      if (uiTransparency === 0) {
+        await handleTransparencyChange(50);
+      }
+
+      setStatusMessage({ type: 'success', text: 'Đã áp dụng hình nền mới thành công!' });
+      setTimeout(() => setStatusMessage(null), 3000);
     } catch (err) {
       console.error('Error optimizing wallpaper:', err);
       setStatusMessage({ type: 'error', text: 'Lỗi khi xử lý hình nền.' });
@@ -208,6 +210,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         await updateUserSettings({ wallpaperDataUrl: '' });
         onDataChanged();
       }
+
+      // Reset transparency to default 0% when wallpaper is removed
+      await handleTransparencyChange(0);
+
       setStatusMessage({ type: 'success', text: 'Đã khôi phục hình nền mặc định!' });
       setTimeout(() => setStatusMessage(null), 3000);
     } catch (err) {
@@ -529,9 +535,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span className="text-xs font-bold text-neutral-200">
                   {activeWallpaper ? 'Hình nền tùy chỉnh' : 'Nền đen tuyền mặc định'}
                 </span>
-                {activeWallpaper && (
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                )}
               </div>
               <p className="text-[11px] text-neutral-400 mt-0.5 leading-relaxed">
                 {activeWallpaper
@@ -540,23 +543,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </p>
             </div>
 
-            {/* If custom wallpaper exists: View live on app & Reset to default */}
+            {/* If custom wallpaper exists: Reset to default button (gray tone) */}
             {activeWallpaper && (
               <div className="flex items-center gap-2 pt-0.5 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => onStartPreviewWallpaper?.(activeWallpaper)}
-                  className="py-1.5 px-3 bg-[#262626] hover:bg-[#333333] text-neutral-200 border border-neutral-700/70 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-                >
-                  <Eye size={13} className="text-purple-400" />
-                  <span>Xem thử</span>
-                </button>
-                <button
-                  type="button"
                   onClick={handleRemoveWallpaper}
-                  className="py-1.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  className="py-1.5 px-3 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
                 >
-                  <RotateCcw size={13} />
+                  <RotateCcw size={13} className="text-neutral-400" />
                   <span>Khôi phục mặc định</span>
                 </button>
               </div>
@@ -596,7 +591,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Độ trong của giao diện
               </span>
             </div>
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-[#1a1a1a] border border-neutral-800 text-purple-400">
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-[#1a1a1a] border border-neutral-700 text-white">
               {uiTransparency}%
             </span>
           </div>
@@ -613,7 +608,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               step="1"
               value={uiTransparency}
               onChange={(e) => handleTransparencyChange(parseInt(e.target.value, 10))}
-              className="w-full accent-purple-500 cursor-pointer h-1.5 bg-neutral-800 rounded-lg"
+              className="w-full accent-white cursor-pointer h-1.5 bg-neutral-800 rounded-lg"
             />
             <div className="flex justify-between text-[10px] text-neutral-500 font-medium">
               <span>0% (Đục / Mặc định)</span>

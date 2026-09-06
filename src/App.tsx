@@ -64,10 +64,9 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   // App Wallpaper state (custom background)
-  const [previewWallpaper, setPreviewWallpaper] = useState<string | null>(null);
   const [cachedWallpaper, setCachedWallpaperState] = useState<string | null>(() => getCachedWallpaper());
 
-  const activeWallpaper = previewWallpaper || userSettings?.wallpaperDataUrl || cachedWallpaper;
+  const activeWallpaper = userSettings?.wallpaperDataUrl || cachedWallpaper;
 
   // Calendar month state (defaults to current date)
   const today = new Date();
@@ -136,10 +135,11 @@ export default function App() {
           setCachedWallpaperState(null);
         }
       }
+      const hasWallpaper = Boolean(settings?.wallpaperDataUrl || getCachedWallpaper());
       if (settings?.uiTransparency !== undefined) {
-        initUiTransparency(settings.uiTransparency);
+        initUiTransparency(settings.uiTransparency, hasWallpaper);
       } else {
-        initUiTransparency();
+        initUiTransparency(undefined, hasWallpaper);
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -151,16 +151,20 @@ export default function App() {
   const handleApplyWallpaper = async (wallpaperUrl: string) => {
     setCachedWallpaper(wallpaperUrl);
     setCachedWallpaperState(wallpaperUrl);
-    setPreviewWallpaper(null);
-    await updateUserSettings({ wallpaperDataUrl: wallpaperUrl });
+    const updates: Partial<UserSettings> = { wallpaperDataUrl: wallpaperUrl };
+    if (!userSettings?.uiTransparency) {
+      updates.uiTransparency = 50;
+      initUiTransparency(50, true);
+    }
+    await updateUserSettings(updates);
     await refreshData();
   };
 
   const handleClearWallpaper = async () => {
-    setPreviewWallpaper(null);
     setCachedWallpaperState(null);
     removeCachedWallpaper();
-    await updateUserSettings({ wallpaperDataUrl: '' });
+    initUiTransparency(0, false);
+    await updateUserSettings({ wallpaperDataUrl: '', uiTransparency: 0 });
     await refreshData();
   };
 
@@ -325,43 +329,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Live Wallpaper Preview Floating Bar */}
-        {previewWallpaper && (
-          <div className="fixed top-0 left-0 right-0 z-50 flex justify-center p-3 animate-in slide-in-from-top duration-300 pointer-events-none">
-            <div className="w-full max-w-md bg-[#16181d]/95 border border-purple-500/50 rounded-2xl p-3 shadow-2xl backdrop-blur-xl pointer-events-auto flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping shrink-0" />
-                <div className="truncate">
-                  <div className="text-xs font-black text-white uppercase tracking-wider truncate">
-                    Đang xem trước hình nền
-                  </div>
-                  <div className="text-[11px] text-neutral-400 truncate">
-                    Chuyển các tab để xem trực tiếp
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setPreviewWallpaper(null)}
-                  className="py-1.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleApplyWallpaper(previewWallpaper)}
-                  className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/30 transition-all active:scale-95 cursor-pointer flex items-center gap-1"
-                >
-                  <Check size={14} strokeWidth={3} />
-                  <span>Áp dụng</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Mobile-first centered phone container (max-w-md = 448px) */}
         <div className={`w-full max-w-md min-h-screen border-x border-neutral-900 flex flex-col relative shadow-2xl z-10 ${activeWallpaper ? 'bg-transparent' : 'bg-black'}`}>
           {/* Header - shown on Dòng tiền (home) screen */}
@@ -418,7 +385,6 @@ export default function App() {
                 onOpenLiquidGlassStudio={() => setIsTunerOpen(true)}
                 userSettings={userSettings}
                 activeWallpaper={activeWallpaper}
-                onStartPreviewWallpaper={(url) => setPreviewWallpaper(url)}
                 onClearWallpaper={handleClearWallpaper}
                 onApplyWallpaper={handleApplyWallpaper}
               />

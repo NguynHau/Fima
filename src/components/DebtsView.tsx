@@ -180,7 +180,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
   });
 
   return (
-    <div className="w-full flex flex-col min-h-0 bg-black text-white p-4 pb-28">
+    <div className="w-full flex flex-col min-h-0 bg-transparent text-white pb-24">
       {/* 1. Header with Stats Summary (Gray Theme) */}
       <div className="mb-6 space-y-4">
         <div className="flex items-center justify-between">

@@ -19,18 +19,23 @@
 
 /* =========================================================================
    Global UI Appearance Transparency System
-   Applies exclusively to in-app cards and elements inside <main> and <header>.
+   Applies to Header, in-app cards and elements inside <main>.
    STRICT EXCLUSION: NEVER affects Main Island (#fima-bottom-island, BottomNavigation)
    ========================================================================= */
-body[data-ui-transparency="active"] main [class*="bg-[#121212]"],
-body[data-ui-transparency="active"] header [class*="bg-[#121212]"] {
+body[data-ui-transparency="active"] header {
+  background-color: rgba(0, 0, 0, var(--ui-card-alpha, 0.95)) !important;
+  backdrop-filter: var(--ui-card-blur, blur(12px));
+  -webkit-backdrop-filter: var(--ui-card-blur, blur(12px));
+  border-bottom-color: rgba(38, 38, 38, var(--ui-card-alpha, 1)) !important;
+}
+
+body[data-ui-transparency="active"] main [class*="bg-[#121212]"] {
   background-color: rgba(18, 18, 18, var(--ui-card-alpha, 1)) !important;
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
 
-body[data-ui-transparency="active"] main [class*="bg-[#1a1a1a]"],
-body[data-ui-transparency="active"] header [class*="bg-[#1a1a1a]"] {
+body[data-ui-transparency="active"] main [class*="bg-[#1a1a1a]"] {
   background-color: rgba(26, 26, 26, var(--ui-card-sub-alpha, 1)) !important;
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
@@ -48,35 +53,26 @@ body[data-ui-transparency="active"] main [class*="bg-[#181818]"] {
   -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
 
-body[data-ui-transparency="active"] main [class*="bg-[#0a0a0c]"],
-body[data-ui-transparency="active"] header [class*="bg-[#0a0a0c]"] {
+body[data-ui-transparency="active"] main [class*="bg-[#0a0a0c]"] {
   background-color: rgba(10, 10, 12, var(--ui-card-alpha, 1)) !important;
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
 
-/* White Slider Styling */
-.ui-transparency-slider {
-  accent-color: #ffffff;
+body[data-ui-transparency="active"] main [class*="bg-[#1e1e1e]"] {
+  background-color: rgba(30, 30, 30, var(--ui-card-sub-alpha, 1)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
 
-.ui-transparency-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+body[data-ui-transparency="active"] main [class*="bg-[#222222]"] {
+  background-color: rgba(34, 34, 34, var(--ui-card-sub-alpha, 1)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
 
-.ui-transparency-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
-  border: none;
+body[data-ui-transparency="active"] main [class*="bg-[#262626]"] {
+  background-color: rgba(38, 38, 38, var(--ui-card-sub-alpha, 1)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
