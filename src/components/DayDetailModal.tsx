@@ -6,6 +6,7 @@ import {
   Calendar,
   Wallet,
   Building2,
+  ChevronLeft,
   ChevronRight,
   TrendingDown,
   TrendingUp,
@@ -14,21 +15,46 @@ import {
   Trash2,
   Camera,
   Pencil,
+  Clock,
+  Sunrise,
+  Sunset,
 } from 'lucide-react';
-import { type Transaction, type CalendarAccountFilter, type AccountType } from '../types';
-import { getTransactionsByDate, getImageBlob, deleteTransaction } from '../db/database';
-import { formatDateVN, formatFullDateVN, formatSignedVND, formatVND } from '../utils/formatters';
+import {
+  type Transaction,
+  type CalendarAccountFilter,
+  type AccountType,
+  type BalancesSummary,
+  type UserSettings,
+} from '../types';
+import {
+  getTransactionsByDate,
+  getImageBlob,
+  deleteTransaction,
+  getTransactions,
+  getUserSettings,
+} from '../db/database';
+import {
+  formatDateVN,
+  formatFullDateVN,
+  formatSignedVND,
+  formatVND,
+  shiftDateString,
+  formatTimeVN,
+} from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 
 interface DayDetailModalProps {
   isOpen: boolean;
   date: string;
+  onDateChange?: (newDate: string) => void;
   accountFilter?: CalendarAccountFilter;
   onAccountFilterChange?: (filter: CalendarAccountFilter) => void;
   onClose: () => void;
   onSelectTransaction: (transaction: Transaction) => void;
   onAddNewForDate: (date: string, defaultAccount?: AccountType) => void;
   allTransactions?: Transaction[];
+  balances?: BalancesSummary;
+  userSettings?: UserSettings | null;
   onDeleteTransaction?: (transaction: Transaction) => Promise<void> | void;
 }
 
@@ -342,6 +368,14 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
                       )}
                       {tx.account === 'wallet' ? 'Ví' : 'Bank'}
                     </span>
+
+                    {/* Giờ giao dịch */}
+                    {tx.createdAt && formatTimeVN(tx.createdAt) && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-neutral-200 bg-black/60 px-1.5 py-0.5 rounded-sm backdrop-blur-xs border border-white/15 font-mono">
+                        <Clock size={10} className="text-neutral-300 shrink-0" />
+                        {formatTimeVN(tx.createdAt)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -398,21 +432,37 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   isOpen,
   date,
+  onDateChange,
   accountFilter = 'all',
   onAccountFilterChange,
   onClose,
   onSelectTransaction,
   onAddNewForDate,
   allTransactions,
+  balances,
+  userSettings,
   onDeleteTransaction,
 }) => {
   const [dbTransactions, setDbTransactions] = useState<Transaction[]>([]);
+  const [fallbackAllTx, setFallbackAllTx] = useState<Transaction[]>([]);
+  const [fallbackSettings, setFallbackSettings] = useState<UserSettings | null>(null);
   const [imageAssets, setImageAssets] = useState<Record<string, { url: string; imageId: string }>>({});
   const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; tx: Transaction } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeSwipedId, setActiveSwipedId] = useState<string | null>(null);
   const [txToDelete, setTxToDelete] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fallback fetching for transactions and settings if not provided via props
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!allTransactions) {
+      getTransactions().then(setFallbackAllTx).catch(console.error);
+    }
+    if (!balances && !userSettings) {
+      getUserSettings().then(setFallbackSettings).catch(console.error);
+    }
+  }, [isOpen, allTransactions, balances, userSettings]);
 
   // If allTransactions is provided by App.tsx, automatically derive day transactions
   const transactions = useMemo(() => {
@@ -572,6 +622,141 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     }
   };
 
+  // Calculate start of day and end of day balances for current date and accountFilter
+  // Unconditionally called at top level before any returns to strictly adhere to Rules of Hooks
+  const { startOfDayBalance, endOfDayBalance } = useMemo(() => {
+    if (!isOpen || !date) {
+      return { startOfDayBalance: 0, endOfDayBalance: 0 };
+    }
+
+    const effectiveSettings = userSettings || fallbackSettings;
+    const initWallet = balances?.initialWallet ?? effectiveSettings?.initialWalletBalance ?? 0;
+    const initBank = balances?.initialBank ?? effectiveSettings?.initialBankBalance ?? 0;
+
+    const sourceTxList = allTransactions || fallbackAllTx;
+
+    let preWalletInc = 0;
+    let preWalletExp = 0;
+    let preBankInc = 0;
+    let preBankExp = 0;
+
+    let dayWalletInc = 0;
+    let dayWalletExp = 0;
+    let dayBankInc = 0;
+    let dayBankExp = 0;
+
+    for (const tx of sourceTxList) {
+      if (tx.date < date) {
+        if (tx.account === 'wallet') {
+          if (tx.type === 'income') preWalletInc += tx.amount;
+          else preWalletExp += tx.amount;
+        } else if (tx.account === 'bank') {
+          if (tx.type === 'income') preBankInc += tx.amount;
+          else preBankExp += tx.amount;
+        }
+      } else if (tx.date === date) {
+        if (tx.account === 'wallet') {
+          if (tx.type === 'income') dayWalletInc += tx.amount;
+          else dayWalletExp += tx.amount;
+        } else if (tx.account === 'bank') {
+          if (tx.type === 'income') dayBankInc += tx.amount;
+          else dayBankExp += tx.amount;
+        }
+      }
+    }
+
+    const startWallet = initWallet + preWalletInc - preWalletExp;
+    const startBank = initBank + preBankInc - preBankExp;
+    const startTotal = startWallet + startBank;
+
+    const endWallet = startWallet + dayWalletInc - dayWalletExp;
+    const endBank = startBank + dayBankInc - dayBankExp;
+    const endTotal = startTotal + (dayWalletInc + dayBankInc) - (dayWalletExp + dayBankExp);
+
+    if (accountFilter === 'wallet') {
+      return {
+        startOfDayBalance: startWallet,
+        endOfDayBalance: endWallet,
+      };
+    }
+
+    if (accountFilter === 'bank') {
+      return {
+        startOfDayBalance: startBank,
+        endOfDayBalance: endBank,
+      };
+    }
+
+    // Default: 'all'
+    return {
+      startOfDayBalance: startTotal,
+      endOfDayBalance: endTotal,
+    };
+  }, [isOpen, balances, userSettings, fallbackSettings, allTransactions, fallbackAllTx, date, accountFilter]);
+
+  // Calculate balance before and after the transaction for the photo viewer modal
+  const { photoBalanceBefore, photoBalanceAfter } = useMemo(() => {
+    if (!isOpen || !selectedPhoto) {
+      return { photoBalanceBefore: 0, photoBalanceAfter: 0 };
+    }
+
+    const tx = selectedPhoto.tx;
+    const effectiveSettings = userSettings || fallbackSettings;
+    const initialBal =
+      tx.account === 'wallet'
+        ? (balances?.initialWallet ?? effectiveSettings?.initialWalletBalance ?? 0)
+        : (balances?.initialBank ?? effectiveSettings?.initialBankBalance ?? 0);
+
+    const sourceTxList = allTransactions || fallbackAllTx;
+
+    // Filter only transactions belonging to the same account ('wallet' or 'bank')
+    const accountTxs = sourceTxList.filter((t) => t.account === tx.account);
+
+    // Sort chronologically: date ascending -> createdAt ascending -> id
+    const sortedAccountTxs = [...accountTxs].sort((a, b) => {
+      if (a.date !== b.date) {
+        return a.date.localeCompare(b.date);
+      }
+      const timeA = new Date(a.createdAt).getTime() || 0;
+      const timeB = new Date(b.createdAt).getTime() || 0;
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+      return a.id.localeCompare(b.id);
+    });
+
+    let runningBalance = initialBal;
+    let before = initialBal;
+    let found = false;
+
+    for (const item of sortedAccountTxs) {
+      if (item.id === tx.id) {
+        before = runningBalance;
+        found = true;
+        break;
+      }
+      if (item.type === 'income') {
+        runningBalance += item.amount;
+      } else {
+        runningBalance -= item.amount;
+      }
+    }
+
+    if (!found) {
+      before = runningBalance;
+    }
+
+    const after =
+      tx.type === 'income'
+        ? before + tx.amount
+        : before - tx.amount;
+
+    return {
+      photoBalanceBefore: before,
+      photoBalanceAfter: after,
+    };
+  }, [isOpen, selectedPhoto, userSettings, fallbackSettings, balances, allTransactions, fallbackAllTx]);
+
   if (!isOpen) return null;
 
   // Calculate day totals for the filtered transactions
@@ -586,18 +771,30 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   const defaultAccountForNew: AccountType | undefined =
     accountFilter === 'wallet' || accountFilter === 'bank' ? accountFilter : undefined;
 
+  const handlePrevDay = () => {
+    if (!date) return;
+    const prev = shiftDateString(date, -1);
+    onDateChange?.(prev);
+  };
+
+  const handleNextDay = () => {
+    if (!date) return;
+    const next = shiftDateString(date, 1);
+    onDateChange?.(next);
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-0 text-neutral-100">
       <div className="w-full max-w-lg bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
         {/* Header */}
         <div className="px-4.5 py-3 bg-[#121212] border-b border-neutral-800 shrink-0 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="w-9 h-9 rounded-xl bg-white/10 text-white border border-neutral-800 flex items-center justify-center shrink-0">
                 <Calendar size={18} />
               </div>
-              <div>
-                <h2 className="text-base font-extrabold text-white leading-tight">
+              <div className="min-w-0">
+                <h2 className="text-base font-extrabold text-white leading-tight truncate">
                   {formatFullDateVN(date)}
                 </h2>
                 <p className="text-xs text-neutral-300 font-bold mt-0.5">
@@ -606,13 +803,35 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
-              aria-label="Đóng"
-            >
-              <X size={18} />
-            </button>
+            {/* Quick date switch buttons "<" & ">" and Close "x" */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handlePrevDay}
+                className="w-8 h-8 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] active:bg-[#333333] border border-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
+                title="Ngày trước"
+                aria-label="Ngày trước"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextDay}
+                className="w-8 h-8 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] active:bg-[#333333] border border-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
+                title="Ngày sau"
+                aria-label="Ngày sau"
+              >
+                <ChevronRight size={18} />
+              </button>
+
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer ml-1"
+                aria-label="Đóng"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Account Filter Switcher within Day Detail */}
@@ -743,6 +962,31 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Start of Day and End of Day Horizontal Metrics Box */}
+          <div className="bg-[#1a1a1a] rounded-2xl p-3 border border-neutral-800 grid grid-cols-2 gap-3 divide-x divide-neutral-800/80">
+            {/* 1. Đầu ngày */}
+            <div className="pr-1.5 flex flex-col justify-center">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                <Sunrise size={13} className="text-amber-400 shrink-0" />
+                <span>Đầu ngày</span>
+              </div>
+              <div className="text-base sm:text-lg font-black tracking-tight mt-1 font-mono text-white truncate">
+                {formatVND(startOfDayBalance)}
+              </div>
+            </div>
+
+            {/* 2. Cuối ngày */}
+            <div className="pl-3 flex flex-col justify-center">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                <Sunset size={13} className="text-indigo-400 shrink-0" />
+                <span>Cuối ngày</span>
+              </div>
+              <div className="text-base sm:text-lg font-black tracking-tight mt-1 font-mono text-white truncate">
+                {formatVND(endOfDayBalance)}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Transaction List */}
@@ -835,17 +1079,17 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center p-2 gap-4 my-auto">
+            <div className="flex-1 flex flex-col items-center justify-center p-2 gap-3 my-auto max-h-full overflow-y-auto">
               <img
                 src={selectedPhoto.url}
                 alt="Ảnh chứng từ"
-                className="max-w-full max-h-[62vh] object-contain rounded-2xl shadow-2xl border border-neutral-800"
+                className="max-w-full max-h-[44vh] object-contain rounded-2xl shadow-2xl border border-neutral-800 shrink-0"
               />
 
               {/* Amount and Transaction Info Panel Below Photo */}
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-xs bg-[#1a1a1a]/95 border border-neutral-800 rounded-2xl p-4 text-center backdrop-blur-md shadow-2xl flex flex-col items-center gap-1.5"
+                className="w-full max-w-xs bg-[#1a1a1a]/95 border border-neutral-800 rounded-2xl p-3.5 text-center backdrop-blur-md shadow-2xl flex flex-col items-center gap-1.5 shrink-0"
               >
                 <div className="flex items-center gap-2 text-xs font-bold text-neutral-300">
                   <CategoryIcon category={selectedPhoto.tx.category} type={selectedPhoto.tx.type} size={16} />
@@ -861,15 +1105,50 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                   {formatSignedVND(selectedPhoto.tx.amount, selectedPhoto.tx.type)}
                 </div>
 
-                {/* Date & Note */}
+                {/* Date, Time & Note */}
                 <div className="text-xs text-neutral-400 font-medium flex items-center justify-center gap-1.5 flex-wrap">
                   <span>Ngày {formatDateVN(selectedPhoto.tx.date)}</span>
+                  {selectedPhoto.tx.createdAt && formatTimeVN(selectedPhoto.tx.createdAt) && (
+                    <>
+                      <span className="text-neutral-600">•</span>
+                      <span className="text-neutral-200 font-mono font-bold inline-flex items-center gap-1">
+                        <Clock size={12} className="text-neutral-400" />
+                        {formatTimeVN(selectedPhoto.tx.createdAt)}
+                      </span>
+                    </>
+                  )}
                   {selectedPhoto.tx.note && (
                     <>
                       <span className="text-neutral-600">•</span>
                       <span className="text-neutral-200 italic">&ldquo;{selectedPhoto.tx.note}&rdquo;</span>
                     </>
                   )}
+                </div>
+              </div>
+
+              {/* Balance Before & After Transaction Box */}
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-xs bg-[#1a1a1a]/95 border border-neutral-800 rounded-2xl p-3 backdrop-blur-md shadow-2xl grid grid-cols-2 gap-2 divide-x divide-neutral-800/80 text-center shrink-0"
+              >
+                {/* Số dư trước */}
+                <div className="pr-1 flex flex-col items-center justify-center">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Số dư trước
+                  </span>
+                  <span className="text-sm sm:text-base font-black font-mono tracking-tight text-white mt-0.5 truncate max-w-full">
+                    {formatVND(photoBalanceBefore)}
+                  </span>
+                </div>
+
+                {/* Số dư sau */}
+                <div className="pl-2 flex flex-col items-center justify-center">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Số dư sau
+                  </span>
+                  <span className="text-sm sm:text-base font-black font-mono tracking-tight text-white mt-0.5 truncate max-w-full">
+                    {formatVND(photoBalanceAfter)}
+                  </span>
                 </div>
               </div>
             </div>

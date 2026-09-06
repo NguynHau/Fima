@@ -50,6 +50,8 @@ export interface UserSettings {
   aiBackendUrl?: string;
   nickname?: string;
   avatarDataUrl?: string;
+  wallpaperDataUrl?: string;
+  uiTransparency?: number;
   createdAt: string;
   updatedAt: string;
 }

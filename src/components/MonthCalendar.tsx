@@ -101,17 +101,20 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
     return transactions.filter((t) => t.account === accountFilter);
   }, [transactions, accountFilter]);
 
-  // 2. Compute month summary based strictly on filtered transactions
+  // 2. Compute month summary based strictly on filtered transactions in current viewing month
+  const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
   const monthSummary = useMemo(() => {
     let income = 0;
     let expense = 0;
     for (const t of filteredTransactions) {
-      if (t.type === 'income') income += t.amount;
-      else expense += t.amount;
+      if (t.date.startsWith(monthPrefix)) {
+        if (t.type === 'income') income += t.amount;
+        else expense += t.amount;
+      }
     }
     const net = income - expense;
     return { income, expense, net };
-  }, [filteredTransactions]);
+  }, [filteredTransactions, monthPrefix]);
 
   // 3. Aggregate daily transactions strictly on filtered transactions
   const dailyMap = useMemo(() => {

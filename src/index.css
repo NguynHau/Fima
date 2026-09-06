@@ -16,3 +16,38 @@
   --orcid-shift: 0px;
   --mobile-shift: 0px;
 }
+
+/* =========================================================================
+   Global UI Appearance Transparency System
+   Applies exclusively to in-app cards and elements inside <main>.
+   STRICT EXCLUSION: NEVER affects Main Island (#fima-bottom-island, BottomNavigation)
+   ========================================================================= */
+body[data-ui-transparency="active"] main [class*="bg-[#121212]"] {
+  background-color: rgba(18, 18, 18, var(--ui-card-alpha, 1)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
+
+body[data-ui-transparency="active"] main [class*="bg-[#1a1a1a]"] {
+  background-color: rgba(26, 26, 26, var(--ui-card-sub-alpha, 1)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
+
+body[data-ui-transparency="active"] main [class*="bg-[#161616]"] {
+  background-color: rgba(22, 22, 22, var(--ui-card-sub-alpha, 1)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
+
+body[data-ui-transparency="active"] main [class*="bg-[#181818]"] {
+  background-color: rgba(24, 24, 24, var(--ui-card-sub-alpha, 1)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
+
+body[data-ui-transparency="active"] main [class*="bg-[#0a0a0c]"] {
+  background-color: rgba(10, 10, 12, var(--ui-card-alpha, 1)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}

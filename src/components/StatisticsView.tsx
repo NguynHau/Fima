@@ -12,6 +12,7 @@ import {
   formatSignedVND,
   formatDateVN,
   formatFullDateVN,
+  formatTimeVN,
 } from '../utils/formatters';
 import { CategoryIcon, getCategoryInfo } from './CategoryIcon';
 import {
@@ -36,11 +37,11 @@ import {
   Tag,
   ArrowRight,
   Users,
-  Search,
   WifiOff,
   ChevronDown,
   ChevronUp,
   List,
+  Clock,
   X,
 } from 'lucide-react';
 import {
@@ -156,9 +157,7 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
 
   const suggestions = [
     'Tháng này tôi tiêu bao nhiêu?',
-    'Khoản chi nào lớn nhất?',
     'Xu hướng chi tiêu của tôi?',
-    'Tôi có thể tiết kiệm thêm không?'
   ];
 
   return (
@@ -1040,16 +1039,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             Báo cáo chi tiết dòng tiền & số dư
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onOpenSearch}
-            className="w-10 h-10 rounded-2xl bg-[#121212] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm"
-            title="Tìm kiếm giao dịch"
-          >
-            <Search size={20} strokeWidth={2.5} />
-          </button>
-        </div>
       </div>
 
       {/* AI ASSISTANT SECTION */}
@@ -1382,8 +1371,17 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                         <div className="text-xs sm:text-sm font-bold text-neutral-200">
                                           {tx.category}
                                         </div>
-                                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 flex items-center gap-1.5">
+                                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 flex items-center gap-1.5 flex-wrap">
                                           <span>{formatDateVN(tx.date)}</span>
+                                          {tx.createdAt && formatTimeVN(tx.createdAt) && (
+                                            <>
+                                              <span className="w-1 h-1 rounded-full bg-neutral-600" />
+                                              <span className="font-mono text-neutral-300 font-bold flex items-center gap-0.5">
+                                                <Clock size={10} />
+                                                {formatTimeVN(tx.createdAt)}
+                                              </span>
+                                            </>
+                                          )}
                                           {tx.note && (
                                             <>
                                               <span className="w-1 h-1 rounded-full bg-neutral-600" />
@@ -1736,7 +1734,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 fontSize={10}
                                 tickLine={false}
                                 tickFormatter={(val) =>
-                                  val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val
+                                  Math.abs(val) >= 1000000
+                                    ? `${(val / 1000000).toFixed(1)}M`
+                                    : Math.abs(val) >= 1000
+                                    ? `${(val / 1000).toFixed(0)}k`
+                                    : val
                                 }
                               />
                               <Tooltip content={<CustomChartTooltip />} />

@@ -10,10 +10,11 @@ import {
   ArrowRight,
   SearchX,
   History,
+  Clock,
   Image as ImageIcon
 } from 'lucide-react';
 import { type Transaction } from '../types';
-import { formatVND, formatDateVN, formatSignedVND } from '../utils/formatters';
+import { formatVND, formatDateVN, formatSignedVND, formatTimeVN } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 import { getImageBlob } from '../db/database';
 
@@ -210,9 +211,20 @@ export const GlobalSearchView: React.FC<GlobalSearchViewProps> = ({
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter flex items-center gap-1.5">
-                        <Calendar size={10} />
-                        {formatDateVN(tx.date)}
+                      <span className="text-[10px] font-black text-neutral-500 uppercase tracking-tighter flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar size={10} />
+                          {formatDateVN(tx.date)}
+                        </span>
+                        {tx.createdAt && formatTimeVN(tx.createdAt) && (
+                          <>
+                            <span className="text-neutral-700">•</span>
+                            <span className="font-mono text-neutral-400 font-bold inline-flex items-center gap-0.5">
+                              <Clock size={10} />
+                              {formatTimeVN(tx.createdAt)}
+                            </span>
+                          </>
+                        )}
                         <span className="text-neutral-700">•</span>
                         {tx.account === 'wallet' ? <Wallet size={10} className="text-amber-500" /> : <Building2 size={10} className="text-blue-500" />}
                         {tx.account === 'wallet' ? 'Ví tiền' : 'Ngân hàng'}

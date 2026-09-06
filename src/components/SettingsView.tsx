@@ -19,7 +19,12 @@ import {
   X,
   Sliders,
   Database,
+  Image as ImageIcon,
+  Camera,
+  RotateCcw,
+  Eye,
 } from 'lucide-react';
+import { type UserSettings } from '../types';
 import { AIManager } from '../services/ai/AIManager';
 import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
 import { exportBackupZip, importBackupZip, triggerBlobDownload } from '../services/backupService';
@@ -34,6 +39,9 @@ import { useCategories } from '../hooks/useCategories';
 import { CategoryManagementModal } from './CategoryManagementModal';
 import { CategoryIcon } from './CategoryIcon';
 import { LiquidGlassStudioLogo } from './LiquidGlassStudioLogo';
+import { ImageCropModal } from './ImageCropModal';
+import { optimizeWallpaper, setCachedWallpaper, removeCachedWallpaper } from '../utils/wallpaperManager';
+import { getStoredUiTransparency, setStoredUiTransparency, applyUiTransparency } from '../utils/uiAppearanceManager';
 
 interface SettingsViewProps {
   onDataChanged: () => void;
@@ -41,6 +49,11 @@ interface SettingsViewProps {
   isCategoryModalOpen: boolean;
   onSetCategoryModalOpen: (open: boolean) => void;
   onOpenLiquidGlassStudio?: () => void;
+  userSettings?: UserSettings | null;
+  activeWallpaper?: string | null;
+  onStartPreviewWallpaper?: (url: string) => void;
+  onClearWallpaper?: () => Promise<void>;
+  onApplyWallpaper?: (url: string) => Promise<void>;
 }
 
 interface SettingsCardHeaderProps {
@@ -98,6 +111,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   isCategoryModalOpen,
   onSetCategoryModalOpen,
   onOpenLiquidGlassStudio,
+  userSettings,
+  activeWallpaper,
+  onStartPreviewWallpaper,
+  onClearWallpaper,
+  onApplyWallpaper,
 }) => {
   const [walletStr, setWalletStr] = useState('');
   const [bankStr, setBankStr] = useState('');
@@ -108,6 +126,95 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showEditBalanceModal, setShowEditBalanceModal] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Wallpaper state & refs
+  const wallpaperGalleryInputRef = useRef<HTMLInputElement>(null);
+  const wallpaperCameraInputRef = useRef<HTMLInputElement>(null);
+  const [wallpaperCropSrc, setWallpaperCropSrc] = useState<string | null>(null);
+  const [isWallpaperCropOpen, setIsWallpaperCropOpen] = useState(false);
+  const [isProcessingWallpaper, setIsProcessingWallpaper] = useState(false);
+
+  // UI Transparency state (persisted)
+  const [uiTransparency, setUiTransparency] = useState<number>(() => {
+    return userSettings?.uiTransparency ?? getStoredUiTransparency();
+  });
+
+  useEffect(() => {
+    if (userSettings?.uiTransparency !== undefined) {
+      setUiTransparency(userSettings.uiTransparency);
+      applyUiTransparency(userSettings.uiTransparency);
+    }
+  }, [userSettings?.uiTransparency]);
+
+  const handleTransparencyChange = async (val: number) => {
+    const clamped = Math.max(0, Math.min(100, val));
+    setUiTransparency(clamped);
+    setStoredUiTransparency(clamped);
+    // Realtime preview is triggered immediately by setStoredUiTransparency via CSS variables
+    try {
+      await updateUserSettings({ uiTransparency: clamped });
+      onDataChanged();
+    } catch (e) {
+      console.error('Error saving UI transparency to database:', e);
+    }
+  };
+
+  const handleWallpaperFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setWallpaperCropSrc(event.target.result as string);
+        setIsWallpaperCropOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleWallpaperCropComplete = async (blob: Blob, dataUrl?: string) => {
+    setIsWallpaperCropOpen(false);
+    const rawCroppedUrl = dataUrl || URL.createObjectURL(blob);
+    setIsProcessingWallpaper(true);
+    try {
+      const optimized = await optimizeWallpaper(rawCroppedUrl);
+      if (onStartPreviewWallpaper) {
+        onStartPreviewWallpaper(optimized);
+      } else if (onApplyWallpaper) {
+        await onApplyWallpaper(optimized);
+      } else {
+        await updateUserSettings({ wallpaperDataUrl: optimized });
+        setCachedWallpaper(optimized);
+        onDataChanged();
+      }
+      setStatusMessage({ type: 'success', text: 'Hình nền đã sẵn sàng và đang xem trước trực tiếp!' });
+      setTimeout(() => setStatusMessage(null), 3500);
+    } catch (err) {
+      console.error('Error optimizing wallpaper:', err);
+      setStatusMessage({ type: 'error', text: 'Lỗi khi xử lý hình nền.' });
+    } finally {
+      setIsProcessingWallpaper(false);
+      setWallpaperCropSrc(null);
+    }
+  };
+
+  const handleRemoveWallpaper = async () => {
+    try {
+      if (onClearWallpaper) {
+        await onClearWallpaper();
+      } else {
+        removeCachedWallpaper();
+        await updateUserSettings({ wallpaperDataUrl: '' });
+        onDataChanged();
+      }
+      setStatusMessage({ type: 'success', text: 'Đã khôi phục hình nền mặc định!' });
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch (err) {
+      console.error('Error clearing wallpaper:', err);
+      setStatusMessage({ type: 'error', text: 'Lỗi khi khôi phục hình nền.' });
+    }
+  };
 
   const { categories, expenseCategories, incomeCategories } = useCategories();
 
@@ -368,7 +475,156 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </button>
       </div>
 
-      {/* 4. SECTION: DỮ LIỆU */}
+      {/* 4. SECTION: HÌNH NỀN & ĐỘ TRONG GIAO DIỆN */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
+        <SettingsCardHeader
+          icon={ImageIcon}
+          title="Hình nền ứng dụng"
+          description="Đổi hình nền toàn bộ ứng dụng và tùy chỉnh độ trong suốt của giao diện (loại trừ Main Island) để làm nổi bật hình nền sau các lớp kính."
+        />
+
+        {/* Hidden inputs */}
+        <input
+          ref={wallpaperGalleryInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleWallpaperFileChange}
+          className="hidden"
+        />
+        <input
+          ref={wallpaperCameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleWallpaperFileChange}
+          className="hidden"
+        />
+
+        {/* Thumbnail Preview Card */}
+        <div className="p-3 bg-[#1a1a1a] rounded-2xl border border-neutral-800 flex items-center gap-3.5">
+          {/* Mini Phone thumbnail */}
+          <div className="w-14 h-24 sm:w-16 sm:h-28 rounded-xl overflow-hidden border border-neutral-700/80 bg-neutral-900 shrink-0 relative flex flex-col items-center justify-center">
+            {activeWallpaper ? (
+              <>
+                <img
+                  src={activeWallpaper}
+                  alt="Hình nền hiện tại"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-1 left-1.5 right-1.5 h-2 rounded-full bg-white/20 backdrop-blur-xs border border-white/30" />
+              </>
+            ) : (
+              <>
+                <ImageIcon size={18} className="text-neutral-600" />
+                <span className="text-[8px] font-bold text-neutral-500 uppercase mt-1">Mặc định</span>
+                <div className="absolute bottom-1 left-1.5 right-1.5 h-2 rounded-full bg-white/10 border border-white/10" />
+              </>
+            )}
+          </div>
+
+          {/* Status & Quick actions */}
+          <div className="flex-1 min-w-0 space-y-2">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-neutral-200">
+                  {activeWallpaper ? 'Hình nền tùy chỉnh' : 'Nền đen tuyền mặc định'}
+                </span>
+                {activeWallpaper && (
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                )}
+              </div>
+              <p className="text-[11px] text-neutral-400 mt-0.5 leading-relaxed">
+                {activeWallpaper
+                  ? 'Đã lưu trên máy và phản chiếu sau các lớp giao diện.'
+                  : 'Chưa cài đặt hình nền riêng.'}
+              </p>
+            </div>
+
+            {/* If custom wallpaper exists: View live on app & Reset to default */}
+            {activeWallpaper && (
+              <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => onStartPreviewWallpaper?.(activeWallpaper)}
+                  className="py-1.5 px-3 bg-[#262626] hover:bg-[#333333] text-neutral-200 border border-neutral-700/70 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                >
+                  <Eye size={13} className="text-purple-400" />
+                  <span>Xem thử</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveWallpaper}
+                  className="py-1.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                >
+                  <RotateCcw size={13} />
+                  <span>Khôi phục mặc định</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons: Choose from Gallery / Take New Photo */}
+        <div className="grid grid-cols-2 gap-2 pt-0.5">
+          <button
+            type="button"
+            onClick={() => wallpaperGalleryInputRef.current?.click()}
+            disabled={isProcessingWallpaper}
+            className="py-2.5 px-3 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+          >
+            <ImageIcon size={16} className="text-neutral-300 shrink-0" />
+            <span>Chọn từ thư viện</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => wallpaperCameraInputRef.current?.click()}
+            disabled={isProcessingWallpaper}
+            className="py-2.5 px-3 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+          >
+            <Camera size={16} className="text-neutral-300 shrink-0" />
+            <span>Chụp ảnh mới</span>
+          </button>
+        </div>
+
+        {/* SUB-SECTION: ĐỘ TRONG CỦA GIAO DIỆN (UI TRANSPARENCY SLIDER) */}
+        <div className="pt-3 border-t border-neutral-800/80 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sliders size={15} className="text-neutral-400" />
+              <span className="text-xs sm:text-sm font-bold text-neutral-200">
+                Độ trong của giao diện
+              </span>
+            </div>
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-[#1a1a1a] border border-neutral-800 text-purple-400">
+              {uiTransparency}%
+            </span>
+          </div>
+
+          <p className="text-[11px] text-neutral-400 leading-relaxed">
+            Điều chỉnh độ trong suốt của các thẻ thông tin và danh sách toàn app (loại trừ Main Island) để làm nổi bật hình nền.
+          </p>
+
+          <div className="space-y-1.5 pt-1">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={uiTransparency}
+              onChange={(e) => handleTransparencyChange(parseInt(e.target.value, 10))}
+              className="w-full accent-purple-500 cursor-pointer h-1.5 bg-neutral-800 rounded-lg"
+            />
+            <div className="flex justify-between text-[10px] text-neutral-500 font-medium">
+              <span>0% (Đục / Mặc định)</span>
+              <span>50% (Kính mờ)</span>
+              <span>100% (Trong suốt)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. SECTION: DỮ LIỆU */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
           icon={Database}
@@ -752,6 +1008,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Image Crop Modal for Wallpaper */}
+      {isWallpaperCropOpen && wallpaperCropSrc && (
+        <ImageCropModal
+          isOpen={isWallpaperCropOpen}
+          imageSrc={wallpaperCropSrc}
+          shape="rect"
+          initialAspectRatio="9:16"
+          lockAspectRatio={false}
+          title="Căn chỉnh hình nền"
+          onClose={() => {
+            setIsWallpaperCropOpen(false);
+            setWallpaperCropSrc(null);
+          }}
+          onCropComplete={handleWallpaperCropComplete}
+        />
       )}
     </div>
   );

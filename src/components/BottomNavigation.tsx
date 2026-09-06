@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layers, PieChart, Plus, Settings, User, Users } from 'lucide-react';
+import { Layers, PieChart, Plus, Search, Settings, User, Users } from 'lucide-react';
 import { type ActiveTab } from '../types';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
 import { getSvgGradientCoords, getReflectedEdgeBoxShadow } from '../utils/liquidGlassOptical';
 
@@ -9,6 +9,7 @@ interface BottomNavigationProps {
   activeTab: ActiveTab;
   onChangeTab: (tab: ActiveTab) => void;
   onOpenAddTransaction: () => void;
+  onOpenSearch?: () => void;
 }
 
 const TAB_ORDER: ActiveTab[] = ['flow', 'statistics', 'profile', 'debts', 'settings'];
@@ -17,6 +18,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   activeTab,
   onChangeTab,
   onOpenAddTransaction,
+  onOpenSearch,
 }) => {
   const { config } = useLiquidGlass();
   const navRef = useRef<HTMLElement>(null);
@@ -157,7 +159,12 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   }, [activeTab]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('#nav-btn-add-transaction')) return;
+    if (
+      (e.target as HTMLElement).closest('#nav-btn-add-transaction') ||
+      (e.target as HTMLElement).closest('#nav-btn-search-transaction')
+    ) {
+      return;
+    }
 
     const navEl = navRef.current;
     if (!navEl) return;
@@ -277,21 +284,47 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       className="fixed bottom-0 left-0 right-0 z-40 flex flex-col items-center px-4 pointer-events-none"
       style={{ paddingBottom: `max(env(safe-area-inset-bottom), ${config.island.bottomOffset}px)` }}
     >
-      <div className="relative w-full max-w-[500px] flex flex-col items-end gap-2.5 pointer-events-none">
-        {/* Floating Action: + Button */}
-        <div className="pointer-events-auto pr-3 flex flex-col items-center">
-          <motion.button
-            id="nav-btn-add-transaction"
-            onClick={onOpenAddTransaction}
-            whileTap={{ scale: 0.88 }}
-            whileHover={{ scale: 1.08 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="w-[70px] h-[70px] rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex items-center justify-center cursor-pointer outline-none touch-manipulation border-none"
-            aria-label="Thêm mới"
-            title="Thêm mới"
-          >
-            <Plus size={24} strokeWidth={3.5} />
-          </motion.button>
+      <div className="relative w-full max-w-[500px] flex flex-col gap-2.5 pointer-events-none">
+        {/* Floating Actions: Left (Search) & Right (Plus) */}
+        <div className="w-full flex items-center justify-between pointer-events-none">
+          {/* Left Action: Search Button (visible on Flow / Dòng tiền tab) */}
+          <div className="pointer-events-auto pl-3 flex flex-col items-center min-w-[70px] min-h-[70px]">
+            <AnimatePresence>
+              {activeTab === 'flow' && (
+                <motion.button
+                  id="nav-btn-search-transaction"
+                  onClick={onOpenSearch}
+                  initial={{ opacity: 0, scale: 0.6, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.6, y: 8 }}
+                  whileTap={{ scale: 0.88 }}
+                  whileHover={{ scale: 1.08 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  className="w-[70px] h-[70px] rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex items-center justify-center cursor-pointer outline-none touch-manipulation border-none"
+                  aria-label="Tìm kiếm"
+                  title="Tìm kiếm"
+                >
+                  <Search size={24} strokeWidth={3} />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Right Action: + Button */}
+          <div className="pointer-events-auto pr-3 flex flex-col items-center min-w-[70px] min-h-[70px]">
+            <motion.button
+              id="nav-btn-add-transaction"
+              onClick={onOpenAddTransaction}
+              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.08 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="w-[70px] h-[70px] rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex items-center justify-center cursor-pointer outline-none touch-manipulation border-none"
+              aria-label="Thêm mới"
+              title="Thêm mới"
+            >
+              <Plus size={24} strokeWidth={3.5} />
+            </motion.button>
+          </div>
         </div>
 
         {/* The 5-Tab Island Navigation */}

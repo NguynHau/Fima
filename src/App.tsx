@@ -37,6 +37,9 @@ import { LiquidGlassProvider } from './context/LiquidGlassContext';
 import { usePWA } from './hooks/usePWA';
 import { initAutoUpdateChecker } from './services/updateService';
 import { getTodayString } from './utils/formatters';
+import { Check } from 'lucide-react';
+import { getCachedWallpaper, setCachedWallpaper, removeCachedWallpaper } from './utils/wallpaperManager';
+import { initUiTransparency } from './utils/uiAppearanceManager';
 
 export default function App() {
   const { isOnline } = usePWA();
@@ -59,6 +62,12 @@ export default function App() {
   const [triggerAddDebtCount, setTriggerAddDebtCount] = useState(0);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // App Wallpaper state (custom background)
+  const [previewWallpaper, setPreviewWallpaper] = useState<string | null>(null);
+  const [cachedWallpaper, setCachedWallpaperState] = useState<string | null>(() => getCachedWallpaper());
+
+  const activeWallpaper = previewWallpaper || userSettings?.wallpaperDataUrl || cachedWallpaper;
 
   // Calendar month state (defaults to current date)
   const today = new Date();
@@ -118,12 +127,42 @@ export default function App() {
           setIsCameraOpen(true);
         }
       }
+      if (settings?.wallpaperDataUrl !== undefined) {
+        if (settings.wallpaperDataUrl) {
+          setCachedWallpaper(settings.wallpaperDataUrl);
+          setCachedWallpaperState(settings.wallpaperDataUrl);
+        } else {
+          removeCachedWallpaper();
+          setCachedWallpaperState(null);
+        }
+      }
+      if (settings?.uiTransparency !== undefined) {
+        initUiTransparency(settings.uiTransparency);
+      } else {
+        initUiTransparency();
+      }
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const handleApplyWallpaper = async (wallpaperUrl: string) => {
+    setCachedWallpaper(wallpaperUrl);
+    setCachedWallpaperState(wallpaperUrl);
+    setPreviewWallpaper(null);
+    await updateUserSettings({ wallpaperDataUrl: wallpaperUrl });
+    await refreshData();
+  };
+
+  const handleClearWallpaper = async () => {
+    setPreviewWallpaper(null);
+    setCachedWallpaperState(null);
+    removeCachedWallpaper();
+    await updateUserSettings({ wallpaperDataUrl: '' });
+    await refreshData();
+  };
 
   useEffect(() => {
     refreshData();
@@ -247,11 +286,84 @@ export default function App() {
     refreshData();
   };
 
+  const handleDayDateChange = (newDate: string) => {
+    setSelectedDayDate(newDate);
+    const [y, m] = newDate.split('-').map(Number);
+    if (y && m && (y !== currentYear || m !== currentMonth)) {
+      setCurrentYear(y);
+      setCurrentMonth(m);
+    }
+  };
+
   return (
     <LiquidGlassProvider>
-      <div className="min-h-screen bg-black flex justify-center text-neutral-100 font-sans selection:bg-white/20">
+      <div className="min-h-screen bg-black flex justify-center text-neutral-100 font-sans selection:bg-white/20 relative">
+        {/* App Wallpaper Background Layer (Behind whole app and Liquid Glass) */}
+        {activeWallpaper && (
+          <div
+            id="app-wallpaper-layer"
+            className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex justify-center select-none"
+            aria-hidden="true"
+          >
+            {/* Ambient blurred extension for wide desktop displays */}
+            <img
+              src={activeWallpaper}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover blur-3xl scale-110 opacity-30 pointer-events-none"
+            />
+
+            {/* Crisp wallpaper layer for the mobile app container */}
+            <div className="w-full max-w-md h-full relative overflow-hidden">
+              <img
+                src={activeWallpaper}
+                alt="App Wallpaper"
+                className="w-full h-full object-cover select-none pointer-events-none"
+              />
+              {/* Subtle tint to ensure high contrast & legibility */}
+              <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+            </div>
+          </div>
+        )}
+
+        {/* Live Wallpaper Preview Floating Bar */}
+        {previewWallpaper && (
+          <div className="fixed top-0 left-0 right-0 z-50 flex justify-center p-3 animate-in slide-in-from-top duration-300 pointer-events-none">
+            <div className="w-full max-w-md bg-[#16181d]/95 border border-purple-500/50 rounded-2xl p-3 shadow-2xl backdrop-blur-xl pointer-events-auto flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping shrink-0" />
+                <div className="truncate">
+                  <div className="text-xs font-black text-white uppercase tracking-wider truncate">
+                    Đang xem trước hình nền
+                  </div>
+                  <div className="text-[11px] text-neutral-400 truncate">
+                    Chuyển các tab để xem trực tiếp
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPreviewWallpaper(null)}
+                  className="py-1.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyWallpaper(previewWallpaper)}
+                  className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/30 transition-all active:scale-95 cursor-pointer flex items-center gap-1"
+                >
+                  <Check size={14} strokeWidth={3} />
+                  <span>Áp dụng</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mobile-first centered phone container (max-w-md = 448px) */}
-        <div className="w-full max-w-md min-h-screen bg-black border-x border-neutral-900 flex flex-col relative shadow-2xl">
+        <div className={`w-full max-w-md min-h-screen border-x border-neutral-900 flex flex-col relative shadow-2xl z-10 ${activeWallpaper ? 'bg-transparent' : 'bg-black'}`}>
           {/* Header - shown on Dòng tiền (home) screen */}
           {activeTab === 'flow' && (
             <Header
@@ -304,6 +416,11 @@ export default function App() {
                 isCategoryModalOpen={isCategoryManagementOpen}
                 onSetCategoryModalOpen={setIsCategoryManagementOpen}
                 onOpenLiquidGlassStudio={() => setIsTunerOpen(true)}
+                userSettings={userSettings}
+                activeWallpaper={activeWallpaper}
+                onStartPreviewWallpaper={(url) => setPreviewWallpaper(url)}
+                onClearWallpaper={handleClearWallpaper}
+                onApplyWallpaper={handleApplyWallpaper}
               />
             ) : (
               <ProfileView
@@ -321,6 +438,7 @@ export default function App() {
               activeTab={activeTab}
               onChangeTab={(tab) => setActiveTab(tab)}
               onOpenAddTransaction={handleAddClick}
+              onOpenSearch={() => setIsSearchOpen(true)}
             />
           )}
 
@@ -364,6 +482,7 @@ export default function App() {
           <DayDetailModal
             isOpen={!!selectedDayDate}
             date={selectedDayDate || ''}
+            onDateChange={handleDayDateChange}
             accountFilter={calendarAccountFilter}
             onAccountFilterChange={setCalendarAccountFilter}
             onClose={() => setSelectedDayDate(null)}
@@ -373,6 +492,8 @@ export default function App() {
               handleOpenAddTransaction(d, acc);
             }}
             allTransactions={transactions}
+            balances={balances}
+            userSettings={userSettings}
             onDeleteTransaction={handleDeleteTransactionFromDay}
           />
 
