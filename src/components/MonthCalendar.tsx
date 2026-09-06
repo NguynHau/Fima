@@ -204,7 +204,20 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
   }, [currentYear, currentMonth]);
 
   return (
-    <div className="space-y-2.5 pb-20">
+    <div className="space-y-3 pb-20">
+      {/* 1. PAGE HEADER (Title, Short Description & Logo) */}
+      <div className="flex items-center justify-between pt-1 pb-0.5">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <Layers className="text-white" size={24} />
+            Dòng tiền
+          </h1>
+          <p className="text-xs text-neutral-400 font-medium mt-0.5">
+            Theo dõi & quản lý thu chi hàng ngày
+          </p>
+        </div>
+      </div>
+
       {/* Filter & Month Navigation Container */}
       <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm space-y-1.5">
         {/* Account Filter Segmented Control (Tất cả | Ví | Bank) */}

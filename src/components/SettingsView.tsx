@@ -23,6 +23,7 @@ import {
   Camera,
   RotateCcw,
   Eye,
+  Settings,
 } from 'lucide-react';
 import { type UserSettings } from '../types';
 import { AIManager } from '../services/ai/AIManager';
@@ -393,9 +394,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   return (
     <div className="space-y-4 pb-24">
-      {/* Title */}
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-xl font-black text-white tracking-tight">Cài đặt ứng dụng</h2>
+      {/* 1. PAGE HEADER (Title & Logo) */}
+      <div className="flex items-center justify-between pt-1 px-1">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <Settings className="text-white" size={24} />
+            Cài đặt ứng dụng
+          </h1>
+        </div>
       </div>
 
       {/* Status Alert */}

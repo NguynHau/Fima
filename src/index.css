@@ -76,3 +76,42 @@ body[data-ui-transparency="active"] main [class*="bg-[#262626]"] {
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
+
+/* Themed Cards (Security, Danger Zone, Alerts) - Transparent with Preserved Colors */
+body[data-ui-transparency="active"] main [class*="bg-white/5"] {
+  background-color: rgba(255, 255, 255, calc(var(--ui-card-alpha, 1) * 0.06)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+  border-color: rgba(255, 255, 255, calc(var(--ui-card-alpha, 1) * 0.12)) !important;
+}
+
+body[data-ui-transparency="active"] main [class*="bg-white/10"] {
+  background-color: rgba(255, 255, 255, calc(var(--ui-card-alpha, 1) * 0.10)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
+
+body[data-ui-transparency="active"] main [class*="bg-rose-500/10"] {
+  background-color: rgba(244, 63, 94, calc(var(--ui-card-alpha, 1) * 0.12)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+  border-color: rgba(244, 63, 94, calc(var(--ui-card-alpha, 1) * 0.28)) !important;
+}
+
+body[data-ui-transparency="active"] main [class*="bg-rose-500/20"] {
+  background-color: rgba(244, 63, 94, calc(var(--ui-card-alpha, 1) * 0.22)) !important;
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
+
+body[data-ui-transparency="active"] main [class*="bg-emerald-500/10"],
+body[data-ui-transparency="active"] main [class*="bg-emerald-500/20"] {
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
+
+body[data-ui-transparency="active"] main [class*="bg-amber-500/10"],
+body[data-ui-transparency="active"] main [class*="bg-amber-500/20"] {
+  backdrop-filter: var(--ui-card-blur, none);
+  -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
