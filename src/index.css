@@ -19,16 +19,18 @@
 
 /* =========================================================================
    Global UI Appearance Transparency System
-   Applies exclusively to in-app cards and elements inside <main>.
+   Applies exclusively to in-app cards and elements inside <main> and <header>.
    STRICT EXCLUSION: NEVER affects Main Island (#fima-bottom-island, BottomNavigation)
    ========================================================================= */
-body[data-ui-transparency="active"] main [class*="bg-[#121212]"] {
+body[data-ui-transparency="active"] main [class*="bg-[#121212]"],
+body[data-ui-transparency="active"] header [class*="bg-[#121212]"] {
   background-color: rgba(18, 18, 18, var(--ui-card-alpha, 1)) !important;
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
 
-body[data-ui-transparency="active"] main [class*="bg-[#1a1a1a]"] {
+body[data-ui-transparency="active"] main [class*="bg-[#1a1a1a]"],
+body[data-ui-transparency="active"] header [class*="bg-[#1a1a1a]"] {
   background-color: rgba(26, 26, 26, var(--ui-card-sub-alpha, 1)) !important;
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
@@ -46,8 +48,35 @@ body[data-ui-transparency="active"] main [class*="bg-[#181818]"] {
   -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
 
-body[data-ui-transparency="active"] main [class*="bg-[#0a0a0c]"] {
+body[data-ui-transparency="active"] main [class*="bg-[#0a0a0c]"],
+body[data-ui-transparency="active"] header [class*="bg-[#0a0a0c]"] {
   background-color: rgba(10, 10, 12, var(--ui-card-alpha, 1)) !important;
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
+}
+
+/* White Slider Styling */
+.ui-transparency-slider {
+  accent-color: #ffffff;
+}
+
+.ui-transparency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+.ui-transparency-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  border: none;
 }
