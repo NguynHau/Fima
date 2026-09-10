@@ -119,7 +119,9 @@ export const DeleteCategoryModal: React.FC<DeleteCategoryModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 -mr-2 text-neutral-400 hover:text-white rounded-full hover:bg-neutral-800 transition-colors"
+            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+            title="Đóng"
+            aria-label="Đóng"
           >
             <X size={18} />
           </button>

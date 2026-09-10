@@ -322,7 +322,7 @@ const TransactionGridCard: React.FC<{
   return (
     <div
       onClick={onClick}
-      className="group relative aspect-[3/4] sm:aspect-[4/5] rounded-[18px] sm:rounded-[22px] overflow-hidden bg-[#161616] border border-white/10 hover:border-white/25 active:scale-95 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center select-none shadow-sm"
+      className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-[#161616] border border-white/10 hover:border-white/25 active:scale-95 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center select-none shadow-sm"
     >
       {/* Background / Photo / Category fallback */}
       {photoUrl ? (
@@ -333,19 +333,19 @@ const TransactionGridCard: React.FC<{
           loading="lazy"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-b from-[#222224] to-[#141416] p-3 flex flex-col justify-between items-center text-center">
-          <div className="w-9 h-9 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white mt-3">
-            <CategoryIcon category={tx.category} type={tx.type} size={18} />
+        <div className="w-full h-full bg-gradient-to-b from-[#202022] to-[#121214] p-2.5 flex flex-col justify-center items-center text-center gap-1.5">
+          <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white">
+            <CategoryIcon category={tx.category} type={tx.type} size={16} />
           </div>
-          <span className="text-[11px] font-semibold text-neutral-400 line-clamp-1 mb-6 px-1">
+          <span className="text-[10px] sm:text-[11px] font-medium text-neutral-400 line-clamp-1 px-1">
             {tx.category}
           </span>
         </div>
       )}
 
-      {/* Sleek Frosted Ultra-Transparent Pill Badge for Amount */}
+      {/* Sleek Frosted Ultra-Transparent Pill Badge for Amount (Black, highly transparent, no drop-shadow, thinner font) */}
       <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 z-10 pointer-events-none">
-        <div className="bg-black/10 backdrop-blur-xs px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-white font-extrabold text-xs sm:text-sm tracking-tight border border-white/10 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
+        <div className="bg-black/35 backdrop-blur-xs px-2 sm:px-2.5 py-0.5 rounded-full text-white/90 font-light sm:font-normal text-[10px] sm:text-xs tracking-tight border border-white/10 font-mono">
           {badgeAmount}
         </div>
       </div>
@@ -1422,82 +1422,35 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'insights':
                     return (
-                      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
-                        <div className="w-full flex items-center justify-between p-4 sm:p-5">
-                          <button
-                            type="button"
-                            onClick={() => setIsInsightsOpen(!isInsightsOpen)}
-                            className="flex items-center gap-3 text-white text-left flex-1 cursor-pointer"
-                          >
-                            <div className="w-9 h-9 rounded-xl bg-neutral-800/50 flex items-center justify-center border border-neutral-700/50 text-neutral-300">
-                              <Sparkles size={18} className="text-white" />
+                      <div
+                        key={cardId}
+                        onClick={() => setIsInsightsOpen(true)}
+                        className="bg-[#121212] hover:bg-[#181818] rounded-2xl p-4 sm:p-5 border border-neutral-800 hover:border-neutral-700 shadow-sm transition-all cursor-pointer group active:scale-[0.99]"
+                      >
+                        <div className="w-full flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center group-hover:bg-purple-500/25 transition-colors">
+                              <Sparkles size={20} />
                             </div>
                             <div>
-                              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
+                              <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                                 Gợi ý & Thông tin nhanh
                               </h3>
                               <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
                                 {quickInsights.length} điểm nổi bật
                               </p>
                             </div>
-                          </button>
+                          </div>
 
                           <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setIsInsightsOpen(!isInsightsOpen)}
-                              className="text-neutral-400 bg-[#1a1a1a] hover:bg-[#262626] w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-800 cursor-pointer"
-                            >
-                              {isInsightsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                            </button>
+                            <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
+                              Xem chi tiết
+                            </span>
+                            <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
+                              <ChevronRight size={18} />
+                            </div>
                           </div>
                         </div>
-
-                        {isInsightsOpen && (
-                          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-2">
-                            {quickInsights.length === 0 ? (
-                              <div className="py-6 text-center text-xs font-bold text-neutral-500">
-                                Không đủ dữ liệu để tạo gợi ý
-                              </div>
-                            ) : (
-                              quickInsights.map((insight) => (
-                                <div
-                                  key={insight.id}
-                                  onClick={insight.onClick}
-                                  className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                                    insight.onClick
-                                      ? 'bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98'
-                                      : 'bg-[#1a1a1a] border border-neutral-800/60'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div>
-                                      <div className="text-xs sm:text-sm font-bold text-neutral-200">
-                                        {insight.title}
-                                      </div>
-                                      {insight.subText && (
-                                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 max-w-[150px] sm:max-w-[200px] truncate">
-                                          {insight.subText}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div className="text-right flex flex-col justify-center items-end">
-                                    <div className="text-sm font-black text-white font-mono">
-                                      {insight.valueText}
-                                    </div>
-                                    {insight.hasArrow && insight.onClick && (
-                                      <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
-                                        Chi tiết <ArrowRight size={10} />
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        )}
                       </div>
                     );
 
@@ -2278,6 +2231,99 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                     />
                   ))}
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HALF-PAGE QUICK INSIGHTS BOTTOM SHEET MODAL */}
+      {isInsightsOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end justify-center p-0 pt-[max(env(safe-area-inset-top,0px),16px)] animate-in fade-in duration-200 text-neutral-100"
+          onClick={() => setIsInsightsOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-[#121212] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[85vh] h-auto overflow-hidden animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with Title & Top-Right Square Rounded X button */}
+            <div className="shrink-0 bg-[#121212] border-b border-neutral-800 px-4 py-3 flex items-center justify-between z-20">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
+                    Gợi ý & Thông tin nhanh
+                  </h2>
+                  <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">
+                    {quickInsights.length} điểm nổi bật
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsInsightsOpen(false)}
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+                title="Đóng"
+                aria-label="Đóng"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Scrollable Insights Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+              {quickInsights.length === 0 ? (
+                <div className="py-12 text-center text-xs font-bold text-neutral-500">
+                  Không đủ dữ liệu để tạo gợi ý
+                </div>
+              ) : (
+                quickInsights.map((insight) => (
+                  <div
+                    key={insight.id}
+                    onClick={() => {
+                      if (insight.onClick) {
+                        setIsInsightsOpen(false);
+                        insight.onClick();
+                      }
+                    }}
+                    className={`flex items-center justify-between p-3.5 rounded-2xl transition-all ${
+                      insight.onClick
+                        ? 'bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800 cursor-pointer active:scale-98'
+                        : 'bg-[#1a1a1a] border border-neutral-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${insight.colorClass}`}>
+                        {insight.icon}
+                      </div>
+                      <div>
+                        <div className="text-xs sm:text-sm font-bold text-neutral-200">
+                          {insight.title}
+                        </div>
+                        {insight.subText && (
+                          <div className="text-[10px] sm:text-xs text-neutral-400 font-medium mt-0.5 max-w-[180px] sm:max-w-[220px] truncate">
+                            {insight.subText}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-right flex flex-col justify-center items-end pl-2">
+                      <div className="text-xs sm:text-sm font-black text-white font-mono">
+                        {insight.valueText}
+                      </div>
+                      {insight.hasArrow && insight.onClick && (
+                        <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
+                          Chi tiết <ArrowRight size={12} />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>

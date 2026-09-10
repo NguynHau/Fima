@@ -5,6 +5,8 @@ import {
   Clock,
   Pencil,
   Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   type Transaction,
@@ -217,6 +219,26 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     }
   };
 
+  // Touch swipe interaction for entire screen
+  const touchStartYRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartYRef.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+    touchStartYRef.current = null;
+    if (Math.abs(deltaY) > 40) {
+      if (deltaY < -40) {
+        goToNext();
+      } else if (deltaY > 40) {
+        goToPrev();
+      }
+    }
+  };
+
   if (!isOpen || !currentTx) return null;
 
   const currentPhotoUrl = currentTx.imageId ? loadedImages[currentTx.imageId] : undefined;
@@ -226,6 +248,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       className="fixed inset-0 z-70 bg-black/95 flex flex-col justify-between px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)] animate-in fade-in duration-200 select-none touch-none"
       onClick={onClose}
       onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Top Header */}
       <div
@@ -239,6 +263,28 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={goToPrev}
+            disabled={currentIndex <= 0}
+            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer disabled:opacity-30 disabled:pointer-events-none shrink-0"
+            title="Giao dịch trước"
+            aria-label="Giao dịch trước"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <button
+            type="button"
+            onClick={goToNext}
+            disabled={currentIndex >= transactions.length - 1}
+            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer disabled:opacity-30 disabled:pointer-events-none shrink-0"
+            title="Giao dịch sau"
+            aria-label="Giao dịch sau"
+          >
+            <ChevronRight size={18} />
+          </button>
+
           {onEditTransaction && (
             <button
               type="button"
@@ -246,7 +292,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 onClose();
                 onEditTransaction(currentTx);
               }}
-              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer shrink-0"
               title="Chỉnh sửa giao dịch"
               aria-label="Chỉnh sửa giao dịch"
             >
@@ -257,7 +303,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer shrink-0 ml-0.5"
             title="Đóng"
             aria-label="Đóng"
           >

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Plus, Edit2, Trash2, Tag, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, Tag, CheckCircle2, X } from 'lucide-react';
 import { type Category, type TransactionType } from '../types';
 import { useCategories } from '../hooks/useCategories';
 import { getTransactionCountByCategory } from '../services/categoryService';
@@ -91,23 +91,27 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
     >
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top,0px),16px)] pb-3.5 border-b border-neutral-800/80 bg-neutral-900/60 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 -ml-2 text-neutral-400 hover:text-white rounded-full hover:bg-neutral-800 transition-colors"
-            title="Quay lại Cài đặt"
-          >
-            <ArrowLeft size={20} />
-          </button>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+            <Tag size={18} />
+          </div>
           <div>
-            <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              <Tag size={18} className="text-amber-400" />
+            <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
               Quản lý danh mục
             </h1>
-            <p className="text-xs text-neutral-400">Tùy chỉnh danh mục Thu và Chi của bạn</p>
+            <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">Tùy chỉnh danh mục Thu và Chi của bạn</p>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+          title="Đóng"
+          aria-label="Đóng"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Tabs: Danh mục chi & Danh mục thu */}

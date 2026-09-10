@@ -364,58 +364,43 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
             </div>
           </div>
 
-          {/* Header Action Tools & Close */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
-              {/* Top row: 3 buttons undo, tiến (redo), reset */}
-              <div className="flex items-center gap-1 sm:gap-1.5">
-                <button
-                  onClick={undo}
-                  disabled={!canUndo}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                  title="Hoàn tác (Undo)"
-                >
-                  <Undo2 size={14} />
-                </button>
+          {/* Header Action Tools & Close: 3 tools next to X matching shape and position */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 disabled:opacity-30 disabled:pointer-events-none"
+              title="Hoàn tác (Undo)"
+              aria-label="Hoàn tác"
+            >
+              <Undo2 size={16} />
+            </button>
 
-                <button
-                  onClick={redo}
-                  disabled={!canRedo}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                  title="Làm lại (Tiến/Redo)"
-                >
-                  <Redo2 size={14} />
-                </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 disabled:opacity-30 disabled:pointer-events-none"
+              title="Làm lại (Tiến/Redo)"
+              aria-label="Làm lại"
+            >
+              <Redo2 size={16} />
+            </button>
 
-                <button
-                  onClick={() => {
-                    resetAll();
-                    showToast('Đã khôi phục về mặc định!');
-                  }}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                  title="Đặt lại mặc định (Reset)"
-                >
-                  <RotateCcw size={14} />
-                </button>
-              </div>
-
-              {/* Bottom: Nút Lưu có theme tím hồng gradient */}
-              <button
-                onClick={() => {
-                  saveCurrentConfig();
-                  showToast('Đã lưu cấu hình Liquid Glass thành công!');
-                }}
-                className="w-full px-3 py-1 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-[11px] sm:text-xs font-black flex items-center justify-center gap-1.5 shadow-md shadow-pink-900/30 active:scale-95 cursor-pointer transition-all border border-pink-400/25"
-                title="Lưu cấu hình"
-              >
-                <Check size={13} strokeWidth={2.5} />
-                <span>{isDirty ? 'Lưu' : 'Đã lưu'}</span>
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                resetAll();
+                showToast('Đã khôi phục về mặc định!');
+              }}
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+              title="Đặt lại mặc định (Reset)"
+              aria-label="Đặt lại mặc định"
+            >
+              <RotateCcw size={16} />
+            </button>
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 ml-1"
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 ml-0.5"
               title="Đóng"
               aria-label="Đóng"
             >
@@ -1891,6 +1876,28 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         </div>
 
         <div className="relative w-full max-w-[500px] flex flex-col items-end gap-2.5 pointer-events-none">
+          {/* Floating Action: Save Island (Matching + button floating island in position and appearance) */}
+          <div className="w-full flex items-center justify-end pointer-events-none">
+            <div className="pointer-events-auto pr-3 flex flex-col items-center min-w-[70px] min-h-[70px]">
+              <motion.button
+                id="studio-btn-save-island"
+                onClick={() => {
+                  saveCurrentConfig();
+                  showToast('Đã lưu cấu hình Liquid Glass thành công!');
+                }}
+                whileTap={{ scale: 0.88 }}
+                whileHover={{ scale: 1.08 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                className="w-[70px] h-[70px] rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex flex-col items-center justify-center cursor-pointer outline-none touch-manipulation border-none"
+                aria-label="Lưu cấu hình"
+                title="Lưu cấu hình"
+              >
+                <Check size={26} strokeWidth={3.5} />
+                <span className="text-[10px] font-black uppercase tracking-tight -mt-0.5">Lưu</span>
+              </motion.button>
+            </div>
+          </div>
+
           {/* Dummy Island Navigation - 100% Identical Parity with Real Island */}
           <motion.nav
             ref={dummyNavRef}
