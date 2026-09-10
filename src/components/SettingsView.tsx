@@ -894,9 +894,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
           <div className="w-full max-w-xs sm:max-w-sm bg-[#121212] border border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center shrink-0">
-                <AlertTriangle size={22} />
-              </div>
+              <Wallet
+                size={26}
+                className="shrink-0"
+                stroke="url(#settings-pink-purple-grad)"
+                strokeWidth={2.3}
+              />
               <div>
                 <h3 className="text-base font-extrabold text-white">
                   Lưu ý thay đổi số dư
@@ -940,7 +943,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="w-full max-w-xs sm:max-w-sm bg-[#121212] border border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <h3 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                <Wallet size={18} className="text-amber-400" />
+                <Wallet
+                  size={20}
+                  className="shrink-0"
+                  stroke="url(#settings-pink-purple-grad)"
+                  strokeWidth={2.3}
+                />
                 Thay đổi số dư ban đầu
               </h3>
               <button

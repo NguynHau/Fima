@@ -89,11 +89,22 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
       id="category-management-screen"
       className="fixed inset-0 z-50 bg-neutral-950 flex flex-col text-neutral-100 overflow-hidden animate-in fade-in duration-200"
     >
+      {/* SVG Gradient Defs for Modal Header Logo */}
+      <svg width="0" height="0" className="absolute pointer-events-none opacity-0" aria-hidden="true">
+        <defs>
+          <linearGradient id="category-modal-pink-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f472b6" />
+            <stop offset="50%" stopColor="#e879f9" />
+            <stop offset="100%" stopColor="#c084fc" />
+          </linearGradient>
+        </defs>
+      </svg>
+
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top,0px),16px)] pb-3.5 border-b border-neutral-800/80 bg-neutral-900/60 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center">
-            <Tag size={18} />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/15 via-fuchsia-500/15 to-pink-500/15 border border-purple-500/30 flex items-center justify-center shadow-xs">
+            <Tag size={18} stroke="url(#category-modal-pink-purple-grad)" strokeWidth={2.3} />
           </div>
           <div>
             <h1 className="text-sm sm:text-base font-black text-white tracking-tight">

@@ -330,14 +330,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         )}
 
+        {/* SVG Gradient Defs */}
+        <svg width="0" height="0" className="absolute pointer-events-none opacity-0" aria-hidden="true">
+          <defs>
+            <linearGradient id="settings-modal-pink-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#f472b6" />
+              <stop offset="50%" stopColor="#e879f9" />
+              <stop offset="100%" stopColor="#c084fc" />
+            </linearGradient>
+          </defs>
+        </svg>
+
         {/* Warning Notice Modal */}
         {showWarningModal && (
           <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
             <div className="w-full max-w-xs sm:max-w-sm bg-[#282c34] border border-[#3a3f4b] rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center justify-center shrink-0">
-                  <AlertTriangle size={22} />
-                </div>
+                <Wallet
+                  size={26}
+                  className="shrink-0"
+                  stroke="url(#settings-modal-pink-purple-grad)"
+                  strokeWidth={2.3}
+                />
                 <div>
                   <h3 className="text-base font-extrabold text-white">
                     Lưu ý thay đổi số dư
@@ -381,7 +395,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="w-full max-w-xs sm:max-w-sm bg-[#282c34] border border-[#3a3f4b] rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between border-b border-[#3a3f4b] pb-3">
                 <h3 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                  <Wallet size={18} className="text-amber-400" />
+                  <Wallet
+                    size={20}
+                    className="shrink-0"
+                    stroke="url(#settings-modal-pink-purple-grad)"
+                    strokeWidth={2.3}
+                  />
                   Thay đổi số dư ban đầu
                 </h3>
                 <button
