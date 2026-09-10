@@ -945,7 +945,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </h3>
               <button
                 onClick={() => setShowEditBalanceModal(false)}
-                className="w-8 h-8 rounded-full bg-[#1a1a1a] hover:bg-[#262626] text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+                aria-label="Đóng"
+                title="Đóng"
               >
                 <X size={18} />
               </button>

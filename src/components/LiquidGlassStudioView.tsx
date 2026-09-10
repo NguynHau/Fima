@@ -352,72 +352,74 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
       {/* ---------------------------------------------------- */}
       <div className="flex flex-col border-b border-neutral-800/80 bg-[#121418]/95 backdrop-blur-md shrink-0 pt-[max(env(safe-area-inset-top),12px)] z-50">
         <div className="flex items-center justify-between px-4 py-2.5">
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-neutral-800/90 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-              title="Đóng"
-            >
-              <X size={18} />
-            </button>
-            <div className="flex items-center gap-2">
-              <LiquidGlassStudioLogo size={22} />
-              <div>
-                <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
-                  Liquid Glass Studio
-                </h1>
-                <p className="text-[11px] text-neutral-400">
-                  Tinh chỉnh quang học & vật lý Đảo điều hướng
-                </p>
-              </div>
+          <div className="flex items-center gap-2">
+            <LiquidGlassStudioLogo size={22} />
+            <div>
+              <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
+                Liquid Glass Studio
+              </h1>
+              <p className="text-[11px] text-neutral-400">
+                Tinh chỉnh quang học & vật lý Đảo điều hướng
+              </p>
             </div>
           </div>
 
-          {/* Header Action Tools */}
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            {/* Top row: 3 buttons undo, tiến (redo), reset */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <button
-                onClick={undo}
-                disabled={!canUndo}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                title="Hoàn tác (Undo)"
-              >
-                <Undo2 size={14} />
-              </button>
+          {/* Header Action Tools & Close */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              {/* Top row: 3 buttons undo, tiến (redo), reset */}
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <button
+                  onClick={undo}
+                  disabled={!canUndo}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                  title="Hoàn tác (Undo)"
+                >
+                  <Undo2 size={14} />
+                </button>
 
-              <button
-                onClick={redo}
-                disabled={!canRedo}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                title="Làm lại (Tiến/Redo)"
-              >
-                <Redo2 size={14} />
-              </button>
+                <button
+                  onClick={redo}
+                  disabled={!canRedo}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800/80 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                  title="Làm lại (Tiến/Redo)"
+                >
+                  <Redo2 size={14} />
+                </button>
 
+                <button
+                  onClick={() => {
+                    resetAll();
+                    showToast('Đã khôi phục về mặc định!');
+                  }}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                  title="Đặt lại mặc định (Reset)"
+                >
+                  <RotateCcw size={14} />
+                </button>
+              </div>
+
+              {/* Bottom: Nút Lưu có theme tím hồng gradient */}
               <button
                 onClick={() => {
-                  resetAll();
-                  showToast('Đã khôi phục về mặc định!');
+                  saveCurrentConfig();
+                  showToast('Đã lưu cấu hình Liquid Glass thành công!');
                 }}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                title="Đặt lại mặc định (Reset)"
+                className="w-full px-3 py-1 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-[11px] sm:text-xs font-black flex items-center justify-center gap-1.5 shadow-md shadow-pink-900/30 active:scale-95 cursor-pointer transition-all border border-pink-400/25"
+                title="Lưu cấu hình"
               >
-                <RotateCcw size={14} />
+                <Check size={13} strokeWidth={2.5} />
+                <span>{isDirty ? 'Lưu' : 'Đã lưu'}</span>
               </button>
             </div>
 
-            {/* Bottom: Nút Lưu có theme tím hồng gradient */}
             <button
-              onClick={() => {
-                saveCurrentConfig();
-                showToast('Đã lưu cấu hình Liquid Glass thành công!');
-              }}
-              className="w-full px-3 py-1 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-[11px] sm:text-xs font-black flex items-center justify-center gap-1.5 shadow-md shadow-pink-900/30 active:scale-95 cursor-pointer transition-all border border-pink-400/25"
-              title="Lưu cấu hình"
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 ml-1"
+              title="Đóng"
+              aria-label="Đóng"
             >
-              <Check size={13} strokeWidth={2.5} />
-              <span>{isDirty ? 'Lưu' : 'Đã lưu'}</span>
+              <X size={18} />
             </button>
           </div>
         </div>

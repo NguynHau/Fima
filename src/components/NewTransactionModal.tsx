@@ -286,35 +286,41 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
     <div className="fixed inset-0 z-50 bg-[#181a1e]/95 backdrop-blur-md flex flex-col justify-between overflow-hidden text-neutral-100">
       {/* 1. Header */}
       <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top,0px),16px)] pb-3 shrink-0">
+        <div className="flex items-center gap-2">
+          {/* AI status card / Offline badge / Scan AI button */}
+          {isAnalyzing ? (
+            <div className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all duration-300 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 border border-pink-300/40 animate-pulse">
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+              <span className="tracking-wide">Đang phân tích...</span>
+            </div>
+          ) : !isOnline ? (
+            <div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <WifiOff size={13} className="text-amber-400" />
+              <span>Ngoại tuyến (Lưu máy)</span>
+            </div>
+          ) : photoBlob ? (
+            <button
+              type="button"
+              onClick={() => triggerReceiptAnalysis(photoBlob)}
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
+            >
+              <Sparkles size={13} className="text-purple-300" />
+              <span>Quét lại AI</span>
+            </button>
+          ) : (
+            <span className="text-sm font-extrabold text-white">Giao dịch mới</span>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={onClose}
-          className="px-5 py-2.5 rounded-full bg-[#2a2e36] hover:bg-[#343842] border border-[#3e4350] text-sm font-bold text-neutral-200 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
+          className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+          aria-label="Đóng"
+          title="Đóng"
         >
-          Hủy
+          <X size={18} />
         </button>
-
-        {/* AI status card / Offline badge / Scan AI button */}
-        {isAnalyzing ? (
-          <div className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all duration-300 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 border border-pink-300/40 animate-pulse">
-            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-            <span className="tracking-wide">Đang phân tích...</span>
-          </div>
-        ) : !isOnline ? (
-          <div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30">
-            <WifiOff size={13} className="text-amber-400" />
-            <span>Ngoại tuyến (Lưu máy)</span>
-          </div>
-        ) : photoBlob ? (
-          <button
-            type="button"
-            onClick={() => triggerReceiptAnalysis(photoBlob)}
-            className="px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
-          >
-            <Sparkles size={13} className="text-purple-300" />
-            <span>Quét lại AI</span>
-          </button>
-        ) : null}
       </div>
 
       {/* AI Smart Input */}

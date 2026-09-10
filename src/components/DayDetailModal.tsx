@@ -826,8 +826,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer ml-1"
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer ml-1 shrink-0"
                 aria-label="Đóng"
+                title="Đóng"
               >
                 <X size={18} />
               </button>

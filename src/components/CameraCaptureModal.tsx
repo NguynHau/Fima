@@ -222,14 +222,13 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
       {/* Top action bar */}
       <div className="relative z-20 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top,0px),16px)] pb-2 text-white">
         <button
-          onClick={() => {
-            stopCamera();
-            onClose();
-          }}
-          className="w-10 h-10 rounded-full bg-[#1c1c1c]/80 border border-white/10 backdrop-blur-md flex items-center justify-center text-white active:scale-95 transition-all cursor-pointer shadow-md"
-          aria-label="Đóng máy ảnh"
+          onClick={toggleFacingMode}
+          disabled={!stream}
+          className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all cursor-pointer shadow-md"
+          aria-label="Đổi camera"
+          title="Đổi camera"
         >
-          <X size={20} />
+          <RefreshCw size={16} />
         </button>
 
         <div className="px-3 py-1 rounded-full bg-black/50 border border-white/10 backdrop-blur-md text-xs font-semibold text-neutral-300">
@@ -237,12 +236,15 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
         </div>
 
         <button
-          onClick={toggleFacingMode}
-          disabled={!stream}
-          className="w-10 h-10 rounded-full bg-[#1c1c1c]/80 border border-white/10 backdrop-blur-md flex items-center justify-center text-white disabled:opacity-30 active:scale-95 transition-all cursor-pointer shadow-md"
-          aria-label="Đổi camera"
+          onClick={() => {
+            stopCamera();
+            onClose();
+          }}
+          className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer shadow-md"
+          aria-label="Đóng máy ảnh"
+          title="Đóng"
         >
-          <RefreshCw size={18} />
+          <X size={18} />
         </button>
       </div>
 

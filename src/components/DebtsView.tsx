@@ -501,9 +501,11 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
               </h3>
               <button
                 onClick={() => setQuickPayDebt(null)}
-                className="w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white"
+                className="w-7 h-7 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                aria-label="Đóng"
+                title="Đóng"
               >
-                <X size={14} />
+                <X size={15} />
               </button>
             </div>
 

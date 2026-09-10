@@ -106,7 +106,9 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white active:scale-90 transition-all cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+            aria-label="Đóng"
+            title="Đóng"
           >
             <X size={18} />
           </button>

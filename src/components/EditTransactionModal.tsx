@@ -331,12 +331,15 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     <div className="fixed inset-0 z-50 bg-[#181a1e]/95 backdrop-blur-md flex flex-col justify-between overflow-hidden text-neutral-100">
       {/* 1. Header */}
       <div className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top,0px),16px)] pb-3 shrink-0">
+        <span className="text-sm font-extrabold text-white">Chỉnh sửa giao dịch</span>
         <button
           type="button"
           onClick={onClose}
-          className="px-5 py-2.5 rounded-full bg-[#2a2e36] hover:bg-[#343842] border border-[#3e4350] text-sm font-bold text-neutral-200 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
+          className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+          aria-label="Đóng"
+          title="Đóng"
         >
-          Hủy
+          <X size={18} />
         </button>
       </div>
 
