@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   ChevronLeft,
@@ -10,15 +10,16 @@ import {
   Layers,
   Wallet,
   Building2,
+  Plus,
 } from 'lucide-react';
 import { type Transaction, type CalendarAccountFilter } from '../types';
 import {
-  formatCompactVND,
   formatDateVN,
   formatMonthVN,
   formatVND,
   getTodayString,
 } from '../utils/formatters';
+import { getImageBlob } from '../db/database';
 
 interface MonthCalendarProps {
   currentYear: number;
@@ -30,6 +31,7 @@ interface MonthCalendarProps {
   onNextMonth: () => void;
   onTodayMonth: () => void;
   onSelectDay: (dateStr: string) => void;
+  selectedDate?: string;
 }
 
 interface DayCellData {
@@ -41,7 +43,105 @@ interface DayCellData {
   expense: number;
   net: number;
   count: number;
+  transactions: Transaction[];
 }
+
+/**
+ * Format compact daily net amount:
+ * -44k = system red
+ * +98k = system green
+ * +1.096k = system green
+ */
+const formatDailyNetCompact = (net: number): string => {
+  if (net === 0) return '';
+  const sign = net > 0 ? '+' : '-';
+  const abs = Math.abs(net);
+
+  if (abs >= 1000) {
+    const inK = abs / 1000;
+    if (Number.isInteger(inK)) {
+      const formatted = inK.toLocaleString('vi-VN');
+      return `${sign}${formatted}k`;
+    } else {
+      const formatted = inK.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+      return `${sign}${formatted}k`;
+    }
+  } else {
+    return `${sign}${abs}₫`;
+  }
+};
+
+const renderCardContent = (photoUrl?: string, tx?: Transaction) => {
+  if (photoUrl) {
+    return <img src={photoUrl} alt="Chứng từ" className="w-full h-full object-cover" />;
+  }
+  if (tx?.type === 'income') {
+    return (
+      <div className="w-full h-full bg-white p-1 flex flex-col justify-between text-black font-mono">
+        <div className="flex items-center justify-between border-b border-neutral-200 pb-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="font-bold text-[6px] text-emerald-600">Thu</span>
+        </div>
+        <div className="space-y-0.5 my-auto">
+          <div className="h-0.5 bg-neutral-300 rounded w-full" />
+          <div className="h-0.5 bg-neutral-200 rounded w-2/3" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="w-full h-full bg-[#202020] flex items-center justify-center">
+      <Plus size={16} className="text-white" strokeWidth={2} />
+    </div>
+  );
+};
+
+/**
+ * Component for rendering day cell transaction thumbnails and stacked thumbnails
+ */
+const CalendarCellThumbnail: React.FC<{
+  count: number;
+  photoUrls?: string[];
+  transactions?: Transaction[];
+}> = ({ count, photoUrls = [], transactions = [] }) => {
+  // If no transactions in this day -> rounded square with thin white border and centered white '+'
+  if (count === 0) {
+    return (
+      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] bg-[#1a1a1a] border border-white/25 flex items-center justify-center shrink-0 shadow-xs">
+        <Plus size={18} className="text-white" strokeWidth={2.2} />
+      </div>
+    );
+  }
+
+  // If exactly 1 transaction -> 1 rounded square with thin white border
+  if (count === 1) {
+    return (
+      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] overflow-hidden bg-[#202020] border border-white/30 flex items-center justify-center shrink-0 shadow-sm">
+        {renderCardContent(photoUrls[0], transactions[0])}
+      </div>
+    );
+  }
+
+  // If 2 or more transactions -> exactly 2 cards: 1st tilted left, 2nd tilted right
+  const firstPhoto = photoUrls[0];
+  const secondPhoto = photoUrls[1];
+  const firstTx = transactions[0];
+  const secondTx = transactions[1];
+
+  return (
+    <div className="relative w-10 h-10 sm:w-11 sm:h-11 mx-auto flex items-center justify-center shrink-0">
+      {/* 1st Card (Bottom) - tilted slightly to the left */}
+      <div className="absolute inset-0 z-0 w-full h-full rounded-[14px] overflow-hidden bg-[#1e1e1e] border border-white/30 shadow-sm transform -rotate-6 scale-95 flex items-center justify-center">
+        {renderCardContent(firstPhoto, firstTx)}
+      </div>
+
+      {/* 2nd Card (Top) - tilted slightly to the right */}
+      <div className="relative z-10 w-full h-full rounded-[14px] overflow-hidden bg-[#222222] border border-white/35 shadow-md transform rotate-6 scale-95 flex items-center justify-center">
+        {renderCardContent(secondPhoto, secondTx)}
+      </div>
+    </div>
+  );
+};
 
 export const MonthCalendar: React.FC<MonthCalendarProps> = ({
   currentYear,
@@ -53,8 +153,10 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
   onNextMonth,
   onTodayMonth,
   onSelectDay,
+  selectedDate,
 }) => {
   const todayStr = useMemo(() => getTodayString(), []);
+  const [dayPhotosMap, setDayPhotosMap] = useState<Record<string, string[]>>({});
 
   const accountTabs: CalendarAccountFilter[] = ['all', 'wallet', 'bank'];
   const accountControlRef = useRef<HTMLDivElement>(null);
@@ -101,6 +203,43 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
     return transactions.filter((t) => t.account === accountFilter);
   }, [transactions, accountFilter]);
 
+  // Load photos for transactions in current view
+  useEffect(() => {
+    let isMounted = true;
+    const newMap: Record<string, string[]> = {};
+
+    const loadPhotos = async () => {
+      for (const t of filteredTransactions) {
+        if (t.imageId) {
+          try {
+            const blob = await getImageBlob(t.imageId);
+            if (blob && isMounted) {
+              const url = URL.createObjectURL(blob);
+              if (!newMap[t.date]) {
+                newMap[t.date] = [];
+              }
+              newMap[t.date].push(url);
+            }
+          } catch (e) {
+            console.error('Lỗi khi tải ảnh lịch:', e);
+          }
+        }
+      }
+      if (isMounted) {
+        setDayPhotosMap(newMap);
+      }
+    };
+
+    loadPhotos();
+
+    return () => {
+      isMounted = false;
+      Object.values(newMap).forEach((urls) => {
+        urls.forEach((u) => URL.revokeObjectURL(u));
+      });
+    };
+  }, [filteredTransactions]);
+
   // 2. Compute month summary based strictly on filtered transactions in current viewing month
   const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
   const monthSummary = useMemo(() => {
@@ -118,12 +257,13 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
 
   // 3. Aggregate daily transactions strictly on filtered transactions
   const dailyMap = useMemo(() => {
-    const map = new Map<string, { income: number; expense: number; count: number }>();
+    const map = new Map<string, { income: number; expense: number; count: number; transactions: Transaction[] }>();
     for (const t of filteredTransactions) {
-      const current = map.get(t.date) || { income: 0, expense: 0, count: 0 };
+      const current = map.get(t.date) || { income: 0, expense: 0, count: 0, transactions: [] };
       if (t.type === 'income') current.income += t.amount;
       else current.expense += t.amount;
       current.count += 1;
+      current.transactions.push(t);
       map.set(t.date, current);
     }
     return map;
@@ -147,7 +287,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
       const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
       const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
       const dateStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(dNum).padStart(2, '0')}`;
-      const data = dailyMap.get(dateStr) || { income: 0, expense: 0, count: 0 };
+      const data = dailyMap.get(dateStr) || { income: 0, expense: 0, count: 0, transactions: [] };
       cells.push({
         dateStr,
         dayNum: dNum,
@@ -157,13 +297,14 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         expense: data.expense,
         net: data.income - data.expense,
         count: data.count,
+        transactions: data.transactions,
       });
     }
 
     // 2. Current month days
     for (let d = 1; d <= daysInCurrentMonth; d++) {
       const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const data = dailyMap.get(dateStr) || { income: 0, expense: 0, count: 0 };
+      const data = dailyMap.get(dateStr) || { income: 0, expense: 0, count: 0, transactions: [] };
       cells.push({
         dateStr,
         dayNum: d,
@@ -173,16 +314,17 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         expense: data.expense,
         net: data.income - data.expense,
         count: data.count,
+        transactions: data.transactions,
       });
     }
 
-    // 3. Next month leading days to fill up complete weeks (42 cells max)
+    // 3. Next month leading days to fill up complete weeks (35 or 42 cells)
     const remaining = 35 - cells.length > 0 ? 35 - cells.length : 42 - cells.length;
     for (let n = 1; n <= remaining; n++) {
       const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
       const nextYear = currentMonth === 12 ? currentYear + 1 : currentYear;
       const dateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(n).padStart(2, '0')}`;
-      const data = dailyMap.get(dateStr) || { income: 0, expense: 0, count: 0 };
+      const data = dailyMap.get(dateStr) || { income: 0, expense: 0, count: 0, transactions: [] };
       cells.push({
         dateStr,
         dayNum: n,
@@ -192,6 +334,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         expense: data.expense,
         net: data.income - data.expense,
         count: data.count,
+        transactions: data.transactions,
       });
     }
 
@@ -204,7 +347,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
   }, [currentYear, currentMonth]);
 
   return (
-    <div className="space-y-3 pb-20">
+    <div className="space-y-3 pb-20 select-none">
       {/* 1. PAGE HEADER (Title, Short Description & Logo) */}
       <div className="flex items-center justify-between pt-1 pb-0.5">
         <div>
@@ -385,69 +528,82 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-[#121212] rounded-2xl p-3 sm:p-3.5 border border-neutral-800 shadow-sm">
+      {/* Calendar Grid Container */}
+      <div className="bg-[#121212] rounded-[24px] p-2.5 sm:p-3.5 border border-neutral-800/80 shadow-xl">
         {/* Day of week headers */}
-        <div className="grid grid-cols-7 gap-1 text-center mb-2">
-          {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day, idx) => (
+        <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+          {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day) => (
             <div
               key={day}
-              className={`text-xs sm:text-sm font-black py-1 ${
-                idx >= 5 ? 'text-neutral-300' : 'text-neutral-500'
-              }`}
+              className="text-[12px] sm:text-xs font-semibold text-neutral-400 py-1"
             >
               {day}
             </div>
           ))}
         </div>
 
-        {/* Day Cells */}
-        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+        {/* Day Cells Grid */}
+        <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
           {calendarCells.map((cell) => {
-            const hasIncome = cell.income > 0;
-            const hasExpense = cell.expense > 0;
+            const isCyanHighlight =
+              cell.isCurrentMonth && (selectedDate ? cell.dateStr === selectedDate : cell.isToday);
+            const formattedNet = formatDailyNetCompact(cell.net);
 
             return (
               <button
                 key={cell.dateStr}
-                onClick={() => onSelectDay(cell.dateStr)}
-                className={`min-h-[58px] sm:min-h-[66px] p-1.5 rounded-xl flex flex-col justify-between items-center transition-all relative border active:scale-95 cursor-pointer ${
-                  cell.isToday
-                    ? 'border-white bg-[#1e1e1e] font-bold shadow-sm ring-1 ring-white/30'
-                    : cell.isCurrentMonth
-                      ? 'border-neutral-800/80 bg-[#181818] hover:bg-[#222222]'
-                      : 'border-transparent bg-transparent opacity-25 hover:opacity-50'
+                type="button"
+                onClick={() => {
+                  if (cell.isCurrentMonth) {
+                    onSelectDay(cell.dateStr);
+                  }
+                }}
+                className={`flex flex-col items-center justify-start p-1 transition-all relative cursor-pointer min-h-[78px] sm:min-h-[88px] ${
+                  cell.isCurrentMonth
+                    ? 'active:scale-95'
+                    : 'opacity-30 pointer-events-none'
                 }`}
               >
-                {/* Day number badge */}
-                <div className="w-full flex items-center justify-between">
+                {/* Top Section: Thumbnail or Placeholder */}
+                {cell.isCurrentMonth ? (
+                  <CalendarCellThumbnail
+                    count={cell.count}
+                    photoUrls={dayPhotosMap[cell.dateStr]}
+                    transactions={cell.transactions}
+                  />
+                ) : (
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 shrink-0" />
+                )}
+
+                {/* Middle Section: Day Number & Cyan Dot */}
+                <div className="flex flex-col items-center justify-center mt-1">
                   <span
-                    className={`text-xs sm:text-sm font-bold inline-flex items-center justify-center w-6 h-6 rounded-full ${
-                      cell.isToday
-                        ? 'bg-white text-black font-black shadow-xs'
+                    className={`text-xs sm:text-sm tracking-tight leading-none ${
+                      isCyanHighlight
+                        ? 'text-cyan-400 font-extrabold'
                         : cell.isCurrentMonth
-                          ? 'text-neutral-100'
-                          : 'text-neutral-500'
+                        ? 'text-white font-semibold'
+                        : 'text-neutral-600 font-medium'
                     }`}
                   >
                     {cell.dayNum}
                   </span>
+                  {isCyanHighlight && (
+                    <span className="w-1 h-1 rounded-full bg-cyan-400 mt-0.5 shadow-[0_0_6px_#22d3ee]" />
+                  )}
                 </div>
 
-                {/* Status dots: Green for Income, Red for Expense */}
-                <div className="w-full mt-auto mb-1 flex items-center justify-center gap-1.5 min-h-[8px]">
-                  {hasIncome && (
+                {/* Bottom Section: Daily Net Amount */}
+                <div className="min-h-[14px] flex items-center justify-center mt-0.5">
+                  {cell.isCurrentMonth && formattedNet ? (
                     <span
-                      className="w-2 h-2 rounded-full bg-emerald-400 shadow-xs"
-                      title="Có giao dịch thu"
-                    />
-                  )}
-                  {hasExpense && (
-                    <span
-                      className="w-2 h-2 rounded-full bg-rose-400 shadow-xs"
-                      title="Có giao dịch chi"
-                    />
-                  )}
+                      className={`text-[9.5px] sm:text-[10px] font-normal tracking-tight leading-none text-center font-mono ${
+                        cell.net > 0 ? 'text-emerald-400' : 'text-rose-500'
+                      }`}
+                    >
+                      {formattedNet}
+                    </span>
+                  ) : null}
                 </div>
               </button>
             );
@@ -457,3 +613,4 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
     </div>
   );
 };
+
