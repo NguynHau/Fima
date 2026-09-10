@@ -231,10 +231,10 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     if (touchStartYRef.current === null) return;
     const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
     touchStartYRef.current = null;
-    if (Math.abs(deltaY) > 35) {
-      if (deltaY < -35) {
+    if (Math.abs(deltaY) > 24) {
+      if (deltaY < -24) {
         goToNext();
-      } else if (deltaY > 35) {
+      } else if (deltaY > 24) {
         goToPrev();
       }
     }
@@ -247,18 +247,21 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const cardVariants = {
     enter: (dir: number) => ({
       opacity: 0,
-      y: dir > 0 ? 80 : dir < 0 ? -80 : 0,
-      scale: 0.94,
+      y: dir > 0 ? 90 : dir < 0 ? -90 : 0,
+      scale: 0.95,
+      filter: 'blur(3px)',
     }),
     center: {
       opacity: 1,
       y: 0,
       scale: 1,
+      filter: 'blur(0px)',
     },
     exit: (dir: number) => ({
       opacity: 0,
-      y: dir > 0 ? -80 : 80,
-      scale: 0.94,
+      y: dir > 0 ? -90 : 90,
+      scale: 0.95,
+      filter: 'blur(3px)',
     }),
   };
 
@@ -343,16 +346,18 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             animate="center"
             exit="exit"
             transition={{
-              y: { type: 'spring', stiffness: 320, damping: 30, mass: 0.8 },
-              opacity: { duration: 0.2 },
-              scale: { duration: 0.2 },
+              y: { type: 'spring', stiffness: 260, damping: 28, mass: 0.65 },
+              opacity: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
+              scale: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
+              filter: { duration: 0.2 },
             }}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.35}
+            dragElastic={0.4}
+            dragTransition={{ bounceStiffness: 400, bounceDamping: 35 }}
             onDragEnd={(_, info) => {
-              const swipeThreshold = 30;
-              const velocityThreshold = 180;
+              const swipeThreshold = 22;
+              const velocityThreshold = 120;
               if (info.offset.y < -swipeThreshold || info.velocity.y < -velocityThreshold) {
                 goToNext();
               } else if (info.offset.y > swipeThreshold || info.velocity.y > velocityThreshold) {
@@ -360,7 +365,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               }
             }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full flex flex-col items-center justify-center gap-3 cursor-grab active:cursor-grabbing select-none"
+            className="w-full flex flex-col items-center justify-center gap-3 cursor-grab active:cursor-grabbing select-none will-change-transform"
           >
             {/* Photo / Placeholder */}
             {currentPhotoUrl ? (

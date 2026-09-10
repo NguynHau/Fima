@@ -46,6 +46,7 @@ import {
   Clock,
   X,
   Plus,
+  Lightbulb,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -168,9 +169,15 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
       <div className="bg-gradient-to-br from-purple-900/40 via-[#121212] to-pink-900/20 rounded-3xl p-5 border border-purple-500/30 shadow-xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+            <button
+              type="button"
+              onClick={() => setIsQuotaOpen(true)}
+              className="w-10 h-10 rounded-2xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 flex items-center justify-center text-purple-300 active:scale-95 transition-all cursor-pointer shadow-xs"
+              title="Xem thông tin Quota & Token AI"
+              aria-label="Xem thông tin Quota & Token AI"
+            >
               <Sparkles size={22} className="animate-pulse" />
-            </div>
+            </button>
             <div>
               <h3 className="text-sm sm:text-base font-black text-white">Trợ lý Tài chính AI</h3>
               <p className="text-[10px] text-purple-200/60 font-bold uppercase tracking-wider">Financial Reasoning Engine</p>
@@ -184,13 +191,6 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
                 <span className="hidden sm:inline">Ngoại tuyến</span>
               </div>
             )}
-            <button
-              onClick={() => setIsQuotaOpen(true)}
-              className="w-9 h-9 rounded-2xl bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center justify-center hover:bg-purple-500/20 transition-colors cursor-pointer active:scale-95"
-              title="AI Quota"
-            >
-              <BarChart3 size={16} />
-            </button>
           </div>
         </div>
 
@@ -281,9 +281,10 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
   );
 };
 
-const formatBadgeAmount = (amount: number): string => {
+const formatBadgeAmount = (amount: number, type: 'income' | 'expense'): string => {
   const abs = Math.abs(amount);
-  return `${abs.toLocaleString('en-US')}đ`;
+  const sign = type === 'expense' ? '-' : '+';
+  return `${sign}${abs.toLocaleString('en-US')}đ`;
 };
 
 const TransactionGridCard: React.FC<{
@@ -317,23 +318,23 @@ const TransactionGridCard: React.FC<{
     };
   }, [tx.imageId]);
 
-  const badgeAmount = formatBadgeAmount(tx.amount);
+  const badgeAmount = formatBadgeAmount(tx.amount, tx.type);
 
   return (
     <div
       onClick={onClick}
-      className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-[#161616] border border-white/10 hover:border-white/25 active:scale-95 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center select-none shadow-sm"
+      className="group relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-[#161616] border border-white/10 hover:border-white/25 active:scale-95 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center select-none shadow-sm will-change-transform"
     >
       {/* Background / Photo / Category fallback */}
       {photoUrl ? (
         <img
           src={photoUrl}
           alt={tx.note || tx.category}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
           loading="lazy"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-b from-[#202022] to-[#121214] p-2.5 flex flex-col justify-center items-center text-center gap-1.5">
+        <div className="w-full h-full bg-gradient-to-b from-[#202022] to-[#121214] p-2.5 flex flex-col justify-center items-center text-center gap-1.5 pointer-events-none">
           <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-white">
             <CategoryIcon category={tx.category} type={tx.type} size={16} />
           </div>
@@ -343,9 +344,15 @@ const TransactionGridCard: React.FC<{
         </div>
       )}
 
-      {/* Sleek Frosted Ultra-Transparent Pill Badge for Amount (Black, highly transparent, no drop-shadow, thinner font) */}
+      {/* Sleek Frosted Ultra-Transparent Pill Badge for Amount with +/- signs */}
       <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 z-10 pointer-events-none">
-        <div className="bg-black/35 backdrop-blur-xs px-2 sm:px-2.5 py-0.5 rounded-full text-white/90 font-light sm:font-normal text-[10px] sm:text-xs tracking-tight border border-white/10 font-mono">
+        <div
+          className={`bg-black/60 backdrop-blur-md px-2 sm:px-2.5 py-0.5 rounded-full font-medium text-[10px] sm:text-xs tracking-tight border font-mono shadow-xs ${
+            tx.type === 'expense'
+              ? 'border-rose-500/30 text-rose-300'
+              : 'border-emerald-500/30 text-emerald-300'
+          }`}
+        >
           {badgeAmount}
         </div>
       </div>
@@ -1217,8 +1224,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         >
           <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center group-hover:bg-purple-500/25 transition-colors">
-                <Sparkles size={20} />
+              <div className="w-10 h-10 rounded-xl bg-neutral-800/60 border border-neutral-700/50 flex items-center justify-center text-white group-hover:bg-white/10 transition-colors">
+                <Lightbulb size={20} />
               </div>
               <div>
                 <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
@@ -2247,7 +2254,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             </div>
 
             {/* 2. SCROLLABLE TRANSACTION 3-COLUMN GRID */}
-            <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
+            <div className="flex-1 overflow-y-auto overscroll-contain scroll-smooth p-3.5 space-y-3">
               {visibleTransactions.length === 0 ? (
                 <div className="py-16 text-center text-neutral-400 text-xs font-bold space-y-2">
                   <div className="w-12 h-12 rounded-2xl bg-neutral-800/60 border border-neutral-700/40 flex items-center justify-center mx-auto text-neutral-400">
@@ -2294,8 +2301,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center">
-                  <Sparkles size={18} />
+                <div className="w-9 h-9 rounded-xl bg-neutral-800/60 text-white border border-neutral-700/50 flex items-center justify-center">
+                  <Lightbulb size={18} />
                 </div>
                 <div>
                   <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
