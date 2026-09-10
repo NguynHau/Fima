@@ -113,30 +113,19 @@ export const AIUsageMonitor: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#121212] border border-purple-500/30 rounded-3xl p-4 sm:p-5 shadow-xl space-y-4 text-white">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-800">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600/30 to-indigo-600/30 border border-purple-500/40 flex items-center justify-center text-purple-300">
-            <Activity size={22} className="text-purple-400" />
+    <div className="space-y-4 text-white">
+      {/* Model info & status toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-neutral-800">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-neutral-300 font-semibold">Mô hình AI:</span>
+            <span className="text-purple-300 font-mono font-bold text-xs bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-800/50">
+              {data?.primaryModel || 'gemini-3.1-flash-lite'}
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm sm:text-base font-black text-white">AI Usage & Quota Monitor</h3>
-              <button
-                type="button"
-                onClick={() => setShowHelp(!showHelp)}
-                className="text-neutral-400 hover:text-purple-300 transition-colors cursor-pointer"
-                title="Giải thích chỉ số"
-              >
-                <HelpCircle size={15} />
-              </button>
-            </div>
-            <p className="text-[11px] text-neutral-400 font-medium">
-              Model: <span className="text-purple-300 font-mono font-bold">{data?.primaryModel || 'gemini-3.1-flash-lite'}</span>
-              <span className="text-neutral-500 text-[10px] ml-1.5">(Fallback: {data?.fallbackModel || 'gemini-3.8-flash'})</span>
-            </p>
-          </div>
+          <p className="text-[10px] text-neutral-500 mt-0.5">
+            Dự phòng: {data?.fallbackModel || 'gemini-3.8-flash'}
+          </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -150,6 +139,14 @@ export const AIUsageMonitor: React.FC = () => {
           >
             <RefreshCw size={13} className={isLoading ? 'animate-spin text-purple-400' : ''} />
             <span className="hidden sm:inline">Làm mới</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowHelp(!showHelp)}
+            className="p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-neutral-400 hover:text-purple-300 transition-colors cursor-pointer border border-neutral-700"
+            title="Giải thích chỉ số"
+          >
+            <HelpCircle size={15} />
           </button>
         </div>
       </div>

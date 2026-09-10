@@ -58,16 +58,13 @@ const formatDailyNetCompact = (net: number): string => {
   const abs = Math.abs(net);
 
   if (abs >= 1000) {
-    const inK = abs / 1000;
-    if (Number.isInteger(inK)) {
-      const formatted = inK.toLocaleString('vi-VN');
-      return `${sign}${formatted}k`;
-    } else {
-      const formatted = inK.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
-      return `${sign}${formatted}k`;
-    }
+    const inK = Math.round(abs / 1000);
+    const formatted = inK.toLocaleString('vi-VN');
+    return `${sign}${formatted}k`;
   } else {
-    return `${sign}${abs}₫`;
+    const rounded = Math.round(abs);
+    if (rounded === 0) return '';
+    return `${sign}${rounded}₫`;
   }
 };
 
@@ -548,8 +545,8 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         {/* Day Cells Grid */}
         <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
           {calendarCells.map((cell) => {
-            const isHighlight =
-              cell.isCurrentMonth && (selectedDate ? cell.dateStr === selectedDate : cell.isToday);
+            const isSelected = cell.isCurrentMonth && Boolean(selectedDate && cell.dateStr === selectedDate);
+            const isToday = cell.isCurrentMonth && cell.isToday;
             const formattedNet = formatDailyNetCompact(cell.net);
 
             return (
@@ -578,12 +575,14 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   <div className="w-10 h-10 sm:w-11 sm:h-11 shrink-0" />
                 )}
 
-                {/* Middle Section: Day Number & Purple-Pink Gradient Dot */}
+                {/* Middle Section: Day Number (Today's number changes color, no dot) */}
                 <div className="flex flex-col items-center justify-center mt-1">
                   <span
                     className={`text-xs sm:text-sm tracking-tight leading-none ${
-                      isHighlight
+                      isToday
                         ? 'bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_6px_rgba(236,72,153,0.4)]'
+                        : isSelected
+                        ? 'text-purple-300 font-extrabold'
                         : cell.isCurrentMonth
                         ? 'text-white font-semibold'
                         : 'text-neutral-600 font-medium'
@@ -591,9 +590,6 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   >
                     {cell.dayNum}
                   </span>
-                  {isHighlight && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 mt-0.5 shadow-[0_0_6px_rgba(236,72,153,0.8)]" />
-                  )}
                 </div>
 
                 {/* Bottom Section: Daily Net Amount */}

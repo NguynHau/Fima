@@ -259,16 +259,34 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
       </div>
 
       {isQuotaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#121212] w-full max-w-md rounded-3xl border border-neutral-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-neutral-800 bg-[#1a1a1a]">
-              <h3 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                <BarChart3 size={18} className="text-purple-400" />
-                AI Usage & Quota
-              </h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsQuotaOpen(false)}
+        >
+          <div
+            className="bg-[#121212] w-full max-w-lg rounded-3xl border-2 border-purple-500/70 ring-1 ring-pink-500/40 shadow-[0_0_35px_rgba(217,70,239,0.25)] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4.5 py-3.5 border-b border-purple-500/20 bg-[#16141a]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+                  <BarChart3 size={18} className="text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-1.5">
+                    AI Usage & Quota
+                  </h3>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-400 font-medium">
+                    Theo dõi hạn mức & chi phí Gemini AI
+                  </p>
+                </div>
+              </div>
               <button
+                type="button"
                 onClick={() => setIsQuotaOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors cursor-pointer active:scale-90"
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+                title="Đóng"
+                aria-label="Đóng"
               >
                 <X size={16} />
               </button>
