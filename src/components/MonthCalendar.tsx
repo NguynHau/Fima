@@ -104,10 +104,10 @@ const CalendarCellThumbnail: React.FC<{
   photoUrls?: string[];
   transactions?: Transaction[];
 }> = ({ count, photoUrls = [], transactions = [] }) => {
-  // If no transactions in this day -> rounded square with pure white border and centered white '+'
+  // If no transactions in this day -> rounded square with gray border and centered white '+'
   if (count === 0) {
     return (
-      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] bg-[#1a1a1a] border border-white flex items-center justify-center shrink-0 shadow-xs">
+      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] bg-[#1a1a1a] border border-neutral-600 flex items-center justify-center shrink-0 shadow-xs">
         <Plus size={18} className="text-white" strokeWidth={2.2} />
       </div>
     );
@@ -123,8 +123,9 @@ const CalendarCellThumbnail: React.FC<{
   }
 
   // If 2 or more transactions -> exactly 2 cards:
-  // - Top card (hình trên) tilted left 30 degrees (-30deg)
-  // - Bottom card (hình nằm dưới) tilted right 30 degrees (+30deg)
+  // - First / top card: tilted 25 deg to the left (-25deg) and shifted slightly left (-3px)
+  // - Second / bottom card: tilted 25 deg to the right (+25deg) and shifted slightly right (+3px)
+  // Both overlap naturally and stay strictly within the cell boundaries
   const firstPhoto = photoUrls[0];
   const secondPhoto = photoUrls[1];
   const firstTx = transactions[0];
@@ -132,14 +133,14 @@ const CalendarCellThumbnail: React.FC<{
 
   return (
     <div className="relative w-10 h-10 sm:w-11 sm:h-11 mx-auto flex items-center justify-center shrink-0">
-      {/* Bottom Card (hình nằm dưới) - tilted 30 deg to the right */}
-      <div className="absolute inset-0 z-0 w-full h-full rounded-[14px] overflow-hidden bg-[#1e1e1e] border border-white shadow-sm transform rotate-[30deg] scale-[0.88] flex items-center justify-center">
-        {renderCardContent(firstPhoto, firstTx)}
+      {/* Bottom Card (ở dưới) - tilted 25 deg right and shifted 3px right */}
+      <div className="absolute inset-0 z-0 w-full h-full rounded-[14px] overflow-hidden bg-[#1e1e1e] border border-white shadow-sm transform rotate-[25deg] translate-x-[3px] scale-[0.88] flex items-center justify-center">
+        {renderCardContent(secondPhoto, secondTx)}
       </div>
 
-      {/* Top Card (hình trên) - tilted 30 deg to the left */}
-      <div className="relative z-10 w-full h-full rounded-[14px] overflow-hidden bg-[#222222] border border-white shadow-md transform -rotate-[30deg] scale-[0.88] flex items-center justify-center">
-        {renderCardContent(secondPhoto, secondTx)}
+      {/* Top Card (hình đầu tiên / trên) - tilted 25 deg left and shifted 3px left */}
+      <div className="relative z-10 w-full h-full rounded-[14px] overflow-hidden bg-[#222222] border border-white shadow-md transform -rotate-[25deg] -translate-x-[3px] scale-[0.88] flex items-center justify-center">
+        {renderCardContent(firstPhoto, firstTx)}
       </div>
     </div>
   );
