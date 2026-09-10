@@ -42,6 +42,7 @@ import {
   formatTimeVN,
 } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
+import { TransactionDetailModal } from './TransactionDetailModal';
 
 interface DayDetailModalProps {
   isOpen: boolean;
@@ -255,6 +256,7 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
       onSwipeClose();
       return;
     }
+    onSelectPhoto({ url: photoUrl || '', tx });
   };
 
   return (
@@ -808,7 +810,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               <button
                 type="button"
                 onClick={handlePrevDay}
-                className="w-8 h-8 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] active:bg-[#333333] border border-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] active:bg-[#333333] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
                 title="Ngày trước"
                 aria-label="Ngày trước"
               >
@@ -817,7 +819,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               <button
                 type="button"
                 onClick={handleNextDay}
-                className="w-8 h-8 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] active:bg-[#333333] border border-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] active:bg-[#333333] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer"
                 title="Ngày sau"
                 aria-label="Ngày sau"
               >
@@ -1063,102 +1065,17 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
           </div>
         )}
 
-        {/* Full Screen Photo Viewer Modal */}
-        {selectedPhoto && (
-          <div
-            className="fixed inset-0 z-70 bg-black/95 flex flex-col justify-between px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)] animate-in fade-in duration-200"
-            onClick={() => setSelectedPhoto(null)}
-          >
-            <div className="flex justify-between items-center pt-2 px-2">
-              <span className="text-xs font-bold text-neutral-400">Xem ảnh chứng từ</span>
-              <button
-                type="button"
-                onClick={() => setSelectedPhoto(null)}
-                className="w-8 h-8 rounded-full bg-neutral-800 text-white flex items-center justify-center active:scale-95 cursor-pointer border border-neutral-700"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex-1 flex flex-col items-center justify-center p-2 gap-3 my-auto max-h-full overflow-y-auto">
-              <img
-                src={selectedPhoto.url}
-                alt="Ảnh chứng từ"
-                className="max-w-full max-h-[44vh] object-contain rounded-2xl shadow-2xl border border-neutral-800 shrink-0"
-              />
-
-              {/* Amount and Transaction Info Panel Below Photo */}
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-xs bg-[#1a1a1a]/95 border border-neutral-800 rounded-2xl p-3.5 text-center backdrop-blur-md shadow-2xl flex flex-col items-center gap-1.5 shrink-0"
-              >
-                <div className="flex items-center gap-2 text-xs font-bold text-neutral-300">
-                  <CategoryIcon category={selectedPhoto.tx.category} type={selectedPhoto.tx.type} size={16} />
-                  <span>{selectedPhoto.tx.category}</span>
-                  <span className="text-neutral-500">•</span>
-                  <span className={selectedPhoto.tx.account === 'wallet' ? 'text-amber-400 font-bold' : 'text-cyan-400 font-bold'}>
-                    {selectedPhoto.tx.account === 'wallet' ? 'Ví tiền' : 'Ngân hàng'}
-                  </span>
-                </div>
-
-                {/* Big Amount */}
-                <div className={`text-2xl sm:text-3xl font-black font-mono tracking-tight my-0.5 ${selectedPhoto.tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {formatSignedVND(selectedPhoto.tx.amount, selectedPhoto.tx.type)}
-                </div>
-
-                {/* Date, Time & Note */}
-                <div className="text-xs text-neutral-400 font-medium flex items-center justify-center gap-1.5 flex-wrap">
-                  <span>Ngày {formatDateVN(selectedPhoto.tx.date)}</span>
-                  {selectedPhoto.tx.createdAt && formatTimeVN(selectedPhoto.tx.createdAt) && (
-                    <>
-                      <span className="text-neutral-600">•</span>
-                      <span className="text-neutral-200 font-mono font-bold inline-flex items-center gap-1">
-                        <Clock size={12} className="text-neutral-400" />
-                        {formatTimeVN(selectedPhoto.tx.createdAt)}
-                      </span>
-                    </>
-                  )}
-                  {selectedPhoto.tx.note && (
-                    <>
-                      <span className="text-neutral-600">•</span>
-                      <span className="text-neutral-200 italic">&ldquo;{selectedPhoto.tx.note}&rdquo;</span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Balance Before & After Transaction Box */}
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-xs bg-[#1a1a1a]/95 border border-neutral-800 rounded-2xl p-3 backdrop-blur-md shadow-2xl grid grid-cols-2 gap-2 divide-x divide-neutral-800/80 text-center shrink-0"
-              >
-                {/* Số dư trước */}
-                <div className="pr-1 flex flex-col items-center justify-center">
-                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                    Số dư trước
-                  </span>
-                  <span className="text-sm sm:text-base font-black font-mono tracking-tight text-white mt-0.5 truncate max-w-full">
-                    {formatVND(photoBalanceBefore)}
-                  </span>
-                </div>
-
-                {/* Số dư sau */}
-                <div className="pl-2 flex flex-col items-center justify-center">
-                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                    Số dư sau
-                  </span>
-                  <span className="text-sm sm:text-base font-black font-mono tracking-tight text-white mt-0.5 truncate max-w-full">
-                    {formatVND(photoBalanceAfter)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center text-xs text-neutral-400 pb-2 font-medium">
-              Chạm vào màn hình để đóng
-            </div>
-          </div>
-        )}
+        {/* Full Screen Photo Viewer Modal with vertical swipe navigation */}
+        <TransactionDetailModal
+          isOpen={!!selectedPhoto}
+          onClose={() => setSelectedPhoto(null)}
+          transactions={filteredTransactions}
+          initialTransactionId={selectedPhoto?.tx.id || null}
+          onEditTransaction={onSelectTransaction}
+          allTransactions={allTransactions}
+          balances={balances}
+          userSettings={userSettings}
+        />
 
         {/* Delete Confirmation Dialog */}
         {txToDelete && (

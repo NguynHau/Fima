@@ -16,6 +16,7 @@ import {
 } from '../utils/formatters';
 import { CategoryIcon, getCategoryInfo } from './CategoryIcon';
 import { getImageBlob } from '../db/database';
+import { TransactionDetailModal } from './TransactionDetailModal';
 import {
   TrendingUp,
   TrendingDown,
@@ -380,6 +381,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
   
   const [isTxListPageOpen, setIsTxListPageOpen] = useState(false);
+  const [viewingTxId, setViewingTxId] = useState<string | null>(null);
   const [isInsightsOpen, setIsInsightsOpen] = useState(false);
   const [txListFilter, setTxListFilter] = useState<'all' | 'expense' | 'income'>('all');
 
@@ -1129,273 +1131,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     return false;
   };
 
-  if (isTxListPageOpen) {
-    return (
-      <div className="space-y-4 pb-24 text-neutral-100 animate-in fade-in duration-300">
-        {/* 1. HEADER WITH TOP-RIGHT SQUARE ROUNDED CLOSE BUTTON */}
-        <div className="flex items-center justify-between pt-1">
-          <div>
-            <h1 className="text-sm sm:text-base font-black text-white tracking-tight flex items-center gap-2">
-              Danh sách các giao dịch
-            </h1>
-            <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">
-              {visibleTransactions.length} giao dịch
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsTxListPageOpen(false)}
-            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-            title="Đóng"
-            aria-label="Đóng"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* 2. FILTER TOOLBAR (Bộ tool lọc) */}
-        <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">
-          {/* Account Filter: Tất cả - Ví - Bank */}
-          <div
-            ref={accountControlRef}
-            onPointerDown={handleAccountPointerDown}
-            onPointerMove={handleAccountPointerMove}
-            onPointerUp={handleAccountPointerUp}
-            onPointerCancel={handleAccountPointerUp}
-            className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
-          >
-            <button
-              type="button"
-              onClick={() => setAccountFilter('all')}
-              className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                accountFilter === 'all'
-                  ? 'text-black font-extrabold'
-                  : 'text-neutral-400 hover:text-neutral-200'
-              }`}
-            >
-              {accountFilter === 'all' && (
-                <motion.div
-                  layoutId="tx_page_account_filter_tab"
-                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute inset-0 bg-white rounded-lg shadow-xs"
-                />
-              )}
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <Layers size={16} />
-                <span>Tất cả</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountFilter('wallet')}
-              className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                accountFilter === 'wallet'
-                  ? 'text-amber-300 font-extrabold'
-                  : 'text-neutral-400 hover:text-neutral-200'
-              }`}
-            >
-              {accountFilter === 'wallet' && (
-                <motion.div
-                  layoutId="tx_page_account_filter_tab"
-                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-lg shadow-xs"
-                />
-              )}
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <Wallet size={16} className="text-amber-400" />
-                <span>Ví</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountFilter('bank')}
-              className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                accountFilter === 'bank'
-                  ? 'text-cyan-300 font-extrabold'
-                  : 'text-neutral-400 hover:text-neutral-200'
-              }`}
-            >
-              {accountFilter === 'bank' && (
-                <motion.div
-                  layoutId="tx_page_account_filter_tab"
-                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute inset-0 bg-cyan-500/25 border border-cyan-500/40 rounded-lg shadow-xs"
-                />
-              )}
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <Building2 size={16} className="text-cyan-400" />
-                <span>Bank</span>
-              </span>
-            </button>
-          </div>
-
-          {/* Time Filter: Tuần - Tháng - Năm - Tùy chọn */}
-          <div
-            ref={timeControlRef}
-            onPointerDown={handleTimePointerDown}
-            onPointerMove={handleTimePointerMove}
-            onPointerUp={handleTimePointerUp}
-            onPointerCancel={handleTimePointerUp}
-            className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
-          >
-            {(
-              [
-                { id: 'week', label: 'Tuần' },
-                { id: 'month', label: 'Tháng' },
-                { id: 'year', label: 'Năm' },
-                { id: 'custom', label: 'Tùy chọn' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setTimeFilter(tab.id)}
-                className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
-                  timeFilter === tab.id
-                    ? 'text-black font-extrabold'
-                    : 'text-neutral-300 hover:text-white'
-                }`}
-              >
-                {timeFilter === tab.id && (
-                  <motion.div
-                    layoutId="tx_page_time_filter_tab"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute inset-0 bg-white rounded-lg shadow-xs"
-                  />
-                )}
-                <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Type Filter: Tất cả - Thu - Chi (swapped before time period navigation) */}
-          <div
-            ref={txControlRef}
-            onPointerDown={handleTxPointerDown}
-            onPointerMove={handleTxPointerMove}
-            onPointerUp={handleTxPointerUp}
-            onPointerCancel={handleTxPointerUp}
-            className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
-          >
-            {(
-              [
-                { id: 'all', label: 'Tất cả' },
-                { id: 'income', label: 'Thu' },
-                { id: 'expense', label: 'Chi' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setTxListFilter(tab.id)}
-                className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
-                  txListFilter === tab.id
-                    ? 'text-black font-extrabold'
-                    : 'text-neutral-300 hover:text-white'
-                }`}
-              >
-                {txListFilter === tab.id && (
-                  <motion.div
-                    layoutId="tx_page_type_filter_tab"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute inset-0 bg-white rounded-lg shadow-xs"
-                  />
-                )}
-                <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Time Period Navigation (Tháng / Tuần / Năm / Tùy chọn) */}
-          {timeFilter !== 'custom' ? (
-            <div className="flex items-center justify-between px-2 pt-0.5">
-              <button
-                type="button"
-                onClick={handlePrevPeriod}
-                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
-                title="Kỳ trước"
-              >
-                <ChevronLeft size={18} />
-              </button>
-
-              <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2 text-center">
-                <span className="text-xs sm:text-sm font-extrabold text-white truncate">
-                  {periodLabel}
-                </span>
-                {!isCurrentPeriod && (
-                  <button
-                    type="button"
-                    onClick={handleResetToToday}
-                    className="text-[11px] sm:text-xs font-bold text-black bg-white hover:bg-neutral-200 px-2.5 py-0.5 sm:py-1 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95"
-                  >
-                    Hôm nay
-                  </button>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleNextPeriod}
-                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
-                title="Kỳ sau"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 pt-1 px-1">
-              <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
-                  Từ ngày
-                </label>
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
-                  Đến ngày
-                </label>
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 3. TRANSACTION 3-COLUMN GRID - Direct grid without outer container card, tight gap and wide margins */}
-        <div className="px-0.5 sm:px-1">
-          {visibleTransactions.length === 0 ? (
-            <div className="py-16 text-center text-neutral-400 text-xs font-bold space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-neutral-800/60 border border-neutral-700/40 flex items-center justify-center mx-auto text-neutral-400">
-                <List size={22} />
-              </div>
-              <p>Không có giao dịch nào trong khoảng thời gian này</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-              {visibleTransactions.map((tx) => (
-                <TransactionGridCard
-                  key={tx.id}
-                  tx={tx}
-                  onClick={() => onSelectTransaction?.(tx)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 pb-24 text-neutral-100">
       {/* 1. HEADER */}
@@ -1677,7 +1412,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
                               Xem tất cả
                             </span>
-                            <div className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
+                            <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
                               <ChevronRight size={18} />
                             </div>
                           </div>
@@ -1711,7 +1446,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             <button
                               type="button"
                               onClick={() => setIsInsightsOpen(!isInsightsOpen)}
-                              className="text-neutral-400 bg-[#1a1a1a] hover:bg-[#262626] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800 cursor-pointer"
+                              className="text-neutral-400 bg-[#1a1a1a] hover:bg-[#262626] w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-800 cursor-pointer"
                             >
                               {isInsightsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                             </button>
@@ -2274,6 +2009,292 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 }
         })}
       </div>
+
+      {/* HALF-PAGE TRANSACTION LIST BOTTOM SHEET MODAL */}
+      {isTxListPageOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end justify-center p-0 pt-[max(env(safe-area-inset-top,0px),16px)] animate-in fade-in duration-200 text-neutral-100"
+          onClick={() => setIsTxListPageOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-[#121212] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[85vh] h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 1. FIXED / STICKY HEADER & FILTER TOOLBAR */}
+            <div className="shrink-0 bg-[#121212] border-b border-neutral-800 px-3.5 pt-3 pb-2.5 space-y-2.5 z-20">
+              {/* Header with Title & Top-Right Square Rounded X button */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm sm:text-base font-black text-white tracking-tight flex items-center gap-2">
+                    Danh sách các giao dịch
+                  </h2>
+                  <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">
+                    {visibleTransactions.length} giao dịch
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsTxListPageOpen(false)}
+                  className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+                  title="Đóng"
+                  aria-label="Đóng"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Account Filter: Tất cả - Ví - Bank */}
+              <div
+                ref={accountControlRef}
+                onPointerDown={handleAccountPointerDown}
+                onPointerMove={handleAccountPointerMove}
+                onPointerUp={handleAccountPointerUp}
+                onPointerCancel={handleAccountPointerUp}
+                className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
+              >
+                <button
+                  type="button"
+                  onClick={() => setAccountFilter('all')}
+                  className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                    accountFilter === 'all'
+                      ? 'text-black font-extrabold'
+                      : 'text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  {accountFilter === 'all' && (
+                    <motion.div
+                      layoutId="tx_sheet_account_filter_tab"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <Layers size={16} />
+                    <span>Tất cả</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAccountFilter('wallet')}
+                  className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                    accountFilter === 'wallet'
+                      ? 'text-amber-300 font-extrabold'
+                      : 'text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  {accountFilter === 'wallet' && (
+                    <motion.div
+                      layoutId="tx_sheet_account_filter_tab"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-lg shadow-xs"
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <Wallet size={16} className="text-amber-400" />
+                    <span>Ví</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAccountFilter('bank')}
+                  className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                    accountFilter === 'bank'
+                      ? 'text-cyan-300 font-extrabold'
+                      : 'text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  {accountFilter === 'bank' && (
+                    <motion.div
+                      layoutId="tx_sheet_account_filter_tab"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute inset-0 bg-cyan-500/25 border border-cyan-500/40 rounded-lg shadow-xs"
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <Building2 size={16} className="text-cyan-400" />
+                    <span>Bank</span>
+                  </span>
+                </button>
+              </div>
+
+              {/* Time Filter: Tuần - Tháng - Năm - Tùy chọn */}
+              <div
+                ref={timeControlRef}
+                onPointerDown={handleTimePointerDown}
+                onPointerMove={handleTimePointerMove}
+                onPointerUp={handleTimePointerUp}
+                onPointerCancel={handleTimePointerUp}
+                className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
+              >
+                {(
+                  [
+                    { id: 'week', label: 'Tuần' },
+                    { id: 'month', label: 'Tháng' },
+                    { id: 'year', label: 'Năm' },
+                    { id: 'custom', label: 'Tùy chọn' },
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setTimeFilter(tab.id)}
+                    className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                      timeFilter === tab.id
+                        ? 'text-black font-extrabold'
+                        : 'text-neutral-300 hover:text-white'
+                    }`}
+                  >
+                    {timeFilter === tab.id && (
+                      <motion.div
+                        layoutId="tx_sheet_time_filter_tab"
+                        transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                        className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Type Filter: Tất cả - Thu - Chi */}
+              <div
+                ref={txControlRef}
+                onPointerDown={handleTxPointerDown}
+                onPointerMove={handleTxPointerMove}
+                onPointerUp={handleTxPointerUp}
+                onPointerCancel={handleTxPointerUp}
+                className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
+              >
+                {(
+                  [
+                    { id: 'all', label: 'Tất cả' },
+                    { id: 'income', label: 'Thu' },
+                    { id: 'expense', label: 'Chi' },
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setTxListFilter(tab.id)}
+                    className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                      txListFilter === tab.id
+                        ? 'text-black font-extrabold'
+                        : 'text-neutral-300 hover:text-white'
+                    }`}
+                  >
+                    {txListFilter === tab.id && (
+                      <motion.div
+                        layoutId="tx_sheet_type_filter_tab"
+                        transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                        className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Time Period Navigation (Tháng / Tuần / Năm / Tùy chọn) */}
+              {timeFilter !== 'custom' ? (
+                <div className="flex items-center justify-between px-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={handlePrevPeriod}
+                    className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
+                    title="Kỳ trước"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+
+                  <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2 text-center">
+                    <span className="text-xs sm:text-sm font-extrabold text-white truncate">
+                      {periodLabel}
+                    </span>
+                    {!isCurrentPeriod && (
+                      <button
+                        type="button"
+                        onClick={handleResetToToday}
+                        className="text-[11px] sm:text-xs font-bold text-black bg-white hover:bg-neutral-200 px-2.5 py-0.5 sm:py-1 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95"
+                      >
+                        Hôm nay
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleNextPeriod}
+                    className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
+                    title="Kỳ sau"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 pt-1 px-1">
+                  <div>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                      Từ ngày
+                    </label>
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                      Đến ngày
+                    </label>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. SCROLLABLE TRANSACTION 3-COLUMN GRID */}
+            <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
+              {visibleTransactions.length === 0 ? (
+                <div className="py-16 text-center text-neutral-400 text-xs font-bold space-y-2">
+                  <div className="w-12 h-12 rounded-2xl bg-neutral-800/60 border border-neutral-700/40 flex items-center justify-center mx-auto text-neutral-400">
+                    <List size={22} />
+                  </div>
+                  <p>Không có giao dịch nào trong khoảng thời gian này</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                  {visibleTransactions.map((tx) => (
+                    <TransactionGridCard
+                      key={tx.id}
+                      tx={tx}
+                      onClick={() => setViewingTxId(tx.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TRANSACTION PHOTO / DETAIL VIEWER MODAL WITH VERTICAL SWIPE */}
+      <TransactionDetailModal
+        isOpen={!!viewingTxId}
+        onClose={() => setViewingTxId(null)}
+        transactions={visibleTransactions.length > 0 ? visibleTransactions : filteredTransactions}
+        initialTransactionId={viewingTxId}
+        onEditTransaction={onSelectTransaction}
+        allTransactions={transactions}
+        balances={balances}
+        userSettings={userSettings}
+      />
     </div>
   );
 };
