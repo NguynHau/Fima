@@ -973,7 +973,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               <div>
                 <label htmlFor="settings-bank-input-modal" className="block text-xs sm:text-sm font-bold text-neutral-200 mb-1 flex items-center gap-2">
-                  <Building2 size={16} className="text-blue-400" />
+                  <Building2 size={16} className="text-cyan-400" />
                   Số dư ban đầu của Ngân hàng
                 </label>
                 <div className="relative flex items-center">
@@ -984,7 +984,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     value={bankNum > 0 ? bankNum.toLocaleString('vi-VN') : ''}
                     onChange={(e) => setBankStr(e.target.value)}
                     placeholder="0"
-                    className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#1a1a1a] border border-neutral-800 rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-400"
+                    className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#1a1a1a] border border-neutral-800 rounded-xl px-3.5 py-2.5 outline-none focus:border-cyan-400"
                   />
                   <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
                 </div>

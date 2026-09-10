@@ -402,7 +402,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           )}
 
           {/* Ultra-transparent Glass Overlay inside Photo for Amount + Note */}
-          <div className="absolute bottom-3 left-3 right-3 bg-black/10 hover:bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center shadow-2xl flex flex-col items-center transition-all">
+          <div className="absolute bottom-3 left-3 right-3 bg-black/5 hover:bg-black/15 backdrop-blur-xs border border-white/10 rounded-2xl p-3 text-center shadow-lg flex flex-col items-center transition-all">
             {/* Amount display & inline input */}
             <div
               onClick={() => amountInputRef.current?.focus()}
@@ -410,7 +410,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
             >
               {/* Sign: − or ＋ */}
               <span
-                className={`text-3xl sm:text-4xl font-black transition-colors drop-shadow-md ${
+                className={`text-3xl sm:text-4xl font-black transition-colors drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${
                   type === 'expense' ? 'text-rose-400' : 'text-emerald-400'
                 }`}
               >
@@ -427,23 +427,23 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                   placeholder="0"
                   value={numericAmount > 0 ? numericAmount.toLocaleString('vi-VN') : ''}
                   onChange={handleAmountChange}
-                  className="w-full text-center text-3xl sm:text-4xl font-bold font-mono tracking-tight text-white bg-transparent border-none outline-none placeholder:text-white/60 max-w-[240px] drop-shadow-md"
+                  className="w-full text-center text-3xl sm:text-4xl font-bold font-mono tracking-tight text-white bg-transparent border-none outline-none placeholder:text-white/60 max-w-[240px] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
                 />
               </div>
 
               {/* Currency Symbol */}
-              <span className="text-lg sm:text-xl font-black text-neutral-100 drop-shadow-md">₫</span>
+              <span className="text-lg sm:text-xl font-black text-neutral-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">₫</span>
             </div>
 
             {/* Note / Ghi chú inside overlay */}
-            <div className="w-full flex items-center gap-2.5 bg-black/10 hover:bg-black/20 border border-white/10 rounded-full px-4 py-2 mt-2 transition-colors">
-              <Pencil size={15} className="text-neutral-200 shrink-0" />
+            <div className="w-full flex items-center gap-2.5 bg-black/5 hover:bg-black/15 border border-white/10 rounded-full px-4 py-2 mt-2 transition-colors backdrop-blur-xs">
+              <Pencil size={15} className="text-neutral-200 shrink-0 drop-shadow-sm" />
               <input
                 type="text"
                 placeholder="Thêm ghi chú / chi tiết"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full text-sm sm:text-base text-white placeholder:text-neutral-300 bg-transparent border-none outline-none font-medium"
+                className="w-full text-sm sm:text-base text-white placeholder:text-neutral-300 bg-transparent border-none outline-none font-medium drop-shadow-sm"
               />
             </div>
           </div>
@@ -474,7 +474,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               {account === 'wallet' ? (
                 <Wallet size={18} className="text-amber-400 shrink-0" />
               ) : (
-                <Building2 size={18} className="text-blue-400 shrink-0" />
+                <Building2 size={18} className="text-cyan-400 shrink-0" />
               )}
               <span className="truncate">{account === 'wallet' ? 'Ví' : 'Bank'}</span>
             </div>
@@ -700,12 +700,12 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 }}
                 className={`w-full p-3.5 rounded-2xl border flex items-center justify-between transition-all active:scale-98 cursor-pointer ${
                   account === 'bank'
-                    ? 'border-blue-400 bg-blue-500/25 text-blue-200 font-bold'
+                    ? 'border-cyan-400 bg-cyan-500/25 text-cyan-200 font-bold'
                     : 'border-[#3a3f4b] bg-[#313540] hover:bg-[#3a3f4c] text-neutral-200'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center">
                     <Building2 size={18} />
                   </div>
                   <div className="text-left">
@@ -713,7 +713,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                     <div className="text-xs text-neutral-300">Tài khoản ngân hàng / thẻ</div>
                   </div>
                 </div>
-                {account === 'bank' && <Check size={18} className="text-blue-300" />}
+                {account === 'bank' && <Check size={18} className="text-cyan-300" />}
               </button>
             </div>
           </div>

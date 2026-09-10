@@ -352,10 +352,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                 Tiền hiện tại trong bank
               </span>
-              <Building2 size={18} className="text-blue-400 shrink-0" />
+              <Building2 size={18} className="text-cyan-400 shrink-0" />
             </div>
             <div className="mt-3">
-              <span className="text-base sm:text-lg font-black text-blue-400 font-mono truncate block">
+              <span className="text-base sm:text-lg font-black text-cyan-400 font-mono truncate block">
                 {formatVND(currentBankBalance)}
               </span>
             </div>

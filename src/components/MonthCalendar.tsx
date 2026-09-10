@@ -430,7 +430,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
             onClick={() => onAccountFilterChange('bank')}
             className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
               accountFilter === 'bank'
-                ? 'text-blue-300'
+                ? 'text-cyan-300'
                 : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
             }`}
           >
@@ -438,13 +438,13 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
               <motion.div
                 layoutId="month_calendar_account_tab"
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                className="absolute inset-0 bg-blue-500/25 rounded-xl shadow-xs border border-blue-500/50"
+                className="absolute inset-0 bg-cyan-500/25 rounded-xl shadow-xs border border-cyan-500/50"
               />
             )}
             <span className="relative z-10 flex items-center justify-center gap-2">
               <Building2
                 size={18}
-                className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
+                className={accountFilter === 'bank' ? 'text-cyan-300' : 'text-neutral-400'}
               />
               <span>Bank</span>
             </span>
@@ -455,20 +455,20 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         <div className="flex items-center justify-between px-2 py-1">
           <button
             onClick={onPrevMonth}
-            className="w-10 h-10 rounded-xl hover:bg-[#1a1a1a] text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer shrink-0"
             aria-label="Tháng trước"
           >
-            <ChevronLeft size={22} />
+            <ChevronLeft size={18} />
           </button>
 
-          <div className="flex items-center gap-2.5">
-            <span className="font-black text-lg sm:text-xl tracking-tight text-white">
+          <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2 text-center">
+            <span className="font-black text-base sm:text-lg tracking-tight text-white truncate">
               {formatMonthVN(currentYear, currentMonth)}
             </span>
             {!isCurrentRealMonth && (
               <button
                 onClick={onTodayMonth}
-                className="text-xs font-bold text-black bg-white hover:bg-neutral-200 px-3 py-1 rounded-xl transition-colors cursor-pointer shadow-xs"
+                className="text-[11px] sm:text-xs font-bold text-black bg-white hover:bg-neutral-200 px-2.5 py-0.5 sm:py-1 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95"
               >
                 Hôm nay
               </button>
@@ -477,10 +477,10 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
 
           <button
             onClick={onNextMonth}
-            className="w-10 h-10 rounded-xl hover:bg-[#1a1a1a] text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer shrink-0"
             aria-label="Tháng sau"
           >
-            <ChevronRight size={22} />
+            <ChevronRight size={18} />
           </button>
         </div>
       </div>
@@ -548,7 +548,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         {/* Day Cells Grid */}
         <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
           {calendarCells.map((cell) => {
-            const isCyanHighlight =
+            const isHighlight =
               cell.isCurrentMonth && (selectedDate ? cell.dateStr === selectedDate : cell.isToday);
             const formattedNet = formatDailyNetCompact(cell.net);
 
@@ -578,12 +578,12 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   <div className="w-10 h-10 sm:w-11 sm:h-11 shrink-0" />
                 )}
 
-                {/* Middle Section: Day Number & Cyan Dot */}
+                {/* Middle Section: Day Number & Purple-Pink Gradient Dot */}
                 <div className="flex flex-col items-center justify-center mt-1">
                   <span
                     className={`text-xs sm:text-sm tracking-tight leading-none ${
-                      isCyanHighlight
-                        ? 'text-cyan-400 font-extrabold'
+                      isHighlight
+                        ? 'bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_6px_rgba(236,72,153,0.4)]'
                         : cell.isCurrentMonth
                         ? 'text-white font-semibold'
                         : 'text-neutral-600 font-medium'
@@ -591,8 +591,8 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   >
                     {cell.dayNum}
                   </span>
-                  {isCyanHighlight && (
-                    <span className="w-1 h-1 rounded-full bg-cyan-400 mt-0.5 shadow-[0_0_6px_#22d3ee]" />
+                  {isHighlight && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 mt-0.5 shadow-[0_0_6px_rgba(236,72,153,0.8)]" />
                   )}
                 </div>
 
@@ -601,7 +601,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   {cell.isCurrentMonth && formattedNet ? (
                     <span
                       className={`text-[9.5px] sm:text-[10px] font-normal tracking-tight leading-none text-center font-mono ${
-                        cell.net > 0 ? 'text-emerald-400' : 'text-rose-500'
+                        cell.net > 0 ? 'text-emerald-400' : 'text-rose-400'
                       }`}
                     >
                       {formattedNet}

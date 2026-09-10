@@ -226,7 +226,7 @@ export const GlobalSearchView: React.FC<GlobalSearchViewProps> = ({
                           </>
                         )}
                         <span className="text-neutral-700">•</span>
-                        {tx.account === 'wallet' ? <Wallet size={10} className="text-amber-500" /> : <Building2 size={10} className="text-blue-500" />}
+                        {tx.account === 'wallet' ? <Wallet size={10} className="text-amber-500" /> : <Building2 size={10} className="text-cyan-500" />}
                         {tx.account === 'wallet' ? 'Ví tiền' : 'Ngân hàng'}
                       </span>
                     </div>

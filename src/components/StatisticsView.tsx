@@ -280,18 +280,9 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
   );
 };
 
-const formatTransactionCompact = (amount: number, type: 'income' | 'expense'): string => {
-  const sign = type === 'income' ? '+' : '-';
+const formatBadgeAmount = (amount: number): string => {
   const abs = Math.abs(amount);
-  if (abs >= 1000) {
-    const inK = abs / 1000;
-    if (Number.isInteger(inK)) {
-      return `${sign}${inK.toLocaleString('vi-VN')}k`;
-    } else {
-      return `${sign}${inK.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}k`;
-    }
-  }
-  return `${sign}${abs.toLocaleString('vi-VN')}₫`;
+  return `${abs.toLocaleString('en-US')}đ`;
 };
 
 const TransactionGridCard: React.FC<{
@@ -325,15 +316,14 @@ const TransactionGridCard: React.FC<{
     };
   }, [tx.imageId]);
 
-  const isIncome = tx.type === 'income';
-  const amountStr = formatTransactionCompact(tx.amount, tx.type);
+  const badgeAmount = formatBadgeAmount(tx.amount);
 
   return (
     <div
       onClick={onClick}
-      className="group relative aspect-square rounded-[16px] overflow-hidden bg-[#1a1a1a] border border-white/20 hover:border-white/40 active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center select-none shadow-xs"
+      className="group relative aspect-[3/4] sm:aspect-[4/5] rounded-[18px] sm:rounded-[22px] overflow-hidden bg-[#161616] border border-white/10 hover:border-white/25 active:scale-95 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center select-none shadow-sm"
     >
-      {/* Background / Photo / Category */}
+      {/* Background / Photo / Category fallback */}
       {photoUrl ? (
         <img
           src={photoUrl}
@@ -341,39 +331,22 @@ const TransactionGridCard: React.FC<{
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
-      ) : isIncome ? (
-        <div className="w-full h-full bg-[#18231c] p-2 flex flex-col justify-between border border-emerald-500/20">
-          <div className="flex items-center justify-between">
-            <CategoryIcon category={tx.category} type={tx.type} size={15} />
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          </div>
-          <div className="space-y-0.5 my-auto">
-            <div className="h-0.5 bg-emerald-500/30 rounded w-full" />
-            <div className="h-0.5 bg-emerald-500/15 rounded w-2/3" />
-          </div>
-        </div>
       ) : (
-        <div className="w-full h-full bg-[#202020] p-2 flex flex-col justify-between border border-neutral-800">
-          <div className="flex items-center justify-between">
-            <CategoryIcon category={tx.category} type={tx.type} size={15} />
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+        <div className="w-full h-full bg-gradient-to-b from-[#222224] to-[#141416] p-3 flex flex-col justify-between items-center text-center">
+          <div className="w-9 h-9 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white mt-3">
+            <CategoryIcon category={tx.category} type={tx.type} size={18} />
           </div>
-          <div className="space-y-0.5 my-auto">
-            <div className="h-0.5 bg-white/15 rounded w-full" />
-            <div className="h-0.5 bg-white/5 rounded w-2/3" />
-          </div>
+          <span className="text-[11px] font-semibold text-neutral-400 line-clamp-1 mb-6 px-1">
+            {tx.category}
+          </span>
         </div>
       )}
 
-      {/* Amount overlay on top of card with thin font & transaction type color */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-1 pt-3 pb-1 flex items-center justify-center pointer-events-none">
-        <span
-          className={`font-mono font-normal text-[11px] sm:text-xs tracking-tight ${
-            isIncome ? 'text-emerald-400' : 'text-rose-400'
-          }`}
-        >
-          {amountStr}
-        </span>
+      {/* Sleek Frosted Transparent Pill Badge for Amount */}
+      <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 z-10 pointer-events-none">
+        <div className="bg-black/35 backdrop-blur-md px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-white font-extrabold text-xs sm:text-sm tracking-tight shadow-md border border-white/20 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+          {badgeAmount}
+        </div>
       </div>
     </div>
   );
@@ -643,6 +616,35 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       periodLabel: label,
     };
   }, [timeFilter, refDate, customStartDate, customEndDate, thirtyDaysAgoStr, todayStr]);
+
+  // Check if current period is the reference period (today/this week/this month/this year)
+  const isCurrentPeriod = useMemo(() => {
+    const now = new Date();
+    if (timeFilter === 'month') {
+      return refDate.getFullYear() === now.getFullYear() && refDate.getMonth() === now.getMonth();
+    }
+    if (timeFilter === 'week') {
+      const dayOfWeekRef = refDate.getDay();
+      const diffRef = dayOfWeekRef === 0 ? -6 : 1 - dayOfWeekRef;
+      const monRef = new Date(refDate);
+      monRef.setDate(refDate.getDate() + diffRef);
+
+      const dayOfWeekNow = now.getDay();
+      const diffNow = dayOfWeekNow === 0 ? -6 : 1 - dayOfWeekNow;
+      const monNow = new Date(now);
+      monNow.setDate(now.getDate() + diffNow);
+
+      return (
+        monRef.getFullYear() === monNow.getFullYear() &&
+        monRef.getMonth() === monNow.getMonth() &&
+        monRef.getDate() === monNow.getDate()
+      );
+    }
+    if (timeFilter === 'year') {
+      return refDate.getFullYear() === now.getFullYear();
+    }
+    return true;
+  }, [timeFilter, refDate]);
 
   // Navigation handlers for time range
   const handlePrevPeriod = () => {
@@ -1211,7 +1213,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               onClick={() => setAccountFilter('bank')}
               className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
                 accountFilter === 'bank'
-                  ? 'text-blue-300 font-extrabold'
+                  ? 'text-cyan-300 font-extrabold'
                   : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
@@ -1219,11 +1221,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 <motion.div
                   layoutId="tx_page_account_filter_tab"
                   transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute inset-0 bg-blue-500/25 border border-blue-500/40 rounded-lg shadow-xs"
+                  className="absolute inset-0 bg-cyan-500/25 border border-cyan-500/40 rounded-lg shadow-xs"
                 />
               )}
               <span className="relative z-10 flex items-center justify-center gap-2">
-                <Building2 size={16} className="text-blue-400" />
+                <Building2 size={16} className="text-cyan-400" />
                 <span>Bank</span>
               </span>
             </button>
@@ -1312,35 +1314,35 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               <button
                 type="button"
                 onClick={handlePrevPeriod}
-                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
                 title="Kỳ trước"
               >
                 <ChevronLeft size={18} />
               </button>
 
-              <div className="text-center">
-                <span className="text-xs sm:text-sm font-extrabold text-white block">
+              <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2 text-center">
+                <span className="text-xs sm:text-sm font-extrabold text-white truncate">
                   {periodLabel}
                 </span>
+                {!isCurrentPeriod && (
+                  <button
+                    type="button"
+                    onClick={handleResetToToday}
+                    className="text-[11px] sm:text-xs font-bold text-black bg-white hover:bg-neutral-200 px-2.5 py-0.5 sm:py-1 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95"
+                  >
+                    Hôm nay
+                  </button>
+                )}
               </div>
 
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={handleResetToToday}
-                  className="px-2.5 py-1 rounded-md bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-[11px] font-bold text-neutral-200 transition-colors cursor-pointer"
-                >
-                  Hôm nay
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextPeriod}
-                  className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
-                  title="Kỳ sau"
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleNextPeriod}
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
+                title="Kỳ sau"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2 pt-1 px-1">
@@ -1380,7 +1382,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               <p>Không có giao dịch nào trong khoảng thời gian này</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
               {visibleTransactions.map((tx) => (
                 <TransactionGridCard
                   key={tx.id}
@@ -1471,7 +1473,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             onClick={() => setAccountFilter('bank')}
             className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
               accountFilter === 'bank'
-                ? 'text-blue-300 font-extrabold'
+                ? 'text-cyan-300 font-extrabold'
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
@@ -1479,11 +1481,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               <motion.div
                 layoutId="stats_account_filter_tab"
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                className="absolute inset-0 bg-blue-500/25 border border-blue-500/40 rounded-lg shadow-xs"
+                className="absolute inset-0 bg-cyan-500/25 border border-cyan-500/40 rounded-lg shadow-xs"
               />
             )}
             <span className="relative z-10 flex items-center justify-center gap-2">
-              <Building2 size={16} className="text-blue-400" />
+              <Building2 size={16} className="text-cyan-400" />
               <span>Bank</span>
             </span>
           </button>
@@ -1533,33 +1535,33 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           <div className="flex items-center justify-between px-2 pt-0.5">
             <button
               onClick={handlePrevPeriod}
-              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
               title="Kỳ trước"
             >
               <ChevronLeft size={18} />
             </button>
 
-            <div className="text-center">
-              <span className="text-xs sm:text-sm font-extrabold text-white block">
+            <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2 text-center">
+              <span className="text-xs sm:text-sm font-extrabold text-white truncate">
                 {periodLabel}
               </span>
+              {!isCurrentPeriod && (
+                <button
+                  onClick={handleResetToToday}
+                  className="text-[11px] sm:text-xs font-bold text-black bg-white hover:bg-neutral-200 px-2.5 py-0.5 sm:py-1 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95"
+                >
+                  Hôm nay
+                </button>
+              )}
             </div>
 
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleResetToToday}
-                className="px-2.5 py-1 rounded-md bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-[11px] font-bold text-neutral-200 transition-colors cursor-pointer"
-              >
-                Hôm nay
-              </button>
-              <button
-                onClick={handleNextPeriod}
-                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
-                title="Kỳ sau"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
+            <button
+              onClick={handleNextPeriod}
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
+              title="Kỳ sau"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
         ) : (
           /* Custom Date Inputs */
@@ -1994,8 +1996,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 </span>
                               )}
                               {(accountFilter === 'all' || accountFilter === 'bank') && (
-                                <span className="flex items-center gap-1 text-blue-400">
-                                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400" /> Bank
+                                <span className="flex items-center gap-1 text-cyan-400">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Bank
                                 </span>
                               )}
                             </div>
@@ -2034,7 +2036,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                   type="monotone"
                                   dataKey="bank"
                                   name="Số dư Bank"
-                                  stroke="#3b82f6"
+                                  stroke="#06b6d4"
                                   strokeWidth={2.5}
                                   dot={false}
                                 />
@@ -2058,8 +2060,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                               <span className="flex items-center gap-1 text-amber-400">
                                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Ví
                               </span>
-                              <span className="flex items-center gap-1 text-blue-400">
-                                <span className="w-2.5 h-2.5 rounded-full bg-blue-400" /> Bank
+                              <span className="flex items-center gap-1 text-cyan-400">
+                                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Bank
                               </span>
                             </div>
                           </div>
@@ -2083,7 +2085,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                               />
                               <Tooltip content={<CustomChartTooltip />} />
                               <Bar dataKey="Ví" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                              <Bar dataKey="Bank" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                              <Bar dataKey="Bank" fill="#06b6d4" radius={[4, 4, 0, 0]} />
                             </BarChart>
                           </ResponsiveContainer>
                         </div>

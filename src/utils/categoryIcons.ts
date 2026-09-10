@@ -210,20 +210,20 @@ export const CATEGORY_ICON_MAP: Record<string, React.ComponentType<{ size?: numb
   }, {} as Record<string, React.ComponentType<{ size?: number; color?: string; className?: string; strokeWidth?: number }>>);
 
 export const DEFAULT_CATEGORY_PALETTE = [
-  '#f97316', // Orange
-  '#3b82f6', // Blue
-  '#ec4899', // Pink
-  '#eab308', // Yellow
-  '#a855f7', // Purple
-  '#ef4444', // Red
-  '#06b6d4', // Cyan
-  '#10b981', // Emerald
-  '#14b8a6', // Teal
-  '#84cc16', // Lime
-  '#6366f1', // Indigo
-  '#f43f5e', // Rose
-  '#8b5cf6', // Violet
-  '#d946ef', // Fuchsia
-  '#64748b', // Slate
-  '#78716c', // Stone
+  '#ff7849', // Fresh Orange
+  '#38bdf8', // Bright Sky Blue
+  '#f472b6', // Radiant Pink
+  '#facc15', // Bright Yellow
+  '#c084fc', // Bright Purple
+  '#ff4d6d', // Radiant Red / Coral
+  '#22d3ee', // Fresh Cyan
+  '#10b981', // Emerald Green
+  '#2dd4bf', // Bright Teal
+  '#a3e635', // Fresh Lime
+  '#818cf8', // Bright Indigo
+  '#fb7185', // Fresh Rose
+  '#a78bfa', // Violet
+  '#e879f9', // Fuchsia
+  '#94a3b8', // Slate
+  '#a8a29e', // Stone
 ];

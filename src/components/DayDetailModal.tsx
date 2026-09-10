@@ -358,7 +358,7 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
                       className={`inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-tighter ${
                         tx.account === 'wallet'
                           ? 'bg-amber-500/80 text-white'
-                          : 'bg-blue-500/80 text-white'
+                          : 'bg-cyan-500/80 text-white'
                       }`}
                     >
                       {tx.account === 'wallet' ? (
@@ -899,7 +899,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                 onClick={() => onAccountFilterChange('bank')}
                 className={`relative py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   accountFilter === 'bank'
-                    ? 'text-blue-300 font-extrabold'
+                    ? 'text-cyan-300 font-extrabold'
                     : 'text-neutral-300 hover:text-white'
                 }`}
               >
@@ -907,13 +907,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                   <motion.div
                     layoutId="day_detail_account_tab"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute inset-0 bg-blue-500/25 rounded-lg shadow-xs border border-blue-500/50"
+                    className="absolute inset-0 bg-cyan-500/25 rounded-lg shadow-xs border border-cyan-500/50"
                   />
                 )}
                 <span className="relative z-10 flex items-center justify-center gap-1.5">
                   <Building2
                     size={14}
-                    className={accountFilter === 'bank' ? 'text-blue-300' : 'text-neutral-400'}
+                    className={accountFilter === 'bank' ? 'text-cyan-300' : 'text-neutral-400'}
                   />
                   <span>Bank</span>
                 </span>
@@ -1095,7 +1095,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                   <CategoryIcon category={selectedPhoto.tx.category} type={selectedPhoto.tx.type} size={16} />
                   <span>{selectedPhoto.tx.category}</span>
                   <span className="text-neutral-500">•</span>
-                  <span className={selectedPhoto.tx.account === 'wallet' ? 'text-amber-400 font-bold' : 'text-blue-400 font-bold'}>
+                  <span className={selectedPhoto.tx.account === 'wallet' ? 'text-amber-400 font-bold' : 'text-cyan-400 font-bold'}>
                     {selectedPhoto.tx.account === 'wallet' ? 'Ví tiền' : 'Ngân hàng'}
                   </span>
                 </div>
