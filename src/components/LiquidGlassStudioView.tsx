@@ -435,11 +435,11 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
               <button
                 onClick={() => {
                   resetAll();
-                  showToast('Đã khôi phục về mặc định!');
+                  showToast('Đã khôi phục trạng thái trước khi sửa!');
                 }}
                 className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-                title="Đặt lại mặc định (Reset)"
-                aria-label="Đặt lại mặc định"
+                title="Khôi phục trạng thái trước khi sửa (Reset)"
+                aria-label="Khôi phục trước khi sửa"
               >
                 <RotateCcw size={16} />
               </button>
@@ -1921,28 +1921,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
           <span>Đảo giả lập quan sát • Chạm vào tab để thử animation</span>
         </div>
 
-        <div className="relative w-full max-w-[500px] flex flex-col items-end gap-2.5 pointer-events-none">
-          {/* Floating Action: Save Island (Matching + button floating island in position and appearance) */}
-          <div className="w-full flex items-center justify-end pointer-events-none">
-            <div className="pointer-events-auto pr-3 flex flex-col items-center min-w-[70px] min-h-[70px]">
-              <motion.button
-                id="studio-btn-save-island"
-                onClick={() => {
-                  saveCurrentConfig();
-                  showToast('Đã lưu cấu hình Liquid Glass thành công!');
-                }}
-                whileTap={{ scale: 0.88 }}
-                whileHover={{ scale: 1.08 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="w-[70px] h-[70px] rounded-full bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.22)] flex items-center justify-center cursor-pointer outline-none touch-manipulation border-none"
-                aria-label="Lưu cấu hình"
-                title="Lưu cấu hình"
-              >
-                <Check size={30} strokeWidth={3.5} />
-              </motion.button>
-            </div>
-          </div>
-
+        <div className="relative w-full max-w-[500px] flex flex-col items-center pointer-events-none">
           {/* Dummy Island Navigation - 100% Identical Parity with Real Island */}
           <motion.nav
             ref={dummyNavRef}

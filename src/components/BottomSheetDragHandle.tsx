@@ -39,20 +39,20 @@ export const BottomSheetDragHandle: React.FC<BottomSheetDragHandleProps> = ({
       title="Kéo xuống để đóng"
       aria-label="Kéo xuống để đóng"
     >
-      {/* Background glowing luminous halo when touched / active */}
+      {/* Subtle soft white ambient blur when active (zero purple/pink) */}
       <div
         className={`absolute inset-x-12 h-6 rounded-full transition-all duration-200 pointer-events-none blur-md ${
           isHandleActive
-            ? 'opacity-100 bg-gradient-to-r from-purple-400/60 via-pink-400/80 to-purple-400/60 scale-x-125 scale-y-125'
-            : 'opacity-0 group-hover:opacity-40 bg-white/25'
+            ? 'opacity-80 bg-white/20 scale-x-110 scale-y-110'
+            : 'opacity-0 group-hover:opacity-20 bg-white/15'
         }`}
       />
 
-      {/* Central handle bar with glowing highlight on touch */}
+      {/* Central handle bar with luminous white glow on touch (no purple/pink) */}
       <div
         className={`h-1.5 rounded-full transition-all duration-200 pointer-events-none relative z-10 ${
           isHandleActive
-            ? 'w-14 bg-white shadow-[0_0_14px_rgba(255,255,255,0.95),0_0_24px_rgba(236,72,153,0.85)] ring-2 ring-white/70 scale-105'
+            ? 'w-14 bg-white shadow-[0_0_14px_rgba(255,255,255,0.95),0_0_22px_rgba(255,255,255,0.5)] ring-2 ring-white/80 scale-105'
             : 'w-10 bg-neutral-600/90 group-hover:bg-neutral-300 group-hover:w-12 group-hover:shadow-[0_0_8px_rgba(255,255,255,0.4)]'
         }`}
       />

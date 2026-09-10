@@ -169,9 +169,9 @@ export const LiquidGlassProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const resetAll = useCallback(() => {
     setConfig((prev) => {
       pushHistory(prev);
-      return getInitialDefault();
+      return savedConfig;
     });
-  }, []);
+  }, [savedConfig]);
 
   const resetToOriginalDefault = useCallback(() => {
     setConfig((prev) => {

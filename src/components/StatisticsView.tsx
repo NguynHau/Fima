@@ -547,6 +547,130 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   const [customStartDate, setCustomStartDate] = useState<string>(thirtyDaysAgoStr);
   const [customEndDate, setCustomEndDate] = useState<string>(todayStr);
 
+  // Independent filters and states for the Transaction List sheet (completely separate from main tab filters)
+  const [txListAccountFilter, setTxListAccountFilter] = useState<CalendarAccountFilter>('all');
+  const [txListTimeFilter, setTxListTimeFilter] = useState<TimeFilter>('month');
+  const [txListRefDate, setTxListRefDate] = useState<Date>(() => new Date());
+  const [txListCustomStartDate, setTxListCustomStartDate] = useState<string>(thirtyDaysAgoStr);
+  const [txListCustomEndDate, setTxListCustomEndDate] = useState<string>(todayStr);
+
+  // Compute Date Range for Transaction List
+  const { txListStartDateStr, txListEndDateStr, txListPeriodLabel } = useMemo(() => {
+    let start: Date;
+    let end: Date;
+    let label = '';
+
+    if (txListTimeFilter === 'week') {
+      const dayOfWeek = txListRefDate.getDay();
+      const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      start = new Date(txListRefDate);
+      start.setDate(txListRefDate.getDate() + diffToMon);
+      end = new Date(start);
+      end.setDate(start.getDate() + 6);
+
+      label = `Tuần (${start.getDate()}/${start.getMonth() + 1} - ${end.getDate()}/${end.getMonth() + 1}/${end.getFullYear()})`;
+    } else if (txListTimeFilter === 'month') {
+      const year = txListRefDate.getFullYear();
+      const month = txListRefDate.getMonth();
+      start = new Date(year, month, 1);
+      end = new Date(year, month + 1, 0);
+
+      label = `Tháng ${month + 1}, ${year}`;
+    } else if (txListTimeFilter === 'year') {
+      const year = txListRefDate.getFullYear();
+      start = new Date(year, 0, 1);
+      end = new Date(year, 11, 31);
+
+      label = `Năm ${year}`;
+    } else {
+      start = parseISODate(txListCustomStartDate || thirtyDaysAgoStr);
+      end = parseISODate(txListCustomEndDate || todayStr);
+      if (start > end) {
+        const tmp = start;
+        start = end;
+        end = tmp;
+      }
+
+      label = `Từ ${formatDateVN(getISOYearMonthDay(start))} đến ${formatDateVN(getISOYearMonthDay(end))}`;
+    }
+
+    return {
+      txListStartDateStr: getISOYearMonthDay(start),
+      txListEndDateStr: getISOYearMonthDay(end),
+      txListPeriodLabel: label,
+    };
+  }, [txListTimeFilter, txListRefDate, txListCustomStartDate, txListCustomEndDate, thirtyDaysAgoStr, todayStr]);
+
+  const txListIsCurrentPeriod = useMemo(() => {
+    const now = new Date();
+    if (txListTimeFilter === 'month') {
+      return txListRefDate.getFullYear() === now.getFullYear() && txListRefDate.getMonth() === now.getMonth();
+    }
+    if (txListTimeFilter === 'week') {
+      const dayOfWeekRef = txListRefDate.getDay();
+      const diffRef = dayOfWeekRef === 0 ? -6 : 1 - dayOfWeekRef;
+      const monRef = new Date(txListRefDate);
+      monRef.setDate(txListRefDate.getDate() + diffRef);
+
+      const dayOfWeekNow = now.getDay();
+      const diffNow = dayOfWeekNow === 0 ? -6 : 1 - dayOfWeekNow;
+      const monNow = new Date(now);
+      monNow.setDate(now.getDate() + diffNow);
+
+      return (
+        monRef.getFullYear() === monNow.getFullYear() &&
+        monRef.getMonth() === monNow.getMonth() &&
+        monRef.getDate() === monNow.getDate()
+      );
+    }
+    if (txListTimeFilter === 'year') {
+      return txListRefDate.getFullYear() === now.getFullYear();
+    }
+    return true;
+  }, [txListTimeFilter, txListRefDate]);
+
+  const handleTxListPrevPeriod = () => {
+    if (txListTimeFilter === 'week') {
+      setTxListRefDate((prev) => addDays(prev, -7));
+    } else if (txListTimeFilter === 'month') {
+      setTxListRefDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    } else if (txListTimeFilter === 'year') {
+      setTxListRefDate((prev) => new Date(prev.getFullYear() - 1, prev.getMonth(), 1));
+    }
+  };
+
+  const handleTxListNextPeriod = () => {
+    if (txListTimeFilter === 'week') {
+      setTxListRefDate((prev) => addDays(prev, 7));
+    } else if (txListTimeFilter === 'month') {
+      setTxListRefDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    } else if (txListTimeFilter === 'year') {
+      setTxListRefDate((prev) => new Date(prev.getFullYear() + 1, prev.getMonth(), 1));
+    }
+  };
+
+  const handleTxListResetToToday = () => {
+    setTxListRefDate(new Date());
+  };
+
+  const txListFilteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      if (txListAccountFilter === 'wallet' && tx.account !== 'wallet') return false;
+      if (txListAccountFilter === 'bank' && tx.account !== 'bank') return false;
+      return tx.date >= txListStartDateStr && tx.date <= txListEndDateStr;
+    });
+  }, [transactions, txListAccountFilter, txListStartDateStr, txListEndDateStr]);
+
+  const txListVisibleTransactions = useMemo(() => {
+    let list = [...txListFilteredTransactions];
+    if (txListFilter === 'expense') list = list.filter((t) => t.type === 'expense');
+    if (txListFilter === 'income') list = list.filter((t) => t.type === 'income');
+    return list.sort((a, b) => {
+      if (b.date === a.date) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return b.date.localeCompare(a.date);
+    });
+  }, [txListFilteredTransactions, txListFilter]);
+
   // Dynamic Debt statistics (Independent)
   const debtStats = useMemo(() => {
     if (!debts || debts.length === 0) return null;
@@ -978,7 +1102,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       hasArrow?: boolean;
     }> = [];
 
-    if (filteredTransactions.length === 0) return insights;
+    if (transactions.length === 0) return insights;
 
     let maxExpenseTx: Transaction | null = null;
     let maxIncomeTx: Transaction | null = null;
@@ -993,7 +1117,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     let totalExp = 0; let countExp = 0;
     let totalInc = 0; let countInc = 0;
 
-    filteredTransactions.forEach(tx => {
+    transactions.forEach(tx => {
       dayCount[tx.date] = (dayCount[tx.date] || 0) + 1;
       if (tx.type === 'expense') {
         if (!maxExpenseTx || tx.amount > maxExpenseTx.amount) maxExpenseTx = tx;
@@ -1130,7 +1254,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     // We can prioritize and just take the top 6 most interesting
     // They are already pushed in a reasonable order
     return insights.slice(0, 8);
-  }, [filteredTransactions, onSelectTransaction, onSelectDay]);
+  }, [transactions, onSelectTransaction, onSelectDay]);
 
   // Comparison helper calculation
   const compareMeta = (curr: number, prev: number) => {
@@ -1200,7 +1324,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   Danh sách các giao dịch
                 </h3>
                 <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
-                  {filteredTransactions.length} giao dịch trong kỳ
+                  {txListFilteredTransactions.length} giao dịch trong bộ lọc riêng
                 </p>
               </div>
             </div>
@@ -2028,7 +2152,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                     Danh sách các giao dịch
                   </h2>
                   <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">
-                    {visibleTransactions.length} giao dịch
+                    {txListVisibleTransactions.length} giao dịch
                   </p>
                 </div>
 
@@ -2045,23 +2169,18 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
               {/* Account Filter: Tất cả - Ví - Bank */}
               <div
-                ref={accountControlRef}
-                onPointerDown={handleAccountPointerDown}
-                onPointerMove={handleAccountPointerMove}
-                onPointerUp={handleAccountPointerUp}
-                onPointerCancel={handleAccountPointerUp}
                 className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
               >
                 <button
                   type="button"
-                  onClick={() => setAccountFilter('all')}
+                  onClick={() => setTxListAccountFilter('all')}
                   className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                    accountFilter === 'all'
+                    txListAccountFilter === 'all'
                       ? 'text-black font-extrabold'
                       : 'text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  {accountFilter === 'all' && (
+                  {txListAccountFilter === 'all' && (
                     <motion.div
                       layoutId="tx_sheet_account_filter_tab"
                       transition={{ type: 'spring', stiffness: 500, damping: 38 }}
@@ -2075,14 +2194,14 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAccountFilter('wallet')}
+                  onClick={() => setTxListAccountFilter('wallet')}
                   className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                    accountFilter === 'wallet'
+                    txListAccountFilter === 'wallet'
                       ? 'text-amber-300 font-extrabold'
                       : 'text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  {accountFilter === 'wallet' && (
+                  {txListAccountFilter === 'wallet' && (
                     <motion.div
                       layoutId="tx_sheet_account_filter_tab"
                       transition={{ type: 'spring', stiffness: 500, damping: 38 }}
@@ -2096,14 +2215,14 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAccountFilter('bank')}
+                  onClick={() => setTxListAccountFilter('bank')}
                   className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                    accountFilter === 'bank'
+                    txListAccountFilter === 'bank'
                       ? 'text-cyan-300 font-extrabold'
                       : 'text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  {accountFilter === 'bank' && (
+                  {txListAccountFilter === 'bank' && (
                     <motion.div
                       layoutId="tx_sheet_account_filter_tab"
                       transition={{ type: 'spring', stiffness: 500, damping: 38 }}
@@ -2119,11 +2238,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
               {/* Time Filter: Tuần - Tháng - Năm - Tùy chọn */}
               <div
-                ref={timeControlRef}
-                onPointerDown={handleTimePointerDown}
-                onPointerMove={handleTimePointerMove}
-                onPointerUp={handleTimePointerUp}
-                onPointerCancel={handleTimePointerUp}
                 className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
               >
                 {(
@@ -2137,14 +2251,14 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setTimeFilter(tab.id)}
+                    onClick={() => setTxListTimeFilter(tab.id)}
                     className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
-                      timeFilter === tab.id
+                      txListTimeFilter === tab.id
                         ? 'text-black font-extrabold'
                         : 'text-neutral-300 hover:text-white'
                     }`}
                   >
-                    {timeFilter === tab.id && (
+                    {txListTimeFilter === tab.id && (
                       <motion.div
                         layoutId="tx_sheet_time_filter_tab"
                         transition={{ type: 'spring', stiffness: 500, damping: 38 }}
@@ -2158,11 +2272,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
               {/* Type Filter: Tất cả - Thu - Chi */}
               <div
-                ref={txControlRef}
-                onPointerDown={handleTxPointerDown}
-                onPointerMove={handleTxPointerMove}
-                onPointerUp={handleTxPointerUp}
-                onPointerCancel={handleTxPointerUp}
                 className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
               >
                 {(
@@ -2195,11 +2304,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               </div>
 
               {/* Time Period Navigation (Tháng / Tuần / Năm / Tùy chọn) */}
-              {timeFilter !== 'custom' ? (
+              {txListTimeFilter !== 'custom' ? (
                 <div className="flex items-center justify-between px-2 pt-0.5">
                   <button
                     type="button"
-                    onClick={handlePrevPeriod}
+                    onClick={handleTxListPrevPeriod}
                     className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
                     title="Kỳ trước"
                   >
@@ -2208,12 +2317,12 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   <div className="flex-1 flex items-center justify-center gap-2 min-w-0 px-2 text-center">
                     <span className="text-xs sm:text-sm font-extrabold text-white truncate">
-                      {periodLabel}
+                      {txListPeriodLabel}
                     </span>
-                    {!isCurrentPeriod && (
+                    {!txListIsCurrentPeriod && (
                       <button
                         type="button"
-                        onClick={handleResetToToday}
+                        onClick={handleTxListResetToToday}
                         className="text-[11px] sm:text-xs font-bold text-black bg-white hover:bg-neutral-200 px-2.5 py-0.5 sm:py-1 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95"
                       >
                         Hôm nay
@@ -2223,7 +2332,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   <button
                     type="button"
-                    onClick={handleNextPeriod}
+                    onClick={handleTxListNextPeriod}
                     className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
                     title="Kỳ sau"
                   >
@@ -2238,8 +2347,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                     </label>
                     <input
                       type="date"
-                      value={customStartDate}
-                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      value={txListCustomStartDate}
+                      onChange={(e) => setTxListCustomStartDate(e.target.value)}
                       className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
                     />
                   </div>
@@ -2249,8 +2358,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                     </label>
                     <input
                       type="date"
-                      value={customEndDate}
-                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      value={txListCustomEndDate}
+                      onChange={(e) => setTxListCustomEndDate(e.target.value)}
                       className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
                     />
                   </div>
@@ -2260,7 +2369,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
             {/* 2. SCROLLABLE TRANSACTION 3-COLUMN GRID */}
             <div className="flex-1 overflow-y-auto overscroll-contain scroll-smooth p-3.5 space-y-3">
-              {visibleTransactions.length === 0 ? (
+              {txListVisibleTransactions.length === 0 ? (
                 <div className="py-16 text-center text-neutral-400 text-xs font-bold space-y-2">
                   <div className="w-12 h-12 rounded-2xl bg-neutral-800/60 border border-neutral-700/40 flex items-center justify-center mx-auto text-neutral-400">
                     <List size={22} />
@@ -2269,7 +2378,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-                  {visibleTransactions.map((tx) => (
+                  {txListVisibleTransactions.map((tx) => (
                     <TransactionGridCard
                       key={tx.id}
                       tx={tx}
@@ -2359,23 +2468,18 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                         : 'bg-[#1a1a1a] border border-neutral-800'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${insight.colorClass}`}>
-                        {insight.icon}
+                    <div className="flex flex-col justify-center min-w-0 pr-2">
+                      <div className="text-xs sm:text-sm font-bold text-neutral-200 truncate">
+                        {insight.title}
                       </div>
-                      <div>
-                        <div className="text-xs sm:text-sm font-bold text-neutral-200">
-                          {insight.title}
+                      {insight.subText && (
+                        <div className="text-[10px] sm:text-xs text-neutral-400 font-medium mt-0.5 max-w-[180px] sm:max-w-[220px] truncate">
+                          {insight.subText}
                         </div>
-                        {insight.subText && (
-                          <div className="text-[10px] sm:text-xs text-neutral-400 font-medium mt-0.5 max-w-[180px] sm:max-w-[220px] truncate">
-                            {insight.subText}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
 
-                    <div className="text-right flex flex-col justify-center items-end pl-2">
+                    <div className="text-right flex flex-col justify-center items-end pl-2 shrink-0">
                       <div className="text-xs sm:text-sm font-black text-white font-mono">
                         {insight.valueText}
                       </div>
@@ -2397,7 +2501,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       <TransactionDetailModal
         isOpen={!!viewingTxId}
         onClose={() => setViewingTxId(null)}
-        transactions={visibleTransactions.length > 0 ? visibleTransactions : filteredTransactions}
+        transactions={isTxListPageOpen ? txListVisibleTransactions : filteredTransactions}
         initialTransactionId={viewingTxId}
         onEditTransaction={onSelectTransaction}
         allTransactions={transactions}
