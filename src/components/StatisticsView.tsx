@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   type Transaction,
@@ -15,6 +15,7 @@ import {
   formatTimeVN,
 } from '../utils/formatters';
 import { CategoryIcon, getCategoryInfo } from './CategoryIcon';
+import { getImageBlob } from '../db/database';
 import {
   TrendingUp,
   TrendingDown,
@@ -43,6 +44,7 @@ import {
   List,
   Clock,
   X,
+  Plus,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -278,6 +280,105 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
   );
 };
 
+const formatTransactionCompact = (amount: number, type: 'income' | 'expense'): string => {
+  const sign = type === 'income' ? '+' : '-';
+  const abs = Math.abs(amount);
+  if (abs >= 1000) {
+    const inK = abs / 1000;
+    if (Number.isInteger(inK)) {
+      return `${sign}${inK.toLocaleString('vi-VN')}k`;
+    } else {
+      return `${sign}${inK.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}k`;
+    }
+  }
+  return `${sign}${abs.toLocaleString('vi-VN')}₫`;
+};
+
+const TransactionGridCard: React.FC<{
+  tx: Transaction;
+  onClick: () => void;
+}> = ({ tx, onClick }) => {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    let createdUrl: string | null = null;
+
+    if (tx.imageId) {
+      getImageBlob(tx.imageId)
+        .then((blob) => {
+          if (blob && isMounted) {
+            createdUrl = URL.createObjectURL(blob);
+            setPhotoUrl(createdUrl);
+          }
+        })
+        .catch((err) => {
+          console.error('Lỗi tải ảnh giao dịch:', err);
+        });
+    }
+
+    return () => {
+      isMounted = false;
+      if (createdUrl) {
+        URL.revokeObjectURL(createdUrl);
+      }
+    };
+  }, [tx.imageId]);
+
+  const isIncome = tx.type === 'income';
+  const amountStr = formatTransactionCompact(tx.amount, tx.type);
+
+  return (
+    <div
+      onClick={onClick}
+      className="group relative aspect-square rounded-[16px] overflow-hidden bg-[#1a1a1a] border border-white/20 hover:border-white/40 active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center select-none shadow-xs"
+    >
+      {/* Background / Photo / Category */}
+      {photoUrl ? (
+        <img
+          src={photoUrl}
+          alt={tx.note || tx.category}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+        />
+      ) : isIncome ? (
+        <div className="w-full h-full bg-[#18231c] p-2 flex flex-col justify-between border border-emerald-500/20">
+          <div className="flex items-center justify-between">
+            <CategoryIcon category={tx.category} type={tx.type} size={15} />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          </div>
+          <div className="space-y-0.5 my-auto">
+            <div className="h-0.5 bg-emerald-500/30 rounded w-full" />
+            <div className="h-0.5 bg-emerald-500/15 rounded w-2/3" />
+          </div>
+        </div>
+      ) : (
+        <div className="w-full h-full bg-[#202020] p-2 flex flex-col justify-between border border-neutral-800">
+          <div className="flex items-center justify-between">
+            <CategoryIcon category={tx.category} type={tx.type} size={15} />
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+          </div>
+          <div className="space-y-0.5 my-auto">
+            <div className="h-0.5 bg-white/15 rounded w-full" />
+            <div className="h-0.5 bg-white/5 rounded w-2/3" />
+          </div>
+        </div>
+      )}
+
+      {/* Amount overlay on top of card with thin font & transaction type color */}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-1 pt-3 pb-1 flex items-center justify-center pointer-events-none">
+        <span
+          className={`font-mono font-normal text-[11px] sm:text-xs tracking-tight ${
+            isIncome ? 'text-emerald-400' : 'text-rose-400'
+          }`}
+        >
+          {amountStr}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 const DEFAULT_CARD_ORDER = [
   'kpis',
   'tx_list',
@@ -305,7 +406,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
   const [accountFilter, setAccountFilter] = useState<CalendarAccountFilter>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
   
-  const [isTxListOpen, setIsTxListOpen] = useState(false);
+  const [isTxListPageOpen, setIsTxListPageOpen] = useState(false);
   const [isInsightsOpen, setIsInsightsOpen] = useState(false);
   const [txListFilter, setTxListFilter] = useState<'all' | 'expense' | 'income'>('all');
 
@@ -1026,6 +1127,274 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     return false;
   };
 
+  if (isTxListPageOpen) {
+    return (
+      <div className="space-y-4 pb-24 text-neutral-100 animate-in fade-in duration-300">
+        {/* 1. HEADER WITH BACK BUTTON */}
+        <div className="flex items-center justify-between pt-1">
+          <button
+            type="button"
+            onClick={() => setIsTxListPageOpen(false)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a1a1a] hover:bg-[#252525] border border-neutral-800 text-xs font-bold text-neutral-200 transition-colors cursor-pointer active:scale-95"
+          >
+            <ChevronLeft size={18} />
+            <span>Quay lại</span>
+          </button>
+
+          <div className="text-center">
+            <h1 className="text-sm sm:text-base font-black text-white tracking-tight flex items-center gap-2 justify-center">
+              Danh sách các giao dịch
+            </h1>
+            <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">
+              {visibleTransactions.length} giao dịch
+            </p>
+          </div>
+
+          <div className="w-[72px]" />
+        </div>
+
+        {/* 2. FILTER TOOLBAR (Bộ tool lọc) */}
+        <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">
+          {/* Account Filter: Tất cả - Ví - Bank */}
+          <div
+            ref={accountControlRef}
+            onPointerDown={handleAccountPointerDown}
+            onPointerMove={handleAccountPointerMove}
+            onPointerUp={handleAccountPointerUp}
+            onPointerCancel={handleAccountPointerUp}
+            className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
+          >
+            <button
+              type="button"
+              onClick={() => setAccountFilter('all')}
+              className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'all'
+                  ? 'text-black font-extrabold'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              {accountFilter === 'all' && (
+                <motion.div
+                  layoutId="tx_page_account_filter_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Layers size={16} />
+                <span>Tất cả</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountFilter('wallet')}
+              className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'wallet'
+                  ? 'text-amber-300 font-extrabold'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              {accountFilter === 'wallet' && (
+                <motion.div
+                  layoutId="tx_page_account_filter_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-lg shadow-xs"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Wallet size={16} className="text-amber-400" />
+                <span>Ví</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountFilter('bank')}
+              className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'bank'
+                  ? 'text-blue-300 font-extrabold'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              {accountFilter === 'bank' && (
+                <motion.div
+                  layoutId="tx_page_account_filter_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-blue-500/25 border border-blue-500/40 rounded-lg shadow-xs"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Building2 size={16} className="text-blue-400" />
+                <span>Bank</span>
+              </span>
+            </button>
+          </div>
+
+          {/* Time Filter: Tuần - Tháng - Năm - Tùy chọn */}
+          <div
+            ref={timeControlRef}
+            onPointerDown={handleTimePointerDown}
+            onPointerMove={handleTimePointerMove}
+            onPointerUp={handleTimePointerUp}
+            onPointerCancel={handleTimePointerUp}
+            className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
+          >
+            {(
+              [
+                { id: 'week', label: 'Tuần' },
+                { id: 'month', label: 'Tháng' },
+                { id: 'year', label: 'Năm' },
+                { id: 'custom', label: 'Tùy chọn' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setTimeFilter(tab.id)}
+                className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                  timeFilter === tab.id
+                    ? 'text-black font-extrabold'
+                    : 'text-neutral-300 hover:text-white'
+                }`}
+              >
+                {timeFilter === tab.id && (
+                  <motion.div
+                    layoutId="tx_page_time_filter_tab"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Type Filter: Tất cả - Thu - Chi (swapped before time period navigation) */}
+          <div
+            ref={txControlRef}
+            onPointerDown={handleTxPointerDown}
+            onPointerMove={handleTxPointerMove}
+            onPointerUp={handleTxPointerUp}
+            onPointerCancel={handleTxPointerUp}
+            className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
+          >
+            {(
+              [
+                { id: 'all', label: 'Tất cả' },
+                { id: 'income', label: 'Thu' },
+                { id: 'expense', label: 'Chi' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setTxListFilter(tab.id)}
+                className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                  txListFilter === tab.id
+                    ? 'text-black font-extrabold'
+                    : 'text-neutral-300 hover:text-white'
+                }`}
+              >
+                {txListFilter === tab.id && (
+                  <motion.div
+                    layoutId="tx_page_type_filter_tab"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Time Period Navigation (Tháng / Tuần / Năm / Tùy chọn) */}
+          {timeFilter !== 'custom' ? (
+            <div className="flex items-center justify-between px-2 pt-0.5">
+              <button
+                type="button"
+                onClick={handlePrevPeriod}
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
+                title="Kỳ trước"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="text-center">
+                <span className="text-xs sm:text-sm font-extrabold text-white block">
+                  {periodLabel}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleResetToToday}
+                  className="px-2.5 py-1 rounded-md bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-[11px] font-bold text-neutral-200 transition-colors cursor-pointer"
+                >
+                  Hôm nay
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextPeriod}
+                  className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer"
+                  title="Kỳ sau"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 pt-1 px-1">
+              <div>
+                <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                  Từ ngày
+                </label>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                  Đến ngày
+                </label>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 3. TRANSACTION 3-COLUMN GRID - Direct grid without outer container card, tight gap and wide margins */}
+        <div className="px-0.5 sm:px-1">
+          {visibleTransactions.length === 0 ? (
+            <div className="py-16 text-center text-neutral-400 text-xs font-bold space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-neutral-800/60 border border-neutral-700/40 flex items-center justify-center mx-auto text-neutral-400">
+                <List size={22} />
+              </div>
+              <p>Không có giao dịch nào trong khoảng thời gian này</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+              {visibleTransactions.map((tx) => (
+                <TransactionGridCard
+                  key={tx.id}
+                  tx={tx}
+                  onClick={() => onSelectTransaction?.(tx)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 pb-24 text-neutral-100">
       {/* 1. HEADER */}
@@ -1283,127 +1652,35 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'tx_list':
                     return (
-                      <div className="bg-[#121212] rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
-                        <div className="w-full flex items-center justify-between p-4 sm:p-5">
-                          <button
-                            type="button"
-                            onClick={() => setIsTxListOpen(!isTxListOpen)}
-                            className="flex items-center gap-3 text-white text-left flex-1 cursor-pointer"
-                          >
-                            <div className="w-9 h-9 rounded-xl bg-neutral-800/50 flex items-center justify-center border border-neutral-700/50 text-neutral-300">
-                              <List size={18} />
+                      <div
+                        key={cardId}
+                        onClick={() => setIsTxListPageOpen(true)}
+                        className="bg-[#121212] hover:bg-[#181818] rounded-2xl p-4 sm:p-5 border border-neutral-800 hover:border-neutral-700 shadow-sm transition-all cursor-pointer group active:scale-[0.99]"
+                      >
+                        <div className="w-full flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-neutral-800/60 border border-neutral-700/50 flex items-center justify-center text-white group-hover:bg-white/10 transition-colors">
+                              <List size={20} />
                             </div>
                             <div>
-                              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-2">
-                                Danh sách giao dịch
+                              <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                                Danh sách các giao dịch
                               </h3>
                               <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
                                 {filteredTransactions.length} giao dịch trong kỳ
                               </p>
                             </div>
-                          </button>
+                          </div>
 
                           <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setIsTxListOpen(!isTxListOpen)}
-                              className="text-neutral-400 bg-[#1a1a1a] hover:bg-[#262626] w-8 h-8 flex items-center justify-center rounded-full border border-neutral-800 cursor-pointer"
-                            >
-                              {isTxListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                            </button>
+                            <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
+                              Xem tất cả
+                            </span>
+                            <div className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
+                              <ChevronRight size={18} />
+                            </div>
                           </div>
                         </div>
-
-                        {isTxListOpen && (
-                          <div className="border-t border-neutral-800 p-4 sm:p-5 pt-3 space-y-4">
-                            <div
-                              ref={txControlRef}
-                              onPointerDown={handleTxPointerDown}
-                              onPointerMove={handleTxPointerMove}
-                              onPointerUp={handleTxPointerUp}
-                              onPointerCancel={handleTxPointerUp}
-                              className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
-                            >
-                              {(
-                                [
-                                  { id: 'all', label: 'Tất cả' },
-                                  { id: 'income', label: 'Thu' },
-                                  { id: 'expense', label: 'Chi' },
-                                ] as const
-                              ).map((tab) => (
-                                <button
-                                  key={tab.id}
-                                  type="button"
-                                  onClick={() => setTxListFilter(tab.id)}
-                                  className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
-                                    txListFilter === tab.id
-                                      ? 'text-black font-extrabold'
-                                      : 'text-neutral-300 hover:text-white'
-                                  }`}
-                                >
-                                  {txListFilter === tab.id && (
-                                    <motion.div
-                                      layoutId="stats_tx_list_filter_tab"
-                                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                                      className="absolute inset-0 bg-white rounded-lg shadow-xs"
-                                    />
-                                  )}
-                                  <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
-                                </button>
-                              ))}
-                            </div>
-
-                            <div className="space-y-2">
-                              {visibleTransactions.length === 0 ? (
-                                <div className="py-8 text-center text-neutral-500 text-xs font-bold">
-                                  Không có giao dịch nào
-                                </div>
-                              ) : (
-                                visibleTransactions.map((tx) => (
-                                  <div
-                                    key={tx.id}
-                                    onClick={() => onSelectTransaction?.(tx)}
-                                    className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] hover:bg-[#222] border border-neutral-800/60 cursor-pointer active:scale-98 transition-all"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <CategoryIcon category={tx.category} type={tx.type} size={18} />
-                                      <div>
-                                        <div className="text-xs sm:text-sm font-bold text-neutral-200">
-                                          {tx.category}
-                                        </div>
-                                        <div className="text-[10px] text-neutral-400 font-medium mt-0.5 flex items-center gap-1.5 flex-wrap">
-                                          <span>{formatDateVN(tx.date)}</span>
-                                          {tx.createdAt && formatTimeVN(tx.createdAt) && (
-                                            <>
-                                              <span className="w-1 h-1 rounded-full bg-neutral-600" />
-                                              <span className="font-mono text-neutral-300 font-bold flex items-center gap-0.5">
-                                                <Clock size={10} />
-                                                {formatTimeVN(tx.createdAt)}
-                                              </span>
-                                            </>
-                                          )}
-                                          {tx.note && (
-                                            <>
-                                              <span className="w-1 h-1 rounded-full bg-neutral-600" />
-                                              <span className="truncate max-w-[120px]">{tx.note}</span>
-                                            </>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div
-                                      className={`text-sm font-black font-mono ${
-                                        tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                                      }`}
-                                    >
-                                      {formatSignedVND(tx.amount, tx.type)}
-                                    </div>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     );
 

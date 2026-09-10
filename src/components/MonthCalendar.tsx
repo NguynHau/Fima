@@ -104,25 +104,27 @@ const CalendarCellThumbnail: React.FC<{
   photoUrls?: string[];
   transactions?: Transaction[];
 }> = ({ count, photoUrls = [], transactions = [] }) => {
-  // If no transactions in this day -> rounded square with thin white border and centered white '+'
+  // If no transactions in this day -> rounded square with pure white border and centered white '+'
   if (count === 0) {
     return (
-      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] bg-[#1a1a1a] border border-white/25 flex items-center justify-center shrink-0 shadow-xs">
+      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] bg-[#1a1a1a] border border-white flex items-center justify-center shrink-0 shadow-xs">
         <Plus size={18} className="text-white" strokeWidth={2.2} />
       </div>
     );
   }
 
-  // If exactly 1 transaction -> 1 rounded square with thin white border
+  // If exactly 1 transaction -> 1 rounded square with pure white border
   if (count === 1) {
     return (
-      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] overflow-hidden bg-[#202020] border border-white/30 flex items-center justify-center shrink-0 shadow-sm">
+      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] overflow-hidden bg-[#202020] border border-white flex items-center justify-center shrink-0 shadow-sm">
         {renderCardContent(photoUrls[0], transactions[0])}
       </div>
     );
   }
 
-  // If 2 or more transactions -> exactly 2 cards: 1st tilted left, 2nd tilted right
+  // If 2 or more transactions -> exactly 2 cards:
+  // - Top card (hình trên) tilted left 30 degrees (-30deg)
+  // - Bottom card (hình nằm dưới) tilted right 30 degrees (+30deg)
   const firstPhoto = photoUrls[0];
   const secondPhoto = photoUrls[1];
   const firstTx = transactions[0];
@@ -130,13 +132,13 @@ const CalendarCellThumbnail: React.FC<{
 
   return (
     <div className="relative w-10 h-10 sm:w-11 sm:h-11 mx-auto flex items-center justify-center shrink-0">
-      {/* 1st Card (Bottom) - tilted slightly to the left */}
-      <div className="absolute inset-0 z-0 w-full h-full rounded-[14px] overflow-hidden bg-[#1e1e1e] border border-white/30 shadow-sm transform -rotate-6 scale-95 flex items-center justify-center">
+      {/* Bottom Card (hình nằm dưới) - tilted 30 deg to the right */}
+      <div className="absolute inset-0 z-0 w-full h-full rounded-[14px] overflow-hidden bg-[#1e1e1e] border border-white shadow-sm transform rotate-[30deg] scale-[0.88] flex items-center justify-center">
         {renderCardContent(firstPhoto, firstTx)}
       </div>
 
-      {/* 2nd Card (Top) - tilted slightly to the right */}
-      <div className="relative z-10 w-full h-full rounded-[14px] overflow-hidden bg-[#222222] border border-white/35 shadow-md transform rotate-6 scale-95 flex items-center justify-center">
+      {/* Top Card (hình trên) - tilted 30 deg to the left */}
+      <div className="relative z-10 w-full h-full rounded-[14px] overflow-hidden bg-[#222222] border border-white shadow-md transform -rotate-[30deg] scale-[0.88] flex items-center justify-center">
         {renderCardContent(secondPhoto, secondTx)}
       </div>
     </div>
@@ -347,7 +349,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
   }, [currentYear, currentMonth]);
 
   return (
-    <div className="space-y-3 pb-20 select-none">
+    <div className="space-y-3 pb-36 sm:pb-44 select-none">
       {/* 1. PAGE HEADER (Title, Short Description & Logo) */}
       <div className="flex items-center justify-between pt-1 pb-0.5">
         <div>
