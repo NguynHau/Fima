@@ -355,8 +355,6 @@ const TransactionGridCard: React.FC<{
 
 const DEFAULT_CARD_ORDER = [
   'kpis',
-  'tx_list',
-  'insights',
   'empty_state',
   'chart_income_vs_expense',
   'chart_net_cashflow',
@@ -499,6 +497,38 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
       } catch {}
+    }
+  };
+
+  // Touch swipe-down to close for transaction list half-page (from static header area only)
+  const txSheetTouchYRef = useRef<number | null>(null);
+  const handleTxSheetTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      txSheetTouchYRef.current = e.touches[0].clientY;
+    }
+  };
+  const handleTxSheetTouchEnd = (e: React.TouchEvent) => {
+    if (txSheetTouchYRef.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - txSheetTouchYRef.current;
+    txSheetTouchYRef.current = null;
+    if (deltaY > 45) {
+      setIsTxListPageOpen(false);
+    }
+  };
+
+  // Touch swipe-down to close for quick insights half-page (from static header area only)
+  const insightsSheetTouchYRef = useRef<number | null>(null);
+  const handleInsightsSheetTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      insightsSheetTouchYRef.current = e.touches[0].clientY;
+    }
+  };
+  const handleInsightsSheetTouchEnd = (e: React.TouchEvent) => {
+    if (insightsSheetTouchYRef.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - insightsSheetTouchYRef.current;
+    insightsSheetTouchYRef.current = null;
+    if (deltaY > 45) {
+      setIsInsightsOpen(false);
     }
   };
 
@@ -1114,8 +1144,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
   const shouldRenderCard = (cardId: string) => {
     if (cardId === 'kpis') return true;
-    if (cardId === 'tx_list') return true;
-    if (cardId === 'insights') return true;
     if (cardId === 'compare_prev_period') return true;
     if (cardId === 'debt_summary') return !!debtStats;
     if (cardId === 'empty_state') return !hasDataInPeriod;
@@ -1148,6 +1176,71 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
       {/* AI ASSISTANT SECTION */}
       <AIAssistantSection transactions={transactions} />
+
+      {/* QUICK ACCESS CARDS: DANH SÁCH GIAO DỊCH & GỢI Ý THÔNG TIN NHANH */}
+      <div className="space-y-2.5">
+        {/* Danh sách các giao dịch */}
+        <div
+          onClick={() => setIsTxListPageOpen(true)}
+          className="bg-[#121212] hover:bg-[#181818] rounded-2xl p-4 sm:p-5 border border-neutral-800 hover:border-neutral-700 shadow-sm transition-all cursor-pointer group active:scale-[0.99]"
+        >
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-neutral-800/60 border border-neutral-700/50 flex items-center justify-center text-white group-hover:bg-white/10 transition-colors">
+                <List size={20} />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                  Danh sách các giao dịch
+                </h3>
+                <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
+                  {filteredTransactions.length} giao dịch trong kỳ
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
+                Xem tất cả
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
+                <ChevronRight size={18} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Gợi ý & Thông tin nhanh */}
+        <div
+          onClick={() => setIsInsightsOpen(true)}
+          className="bg-[#121212] hover:bg-[#181818] rounded-2xl p-4 sm:p-5 border border-neutral-800 hover:border-neutral-700 shadow-sm transition-all cursor-pointer group active:scale-[0.99]"
+        >
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center group-hover:bg-purple-500/25 transition-colors">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                  Gợi ý & Thông tin nhanh
+                </h3>
+                <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
+                  {quickInsights.length} điểm nổi bật
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
+                Xem chi tiết
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
+                <ChevronRight size={18} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 2 & 3. FILTERS (Account & Time) */}
       <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">
@@ -1380,74 +1473,6 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             </div>
                             <div className="text-sm sm:text-base font-black text-white mt-1 truncate font-mono">
                               {formatVND(availableBalance)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-
-                  case 'tx_list':
-                    return (
-                      <div
-                        key={cardId}
-                        onClick={() => setIsTxListPageOpen(true)}
-                        className="bg-[#121212] hover:bg-[#181818] rounded-2xl p-4 sm:p-5 border border-neutral-800 hover:border-neutral-700 shadow-sm transition-all cursor-pointer group active:scale-[0.99]"
-                      >
-                        <div className="w-full flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-neutral-800/60 border border-neutral-700/50 flex items-center justify-center text-white group-hover:bg-white/10 transition-colors">
-                              <List size={20} />
-                            </div>
-                            <div>
-                              <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                                Danh sách các giao dịch
-                              </h3>
-                              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
-                                {filteredTransactions.length} giao dịch trong kỳ
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
-                              Xem tất cả
-                            </span>
-                            <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
-                              <ChevronRight size={18} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-
-                  case 'insights':
-                    return (
-                      <div
-                        key={cardId}
-                        onClick={() => setIsInsightsOpen(true)}
-                        className="bg-[#121212] hover:bg-[#181818] rounded-2xl p-4 sm:p-5 border border-neutral-800 hover:border-neutral-700 shadow-sm transition-all cursor-pointer group active:scale-[0.99]"
-                      >
-                        <div className="w-full flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center group-hover:bg-purple-500/25 transition-colors">
-                              <Sparkles size={20} />
-                            </div>
-                            <div>
-                              <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                                Gợi ý & Thông tin nhanh
-                              </h3>
-                              <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
-                                {quickInsights.length} điểm nổi bật
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
-                              Xem chi tiết
-                            </span>
-                            <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
-                              <ChevronRight size={18} />
                             </div>
                           </div>
                         </div>
@@ -1973,8 +1998,17 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             className="w-full max-w-md bg-[#121212] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[85vh] h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 1. FIXED / STICKY HEADER & FILTER TOOLBAR */}
-            <div className="shrink-0 bg-[#121212] border-b border-neutral-800 px-3.5 pt-3 pb-2.5 space-y-2.5 z-20">
+            {/* 1. FIXED / STICKY HEADER & FILTER TOOLBAR (Static area supports swipe-down to close) */}
+            <div
+              onTouchStart={handleTxSheetTouchStart}
+              onTouchEnd={handleTxSheetTouchEnd}
+              className="shrink-0 bg-[#121212] border-b border-neutral-800 px-3.5 pt-1.5 pb-2.5 space-y-2 z-20"
+            >
+              {/* Drag pull handle bar at the top */}
+              <div className="w-full flex justify-center py-1 cursor-grab active:cursor-grabbing select-none">
+                <div className="w-10 h-1.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 transition-colors" />
+              </div>
+
               {/* Header with Title & Top-Right Square Rounded X button */}
               <div className="flex items-center justify-between">
                 <div>
@@ -2247,9 +2281,19 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             className="w-full max-w-md bg-[#121212] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[85vh] h-auto overflow-hidden animate-in slide-in-from-bottom duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header with Title & Top-Right Square Rounded X button */}
-            <div className="shrink-0 bg-[#121212] border-b border-neutral-800 px-4 py-3 flex items-center justify-between z-20">
-              <div className="flex items-center gap-3">
+            {/* Header with Title & Top-Right Square Rounded X button (Static area supports swipe-down to close) */}
+            <div
+              onTouchStart={handleInsightsSheetTouchStart}
+              onTouchEnd={handleInsightsSheetTouchEnd}
+              className="shrink-0 bg-[#121212] border-b border-neutral-800 px-4 pt-1.5 pb-3 z-20 space-y-2"
+            >
+              {/* Drag pull handle bar at the top */}
+              <div className="w-full flex justify-center py-1 cursor-grab active:cursor-grabbing select-none">
+                <div className="w-10 h-1.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 transition-colors" />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center">
                   <Sparkles size={18} />
                 </div>
@@ -2272,6 +2316,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               >
                 <X size={18} />
               </button>
+            </div>
             </div>
 
             {/* Scrollable Insights Content */}

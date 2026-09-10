@@ -603,6 +603,24 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     }
   };
 
+  // Touch swipe-down to dismiss modal (strictly on the static header area)
+  const headerTouchYRef = useRef<number | null>(null);
+
+  const handleHeaderTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      headerTouchYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleHeaderTouchEnd = (e: React.TouchEvent) => {
+    if (headerTouchYRef.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - headerTouchYRef.current;
+    headerTouchYRef.current = null;
+    if (deltaY > 45) {
+      onClose();
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!txToDelete) return;
     setIsDeleting(true);
@@ -788,8 +806,17 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-0 text-neutral-100">
       <div className="w-full max-w-lg bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
-        {/* Header */}
-        <div className="px-4.5 py-3 bg-[#121212] border-b border-neutral-800 shrink-0 space-y-2.5">
+        {/* Header (Static area supports swipe-down to close) */}
+        <div
+          onTouchStart={handleHeaderTouchStart}
+          onTouchEnd={handleHeaderTouchEnd}
+          className="px-4.5 pt-1.5 pb-3 bg-[#121212] border-b border-neutral-800 shrink-0 space-y-2"
+        >
+          {/* Drag pull handle bar at the top */}
+          <div className="w-full flex justify-center py-1 cursor-grab active:cursor-grabbing select-none">
+            <div className="w-10 h-1.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 transition-colors" />
+          </div>
+
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="w-9 h-9 rounded-xl bg-white/10 text-white border border-neutral-800 flex items-center justify-center shrink-0">

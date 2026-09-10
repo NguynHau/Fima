@@ -207,7 +207,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   // Mouse wheel swipe interaction
   const handleWheel = (e: React.WheelEvent) => {
     if (wheelTimeoutRef.current) return;
-    if (Math.abs(e.deltaY) > 30) {
+    if (Math.abs(e.deltaY) > 25) {
       if (e.deltaY > 0) {
         goToNext();
       } else {
@@ -215,14 +215,15 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       }
       wheelTimeoutRef.current = window.setTimeout(() => {
         wheelTimeoutRef.current = null;
-      }, 350);
+      }, 240);
     }
   };
 
-  // Touch swipe interaction for entire screen
+  // Touch swipe interaction for backdrop
   const touchStartYRef = useRef<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('[data-swipe-card="true"]')) return;
     touchStartYRef.current = e.touches[0].clientY;
   };
 
@@ -230,10 +231,10 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     if (touchStartYRef.current === null) return;
     const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
     touchStartYRef.current = null;
-    if (Math.abs(deltaY) > 40) {
-      if (deltaY < -40) {
+    if (Math.abs(deltaY) > 35) {
+      if (deltaY < -35) {
         goToNext();
-      } else if (deltaY > 40) {
+      } else if (deltaY > 35) {
         goToPrev();
       }
     }
@@ -242,6 +243,24 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   if (!isOpen || !currentTx) return null;
 
   const currentPhotoUrl = currentTx.imageId ? loadedImages[currentTx.imageId] : undefined;
+
+  const cardVariants = {
+    enter: (dir: number) => ({
+      opacity: 0,
+      y: dir > 0 ? 80 : dir < 0 ? -80 : 0,
+      scale: 0.94,
+    }),
+    center: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+    },
+    exit: (dir: number) => ({
+      opacity: 0,
+      y: dir > 0 ? -80 : 80,
+      scale: 0.94,
+    }),
+  };
 
   return (
     <div
@@ -314,32 +333,26 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
       {/* Main Swipeable Content with Smooth Vertical Spring Motion */}
       <div className="flex-1 relative flex items-center justify-center overflow-hidden my-auto w-full max-w-sm mx-auto">
-        <AnimatePresence initial={false} custom={direction} mode="wait">
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={currentTx.id}
+            data-swipe-card="true"
             custom={direction}
-            initial={{
-              opacity: 0,
-              y: direction > 0 ? 60 : direction < 0 ? -60 : 0,
-              scale: 0.96,
+            variants={cardVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              y: { type: 'spring', stiffness: 320, damping: 30, mass: 0.8 },
+              opacity: { duration: 0.2 },
+              scale: { duration: 0.2 },
             }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1,
-            }}
-            exit={{
-              opacity: 0,
-              y: direction > 0 ? -60 : 60,
-              scale: 0.96,
-            }}
-            transition={{ type: 'spring', stiffness: 450, damping: 34 }}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.25}
+            dragElastic={0.35}
             onDragEnd={(_, info) => {
-              const swipeThreshold = 45;
-              const velocityThreshold = 250;
+              const swipeThreshold = 30;
+              const velocityThreshold = 180;
               if (info.offset.y < -swipeThreshold || info.velocity.y < -velocityThreshold) {
                 goToNext();
               } else if (info.offset.y > swipeThreshold || info.velocity.y > velocityThreshold) {
@@ -347,7 +360,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               }
             }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full flex flex-col items-center justify-center gap-3 cursor-grab active:cursor-grabbing"
+            className="w-full flex flex-col items-center justify-center gap-3 cursor-grab active:cursor-grabbing select-none"
           >
             {/* Photo / Placeholder */}
             {currentPhotoUrl ? (
