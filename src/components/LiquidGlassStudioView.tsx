@@ -27,6 +27,8 @@ import { type ActiveTab } from '../types';
 import { getSvgGradientCoords, getReflectedEdgeBoxShadow } from '../utils/liquidGlassOptical';
 import { SegmentedTabs } from './SegmentedTabs';
 import { LiquidGlassStudioLogo } from './LiquidGlassStudioLogo';
+import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag';
+import { BottomSheetDragHandle } from './BottomSheetDragHandle';
 
 interface LiquidGlassStudioViewProps {
   isOpen: boolean;
@@ -69,6 +71,12 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showControls, setShowControls] = useState(true);
+
+  // Bottom sheet drag gesture controller with glowing handle
+  const sheetDrag = useBottomSheetDrag({
+    onClose,
+    threshold: 65,
+  });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -346,81 +354,119 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0b0d] text-neutral-100 flex flex-col overflow-hidden select-none">
-      {/* ---------------------------------------------------- */}
-      {/* 1. TOP HEADER                                       */}
-      {/* ---------------------------------------------------- */}
-      <div className="flex flex-col border-b border-neutral-800/80 bg-[#121418]/95 backdrop-blur-md shrink-0 pt-[max(env(safe-area-inset-top),12px)] z-50">
-        <div className="flex items-center justify-between px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <LiquidGlassStudioLogo size={22} />
-            <div>
-              <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
-                Liquid Glass Studio
-              </h1>
-              <p className="text-[11px] text-neutral-400">
-                Tinh chỉnh quang học & vật lý Đảo điều hướng
-              </p>
+    <div
+      style={sheetDrag.backdropStyle}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end justify-center p-0 pt-[max(env(safe-area-inset-top,0px),16px)] text-neutral-100 select-none"
+      onClick={sheetDrag.closeWithAnimation}
+    >
+      <div
+        style={sheetDrag.sheetStyle}
+        className="w-full max-w-lg bg-[#0a0b0d] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[85vh] h-[88vh] overflow-hidden relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ---------------------------------------------------- */}
+        {/* 1. TOP HEADER & PULL DRAG HANDLE                    */}
+        {/* ---------------------------------------------------- */}
+        <div className="flex flex-col border-b border-neutral-800/80 bg-[#121418]/95 backdrop-blur-md shrink-0 px-4 pt-1.5 pb-2.5 z-20 space-y-1.5">
+          {/* Drag pull handle bar at the top with light-up glow on touch */}
+          <BottomSheetDragHandle
+            isHandleActive={sheetDrag.isHandleActive}
+            onPointerDown={sheetDrag.handlePointerDown}
+            onPointerMove={sheetDrag.handlePointerMove}
+            onPointerUp={sheetDrag.handlePointerUp}
+            onPointerCancel={sheetDrag.handlePointerUp}
+            onTouchStart={sheetDrag.handleTouchStart}
+            onTouchMove={sheetDrag.handleTouchMove}
+            onTouchEnd={sheetDrag.handleTouchEnd}
+            onTouchCancel={sheetDrag.handleTouchCancel}
+          />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <LiquidGlassStudioLogo size={22} />
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-black text-white tracking-tight truncate">
+                  Liquid Glass Studio
+                </h1>
+                <p className="text-[11px] text-neutral-400 truncate">
+                  Tinh chỉnh quang học & vật lý Đảo điều hướng
+                </p>
+              </div>
+            </div>
+
+            {/* Header Action Tools: Save (Check icon only), Undo, Redo, Reset, and Close */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => {
+                  saveCurrentConfig();
+                  showToast('Đã lưu cấu hình!');
+                }}
+                className={`w-8 h-8 rounded-lg border transition-colors cursor-pointer active:scale-95 shrink-0 flex items-center justify-center ${
+                  isDirty
+                    ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white'
+                    : 'bg-[#1a1a1a] hover:bg-[#262626] border-neutral-800 text-neutral-400 hover:text-white'
+                }`}
+                title="Lưu cấu hình"
+                aria-label="Lưu cấu hình"
+              >
+                <Check size={16} strokeWidth={2.5} />
+              </button>
+
+              <button
+                onClick={undo}
+                disabled={!canUndo}
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 disabled:opacity-30 disabled:pointer-events-none"
+                title="Hoàn tác (Undo)"
+                aria-label="Hoàn tác"
+              >
+                <Undo2 size={16} />
+              </button>
+
+              <button
+                onClick={redo}
+                disabled={!canRedo}
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 disabled:opacity-30 disabled:pointer-events-none"
+                title="Làm lại (Tiến/Redo)"
+                aria-label="Làm lại"
+              >
+                <Redo2 size={16} />
+              </button>
+
+              <button
+                onClick={() => {
+                  resetAll();
+                  showToast('Đã khôi phục về mặc định!');
+                }}
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
+                title="Đặt lại mặc định (Reset)"
+                aria-label="Đặt lại mặc định"
+              >
+                <RotateCcw size={16} />
+              </button>
+
+              <button
+                onClick={sheetDrag.closeWithAnimation}
+                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 ml-0.5"
+                title="Đóng"
+                aria-label="Đóng"
+              >
+                <X size={18} />
+              </button>
             </div>
           </div>
 
-          {/* Header Action Tools & Close: 3 tools next to X matching shape and position */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={undo}
-              disabled={!canUndo}
-              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 disabled:opacity-30 disabled:pointer-events-none"
-              title="Hoàn tác (Undo)"
-              aria-label="Hoàn tác"
-            >
-              <Undo2 size={16} />
-            </button>
-
-            <button
-              onClick={redo}
-              disabled={!canRedo}
-              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 disabled:opacity-30 disabled:pointer-events-none"
-              title="Làm lại (Tiến/Redo)"
-              aria-label="Làm lại"
-            >
-              <Redo2 size={16} />
-            </button>
-
-            <button
-              onClick={() => {
-                resetAll();
-                showToast('Đã khôi phục về mặc định!');
-              }}
-              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-              title="Đặt lại mặc định (Reset)"
-              aria-label="Đặt lại mặc định"
-            >
-              <RotateCcw size={16} />
-            </button>
-
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0 ml-0.5"
-              title="Đóng"
-              aria-label="Đóng"
-            >
-              <X size={18} />
-            </button>
+          {/* CONTAINER 1: CHỦ ĐỀ & TÙY CHỈNH THEO DESIGN SYSTEM */}
+          <div className="pt-1 pb-1">
+            <SegmentedTabs
+              layoutId="liquid_studio_main_tab"
+              activeId={mainTab}
+              onChange={(id) => setMainTab(id as 'presets' | 'custom')}
+              tabs={[
+                { id: 'presets', label: 'Chủ đề', icon: Sparkles },
+                { id: 'custom', label: 'Tùy chỉnh', icon: Sliders },
+              ]}
+            />
           </div>
-        </div>
-
-        {/* CONTAINER 1: CHỦ ĐỀ & TÙY CHỈNH THEO DESIGN SYSTEM */}
-        <div className="px-4 pt-1.5 pb-2">
-          <SegmentedTabs
-            layoutId="liquid_studio_main_tab"
-            activeId={mainTab}
-            onChange={(id) => setMainTab(id as 'presets' | 'custom')}
-            tabs={[
-              { id: 'presets', label: 'Chủ đề', icon: Sparkles },
-              { id: 'custom', label: 'Tùy chỉnh', icon: Sliders },
-            ]}
-          />
-        </div>
 
         {/* CONTAINER 2: ĐẢO CHÍNH - GIỌT NƯỚC - MÃ CSS CŨNG DÙNG SEGMENTED TABS THEO DESIGN SYSTEM */}
         <AnimatePresence initial={false}>
@@ -1864,7 +1910,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
       {/* chức năng gì chỉ phục vụ cho animation và quan sát" */}
       {/* ---------------------------------------------------- */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 flex flex-col items-center px-4 pointer-events-none"
+        className="absolute bottom-0 left-0 right-0 z-30 flex flex-col items-center px-4 pointer-events-none"
         style={{
           paddingBottom: `max(env(safe-area-inset-bottom), ${config.island.bottomOffset}px)`,
         }}
@@ -2051,5 +2097,6 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
         </div>
       </div>
     </div>
+  </div>
   );
 };

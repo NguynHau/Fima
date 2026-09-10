@@ -17,6 +17,8 @@ import {
 import { CategoryIcon, getCategoryInfo } from './CategoryIcon';
 import { getImageBlob } from '../db/database';
 import { TransactionDetailModal } from './TransactionDetailModal';
+import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag';
+import { BottomSheetDragHandle } from './BottomSheetDragHandle';
 import {
   TrendingUp,
   TrendingDown,
@@ -507,37 +509,16 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     }
   };
 
-  // Touch swipe-down to close for transaction list half-page (from static header area only)
-  const txSheetTouchYRef = useRef<number | null>(null);
-  const handleTxSheetTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      txSheetTouchYRef.current = e.touches[0].clientY;
-    }
-  };
-  const handleTxSheetTouchEnd = (e: React.TouchEvent) => {
-    if (txSheetTouchYRef.current === null) return;
-    const deltaY = e.changedTouches[0].clientY - txSheetTouchYRef.current;
-    txSheetTouchYRef.current = null;
-    if (deltaY > 45) {
-      setIsTxListPageOpen(false);
-    }
-  };
+  // Smooth bottom sheet drag controllers with light-up glow handle
+  const txSheetDrag = useBottomSheetDrag({
+    onClose: () => setIsTxListPageOpen(false),
+    threshold: 65,
+  });
 
-  // Touch swipe-down to close for quick insights half-page (from static header area only)
-  const insightsSheetTouchYRef = useRef<number | null>(null);
-  const handleInsightsSheetTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      insightsSheetTouchYRef.current = e.touches[0].clientY;
-    }
-  };
-  const handleInsightsSheetTouchEnd = (e: React.TouchEvent) => {
-    if (insightsSheetTouchYRef.current === null) return;
-    const deltaY = e.changedTouches[0].clientY - insightsSheetTouchYRef.current;
-    insightsSheetTouchYRef.current = null;
-    if (deltaY > 45) {
-      setIsInsightsOpen(false);
-    }
-  };
+  const insightsSheetDrag = useBottomSheetDrag({
+    onClose: () => setIsInsightsOpen(false),
+    threshold: 65,
+  });
 
   // Reference date state for week/month/year navigation
   const [refDate, setRefDate] = useState<Date>(() => new Date());
@@ -1398,28 +1379,28 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             </button>
           </div>
         ) : (
-          /* Custom Date Inputs */
-          <div className="grid grid-cols-2 gap-2 pt-1 px-1">
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+          /* Custom Date Inputs - Compact and responsive on mobile to prevent overflow */
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1 px-0.5 max-w-full overflow-hidden">
+            <div className="min-w-0">
+              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 truncate">
                 Từ ngày
               </label>
               <input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
+                className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
               />
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+            <div className="min-w-0">
+              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 truncate">
                 Đến ngày
               </label>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
+                className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
               />
             </div>
           </div>
@@ -1998,23 +1979,29 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       {/* HALF-PAGE TRANSACTION LIST BOTTOM SHEET MODAL */}
       {isTxListPageOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end justify-center p-0 pt-[max(env(safe-area-inset-top,0px),16px)] animate-in fade-in duration-200 text-neutral-100"
-          onClick={() => setIsTxListPageOpen(false)}
+          style={txSheetDrag.backdropStyle}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end justify-center p-0 pt-[max(env(safe-area-inset-top,0px),16px)] text-neutral-100"
+          onClick={txSheetDrag.closeWithAnimation}
         >
           <div
-            className="w-full max-w-md bg-[#121212] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[85vh] h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200"
+            style={txSheetDrag.sheetStyle}
+            className="w-full max-w-md bg-[#121212] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[85vh] h-[88vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 1. FIXED / STICKY HEADER & FILTER TOOLBAR (Static area supports swipe-down to close) */}
-            <div
-              onTouchStart={handleTxSheetTouchStart}
-              onTouchEnd={handleTxSheetTouchEnd}
-              className="shrink-0 bg-[#121212] border-b border-neutral-800 px-3.5 pt-1.5 pb-2.5 space-y-2 z-20"
-            >
-              {/* Drag pull handle bar at the top */}
-              <div className="w-full flex justify-center py-1 cursor-grab active:cursor-grabbing select-none">
-                <div className="w-10 h-1.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 transition-colors" />
-              </div>
+            {/* 1. FIXED / STICKY HEADER & FILTER TOOLBAR */}
+            <div className="shrink-0 bg-[#121212] border-b border-neutral-800 px-3.5 pt-1.5 pb-2.5 space-y-2 z-20">
+              {/* Drag pull handle bar at the top with light-up glow on touch */}
+              <BottomSheetDragHandle
+                isHandleActive={txSheetDrag.isHandleActive}
+                onPointerDown={txSheetDrag.handlePointerDown}
+                onPointerMove={txSheetDrag.handlePointerMove}
+                onPointerUp={txSheetDrag.handlePointerUp}
+                onPointerCancel={txSheetDrag.handlePointerUp}
+                onTouchStart={txSheetDrag.handleTouchStart}
+                onTouchMove={txSheetDrag.handleTouchMove}
+                onTouchEnd={txSheetDrag.handleTouchEnd}
+                onTouchCancel={txSheetDrag.handleTouchCancel}
+              />
 
               {/* Header with Title & Top-Right Square Rounded X button */}
               <div className="flex items-center justify-between">
@@ -2029,7 +2016,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => setIsTxListPageOpen(false)}
+                  onClick={txSheetDrag.closeWithAnimation}
                   className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
                   title="Đóng"
                   aria-label="Đóng"
@@ -2226,27 +2213,27 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 pt-1 px-1">
-                  <div>
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1 px-0.5 max-w-full overflow-hidden">
+                  <div className="min-w-0">
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 truncate">
                       Từ ngày
                     </label>
                     <input
                       type="date"
                       value={customStartDate}
                       onChange={(e) => setCustomStartDate(e.target.value)}
-                      className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
+                      className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">
+                  <div className="min-w-0">
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 truncate">
                       Đến ngày
                     </label>
                     <input
                       type="date"
                       value={customEndDate}
                       onChange={(e) => setCustomEndDate(e.target.value)}
-                      className="w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white font-mono"
+                      className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
                     />
                   </div>
                 </div>
@@ -2281,23 +2268,29 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       {/* HALF-PAGE QUICK INSIGHTS BOTTOM SHEET MODAL */}
       {isInsightsOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end justify-center p-0 pt-[max(env(safe-area-inset-top,0px),16px)] animate-in fade-in duration-200 text-neutral-100"
-          onClick={() => setIsInsightsOpen(false)}
+          style={insightsSheetDrag.backdropStyle}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end justify-center p-0 pt-[max(env(safe-area-inset-top,0px),16px)] text-neutral-100"
+          onClick={insightsSheetDrag.closeWithAnimation}
         >
           <div
-            className="w-full max-w-md bg-[#121212] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[85vh] h-auto overflow-hidden animate-in slide-in-from-bottom duration-200"
+            style={insightsSheetDrag.sheetStyle}
+            className="w-full max-w-md bg-[#121212] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[85vh] h-auto overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header with Title & Top-Right Square Rounded X button (Static area supports swipe-down to close) */}
-            <div
-              onTouchStart={handleInsightsSheetTouchStart}
-              onTouchEnd={handleInsightsSheetTouchEnd}
-              className="shrink-0 bg-[#121212] border-b border-neutral-800 px-4 pt-1.5 pb-3 z-20 space-y-2"
-            >
-              {/* Drag pull handle bar at the top */}
-              <div className="w-full flex justify-center py-1 cursor-grab active:cursor-grabbing select-none">
-                <div className="w-10 h-1.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 transition-colors" />
-              </div>
+            {/* Header with Title & Top-Right Square Rounded X button */}
+            <div className="shrink-0 bg-[#121212] border-b border-neutral-800 px-4 pt-1.5 pb-3 z-20 space-y-2">
+              {/* Drag pull handle bar at the top with light-up glow on touch */}
+              <BottomSheetDragHandle
+                isHandleActive={insightsSheetDrag.isHandleActive}
+                onPointerDown={insightsSheetDrag.handlePointerDown}
+                onPointerMove={insightsSheetDrag.handlePointerMove}
+                onPointerUp={insightsSheetDrag.handlePointerUp}
+                onPointerCancel={insightsSheetDrag.handlePointerUp}
+                onTouchStart={insightsSheetDrag.handleTouchStart}
+                onTouchMove={insightsSheetDrag.handleTouchMove}
+                onTouchEnd={insightsSheetDrag.handleTouchEnd}
+                onTouchCancel={insightsSheetDrag.handleTouchCancel}
+              />
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -2316,7 +2309,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
               <button
                 type="button"
-                onClick={() => setIsInsightsOpen(false)}
+                onClick={insightsSheetDrag.closeWithAnimation}
                 className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
                 title="Đóng"
                 aria-label="Đóng"

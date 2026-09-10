@@ -33,6 +33,8 @@ import {
   getTransactions,
   getUserSettings,
 } from '../db/database';
+import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag';
+import { BottomSheetDragHandle } from './BottomSheetDragHandle';
 import {
   formatDateVN,
   formatFullDateVN,
@@ -603,23 +605,11 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     }
   };
 
-  // Touch swipe-down to dismiss modal (strictly on the static header area)
-  const headerTouchYRef = useRef<number | null>(null);
-
-  const handleHeaderTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      headerTouchYRef.current = e.touches[0].clientY;
-    }
-  };
-
-  const handleHeaderTouchEnd = (e: React.TouchEvent) => {
-    if (headerTouchYRef.current === null) return;
-    const deltaY = e.changedTouches[0].clientY - headerTouchYRef.current;
-    headerTouchYRef.current = null;
-    if (deltaY > 45) {
-      onClose();
-    }
-  };
+  // Smooth bottom sheet drag controller with glowing handle
+  const sheetDrag = useBottomSheetDrag({
+    onClose,
+    threshold: 65,
+  });
 
   const handleConfirmDelete = async () => {
     if (!txToDelete) return;
@@ -804,18 +794,30 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-0 text-neutral-100">
-      <div className="w-full max-w-lg bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden animate-in slide-in-from-bottom duration-200">
-        {/* Header (Static area supports swipe-down to close) */}
-        <div
-          onTouchStart={handleHeaderTouchStart}
-          onTouchEnd={handleHeaderTouchEnd}
-          className="px-4.5 pt-1.5 pb-3 bg-[#121212] border-b border-neutral-800 shrink-0 space-y-2"
-        >
-          {/* Drag pull handle bar at the top */}
-          <div className="w-full flex justify-center py-1 cursor-grab active:cursor-grabbing select-none">
-            <div className="w-10 h-1.5 rounded-full bg-neutral-700/80 hover:bg-neutral-600 transition-colors" />
-          </div>
+    <div
+      style={sheetDrag.backdropStyle}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-center items-end sm:items-center overflow-hidden pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-0 text-neutral-100"
+      onClick={sheetDrag.closeWithAnimation}
+    >
+      <div
+        style={sheetDrag.sheetStyle}
+        className="w-full max-w-lg bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[88vh] max-h-[88vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-4.5 pt-1.5 pb-3 bg-[#121212] border-b border-neutral-800 shrink-0 space-y-2">
+          {/* Drag pull handle bar at the top with glowing halo effect on touch */}
+          <BottomSheetDragHandle
+            isHandleActive={sheetDrag.isHandleActive}
+            onPointerDown={sheetDrag.handlePointerDown}
+            onPointerMove={sheetDrag.handlePointerMove}
+            onPointerUp={sheetDrag.handlePointerUp}
+            onPointerCancel={sheetDrag.handlePointerUp}
+            onTouchStart={sheetDrag.handleTouchStart}
+            onTouchMove={sheetDrag.handleTouchMove}
+            onTouchEnd={sheetDrag.handleTouchEnd}
+            onTouchCancel={sheetDrag.handleTouchCancel}
+          />
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -854,7 +856,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </button>
 
               <button
-                onClick={onClose}
+                type="button"
+                onClick={sheetDrag.closeWithAnimation}
                 className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-colors cursor-pointer ml-1 shrink-0"
                 aria-label="Đóng"
                 title="Đóng"
