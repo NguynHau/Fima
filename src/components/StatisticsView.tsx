@@ -1372,7 +1372,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       </div>
 
       {/* 2 & 3. FILTERS (Account & Time) */}
-      <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">
+      <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm space-y-1.5">
         {/* Account Filter */}
         <LayoutGroup id="stats_account_filter_group">
           <div
@@ -1389,18 +1389,21 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
                 accountFilter === 'all'
                   ? 'text-black font-extrabold'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  : 'text-neutral-400 hover:text-white'
               }`}
             >
               {accountFilter === 'all' && (
                 <motion.div
                   layoutId="stats_account_filter_tab"
                   transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm"
                 />
               )}
               <span className="relative z-10 flex items-center justify-center gap-2">
-                <Layers size={16} />
+                <Layers
+                  size={16}
+                  className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
+                />
                 <span>Tất cả</span>
               </span>
             </button>
@@ -1410,18 +1413,21 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
                 accountFilter === 'wallet'
                   ? 'text-amber-300 font-extrabold'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  : 'text-neutral-400 hover:text-white'
               }`}
             >
               {accountFilter === 'wallet' && (
                 <motion.div
                   layoutId="stats_account_filter_tab"
                   transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-lg shadow-xs"
+                  className="absolute inset-0 bg-amber-500/25 rounded-lg shadow-xs border border-amber-500/40"
                 />
               )}
               <span className="relative z-10 flex items-center justify-center gap-2">
-                <Wallet size={16} className="text-amber-400" />
+                <Wallet
+                  size={16}
+                  className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-400'}
+                />
                 <span>Ví</span>
               </span>
             </button>
@@ -1431,18 +1437,21 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
                 accountFilter === 'bank'
                   ? 'text-cyan-300 font-extrabold'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  : 'text-neutral-400 hover:text-white'
               }`}
             >
               {accountFilter === 'bank' && (
                 <motion.div
                   layoutId="stats_account_filter_tab"
                   transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  className="absolute inset-0 bg-cyan-500/25 border border-cyan-500/40 rounded-lg shadow-xs"
+                  className="absolute inset-0 bg-cyan-500/25 rounded-lg shadow-xs border border-cyan-500/40"
                 />
               )}
               <span className="relative z-10 flex items-center justify-center gap-2">
-                <Building2 size={16} className="text-cyan-400" />
+                <Building2
+                  size={16}
+                  className={accountFilter === 'bank' ? 'text-cyan-400' : 'text-neutral-400'}
+                />
                 <span>Bank</span>
               </span>
             </button>

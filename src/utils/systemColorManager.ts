@@ -100,9 +100,9 @@ export const SYSTEM_COLOR_PRESETS: ColorPreset[] = [
     tag: 'Mặc định',
     config: {
       red: {
-        main: '#ff073a',
-        light: '#ff4d6d',
-        dark: '#e6002f',
+        main: '#ff3366',
+        light: '#ff8fab',
+        dark: '#eb003b',
       },
       yellow: {
         main: '#ffb300',
@@ -111,8 +111,8 @@ export const SYSTEM_COLOR_PRESETS: ColorPreset[] = [
       },
       green: {
         main: '#00e676',
-        light: '#69f0ae',
-        dark: '#00c853',
+        light: '#4dffa9',
+        dark: '#009e52',
       },
       blue: {
         main: '#00b0ff',

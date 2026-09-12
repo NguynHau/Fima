@@ -35,9 +35,9 @@ export const LiquidGlassStudioLogo: React.FC<LiquidGlassStudioLogoProps> = ({
       {hasColor && (
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#a855f7" />
-            <stop offset="50%" stopColor="#d946ef" />
-            <stop offset="100%" stopColor="#ec4899" />
+            <stop offset="0%" stopColor="var(--sys-gradient-start, #a855f7)" />
+            <stop offset="50%" stopColor="var(--sys-gradient-purple, #c084fc)" />
+            <stop offset="100%" stopColor="var(--sys-gradient-end, #ec4899)" />
           </linearGradient>
         </defs>
       )}

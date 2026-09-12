@@ -43,7 +43,15 @@ import { CategoryIcon } from './CategoryIcon';
 import { LiquidGlassStudioLogo } from './LiquidGlassStudioLogo';
 import { ImageCropModal } from './ImageCropModal';
 import { SystemColorStudioModal } from './SystemColorStudioModal';
-import { optimizeWallpaper, setCachedWallpaper, removeCachedWallpaper } from '../utils/wallpaperManager';
+import { WallpaperEditorModal } from './WallpaperEditorModal';
+import {
+  optimizeWallpaper,
+  setCachedWallpaper,
+  removeCachedWallpaper,
+  getStoredWallpaperBlur,
+  setStoredWallpaperBlur,
+  applyWallpaperBlur,
+} from '../utils/wallpaperManager';
 import { getStoredUiTransparency, setStoredUiTransparency, applyUiTransparency } from '../utils/uiAppearanceManager';
 import {
   loadStoredSystemColors,
@@ -134,11 +142,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Wallpaper state & refs
+  const [isWallpaperModalOpen, setIsWallpaperModalOpen] = useState(false);
   const wallpaperGalleryInputRef = useRef<HTMLInputElement>(null);
   const wallpaperCameraInputRef = useRef<HTMLInputElement>(null);
   const [wallpaperCropSrc, setWallpaperCropSrc] = useState<string | null>(null);
   const [isWallpaperCropOpen, setIsWallpaperCropOpen] = useState(false);
   const [isProcessingWallpaper, setIsProcessingWallpaper] = useState(false);
+
+  // Wallpaper blur state (0 to 30px)
+  const [wallpaperBlur, setWallpaperBlur] = useState<number>(() => {
+    return userSettings?.wallpaperBlur ?? getStoredWallpaperBlur();
+  });
 
   // UI Transparency state (persisted)
   const [uiTransparency, setUiTransparency] = useState<number>(() => {
@@ -154,11 +168,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   }, [systemColors]);
 
   useEffect(() => {
+    if (userSettings?.wallpaperBlur !== undefined) {
+      setWallpaperBlur(userSettings.wallpaperBlur);
+      applyWallpaperBlur(userSettings.wallpaperBlur);
+    }
+  }, [userSettings?.wallpaperBlur]);
+
+  useEffect(() => {
     if (userSettings?.uiTransparency !== undefined) {
       setUiTransparency(userSettings.uiTransparency);
       applyUiTransparency(userSettings.uiTransparency);
     }
   }, [userSettings?.uiTransparency]);
+
+  const handleWallpaperBlurChange = async (val: number) => {
+    const clamped = Math.max(0, Math.min(30, val));
+    setWallpaperBlur(clamped);
+    setStoredWallpaperBlur(clamped);
+    try {
+      await updateUserSettings({ wallpaperBlur: clamped });
+      onDataChanged();
+    } catch (e) {
+      console.error('Error saving wallpaper blur to database:', e);
+    }
+  };
 
   const handleTransparencyChange = async (val: number) => {
     const clamped = Math.max(0, Math.min(100, val));
@@ -441,9 +474,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <svg width="0" height="0" style={{ position: 'absolute', pointerEvents: 'none', opacity: 0 }} aria-hidden="true">
         <defs>
           <linearGradient id="settings-pink-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f472b6" />
-            <stop offset="50%" stopColor="#e879f9" />
-            <stop offset="100%" stopColor="#c084fc" />
+            <stop offset="0%" stopColor="var(--sys-gradient-pink, #f472b6)" />
+            <stop offset="30%" stopColor="var(--sys-gradient-end, #ec4899)" />
+            <stop offset="70%" stopColor="var(--sys-gradient-start, #a855f7)" />
+            <stop offset="100%" stopColor="var(--sys-gradient-purple, #c084fc)" />
           </linearGradient>
         </defs>
       </svg>
@@ -510,65 +544,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           description="Tùy chỉnh sắc độ của 5 gam màu chủ đạo: Đỏ (chi tiêu & nợ), Vàng (ví tiền), Xanh lá (thu nhập), Xanh dương (ngân hàng) và Tím hồng gradient. Hỗ trợ bộ theme sẵn, điều chỉnh chi tiết, reset xuất xưởng và sao chép mã CSS."
         />
 
-        {/* 5 Master Colors Preview Bar */}
-        <div className="p-3 bg-[#1a1a1a] rounded-2xl border border-neutral-800 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-neutral-300">Dải 5 màu chủ đạo đang áp dụng:</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700">
-              {systemColors.activePresetId ? 'Bộ theme mẫu' : 'Tùy chỉnh riêng'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-5 gap-2 pt-0.5">
-            <div className="flex flex-col items-center gap-1 min-w-0">
-              <div
-                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
-                style={{ backgroundColor: systemColors.red.main }}
-                title="Đỏ (Chi tiêu)"
-              />
-              <span className="text-[10px] font-bold text-neutral-400 truncate">Đỏ</span>
-            </div>
-
-            <div className="flex flex-col items-center gap-1 min-w-0">
-              <div
-                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
-                style={{ backgroundColor: systemColors.yellow.main }}
-                title="Vàng (Ví tiền)"
-              />
-              <span className="text-[10px] font-bold text-neutral-400 truncate">Vàng</span>
-            </div>
-
-            <div className="flex flex-col items-center gap-1 min-w-0">
-              <div
-                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
-                style={{ backgroundColor: systemColors.green.main }}
-                title="Xanh lá (Thu nhập)"
-              />
-              <span className="text-[10px] font-bold text-neutral-400 truncate">Xanh lá</span>
-            </div>
-
-            <div className="flex flex-col items-center gap-1 min-w-0">
-              <div
-                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
-                style={{ backgroundColor: systemColors.blue.main }}
-                title="Xanh dương (Ngân hàng)"
-              />
-              <span className="text-[10px] font-bold text-neutral-400 truncate">Xanh dương</span>
-            </div>
-
-            <div className="flex flex-col items-center gap-1 min-w-0">
-              <div
-                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
-                style={{
-                  background: `linear-gradient(to right, ${systemColors.gradient.start}, ${systemColors.gradient.end})`,
-                }}
-                title="Tím hồng Gradient"
-              />
-              <span className="text-[10px] font-bold text-neutral-400 truncate">Tím hồng</span>
-            </div>
-          </div>
-        </div>
-
         <button
           type="button"
           onClick={() => setIsColorStudioOpen(true)}
@@ -584,137 +559,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <SettingsCardHeader
           icon={ImageIcon}
           title="Hình nền ứng dụng"
-          description="Đổi hình nền toàn bộ ứng dụng và tùy chỉnh độ trong suốt của giao diện (loại trừ Main Island) để làm nổi bật hình nền sau các lớp kính."
+          description="Đổi hình nền toàn bộ ứng dụng, tùy chỉnh độ mờ của ảnh nền và độ trong suốt của giao diện (loại trừ Main Island) để làm nổi bật hình nền sau các lớp kính."
         />
 
-        {/* Hidden inputs */}
-        <input
-          ref={wallpaperGalleryInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleWallpaperFileChange}
-          className="hidden"
-        />
-        <input
-          ref={wallpaperCameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleWallpaperFileChange}
-          className="hidden"
-        />
-
-        {/* Thumbnail Preview Card */}
-        <div className="p-3 bg-[#1a1a1a] rounded-2xl border border-neutral-800 flex items-center gap-3.5">
-          {/* Mini Phone thumbnail */}
-          <div className="w-14 h-24 sm:w-16 sm:h-28 rounded-xl overflow-hidden border border-neutral-700/80 bg-neutral-900 shrink-0 relative flex flex-col items-center justify-center">
-            {activeWallpaper ? (
-              <>
-                <img
-                  src={activeWallpaper}
-                  alt="Hình nền hiện tại"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute bottom-1 left-1.5 right-1.5 h-2 rounded-full bg-white/20 backdrop-blur-xs border border-white/30" />
-              </>
-            ) : (
-              <>
-                <ImageIcon size={18} className="text-neutral-600" />
-                <span className="text-[8px] font-bold text-neutral-500 uppercase mt-1">Mặc định</span>
-                <div className="absolute bottom-1 left-1.5 right-1.5 h-2 rounded-full bg-white/10 border border-white/10" />
-              </>
-            )}
-          </div>
-
-          {/* Status & Quick actions */}
-          <div className="flex-1 min-w-0 space-y-2">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-neutral-200">
-                  {activeWallpaper ? 'Hình nền tùy chỉnh' : 'Nền đen tuyền mặc định'}
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-400 mt-0.5 leading-relaxed">
-                {activeWallpaper
-                  ? 'Đã lưu trên máy và phản chiếu sau các lớp giao diện.'
-                  : 'Chưa cài đặt hình nền riêng.'}
-              </p>
-            </div>
-
-            {/* If custom wallpaper exists: Reset to default button (gray tone) */}
-            {activeWallpaper && (
-              <div className="flex items-center gap-2 pt-0.5 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleRemoveWallpaper}
-                  className="py-1.5 px-3 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-                >
-                  <RotateCcw size={13} className="text-neutral-400" />
-                  <span>Khôi phục mặc định</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons: Choose from Gallery / Take New Photo */}
-        <div className="grid grid-cols-2 gap-2 pt-0.5">
-          <button
-            type="button"
-            onClick={() => wallpaperGalleryInputRef.current?.click()}
-            disabled={isProcessingWallpaper}
-            className="py-2.5 px-3 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-          >
-            <ImageIcon size={16} className="text-neutral-300 shrink-0" />
-            <span>Chọn từ thư viện</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => wallpaperCameraInputRef.current?.click()}
-            disabled={isProcessingWallpaper}
-            className="py-2.5 px-3 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-          >
-            <Camera size={16} className="text-neutral-300 shrink-0" />
-            <span>Chụp ảnh mới</span>
-          </button>
-        </div>
-
-        {/* SUB-SECTION: ĐỘ TRONG CỦA GIAO DIỆN (UI TRANSPARENCY SLIDER) */}
-        <div className="pt-3 border-t border-neutral-800/80 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sliders size={15} className="text-neutral-400" />
-              <span className="text-xs sm:text-sm font-bold text-neutral-200">
-                Độ trong của giao diện
-              </span>
-            </div>
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-[#1a1a1a] border border-neutral-700 text-white">
-              {uiTransparency}%
-            </span>
-          </div>
-
-          <p className="text-[11px] text-neutral-400 leading-relaxed">
-            Điều chỉnh độ trong suốt của các thẻ thông tin và danh sách toàn app (loại trừ Main Island) để làm nổi bật hình nền.
-          </p>
-
-          <div className="space-y-1.5 pt-1">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value={uiTransparency}
-              onChange={(e) => handleTransparencyChange(parseInt(e.target.value, 10))}
-              className="w-full accent-white cursor-pointer h-1.5 bg-neutral-800 rounded-lg"
-            />
-            <div className="flex justify-between text-[10px] text-neutral-500 font-medium">
-              <span>0% (Đục / Mặc định)</span>
-              <span>50% (Kính mờ)</span>
-              <span>100% (Trong suốt)</span>
-            </div>
-          </div>
-        </div>
+        {/* Chỉnh sửa hình nền ứng dụng button (Colorless icon on button) */}
+        <button
+          type="button"
+          onClick={() => setIsWallpaperModalOpen(true)}
+          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
+        >
+          <ImageIcon size={16} className="text-neutral-300 shrink-0" />
+          <span>Chỉnh sửa hình nền ứng dụng</span>
+        </button>
       </div>
 
       {/* 5. SECTION: DỮ LIỆU */}
@@ -1127,6 +983,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             setWallpaperCropSrc(null);
           }}
           onCropComplete={handleWallpaperCropComplete}
+        />
+      )}
+
+      {/* Wallpaper Editor Bottom Sheet Modal */}
+      {isWallpaperModalOpen && (
+        <WallpaperEditorModal
+          isOpen={isWallpaperModalOpen}
+          onClose={() => setIsWallpaperModalOpen(false)}
+          activeWallpaper={activeWallpaper}
+          onApplyWallpaper={onApplyWallpaper}
+          onClearWallpaper={onClearWallpaper}
+          uiTransparency={uiTransparency}
+          onTransparencyChange={handleTransparencyChange}
+          wallpaperBlur={wallpaperBlur}
+          onWallpaperBlurChange={handleWallpaperBlurChange}
         />
       )}
 

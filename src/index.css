@@ -1,61 +1,35 @@
 @import "tailwindcss";
 
-@theme {
-  --color-rose-50: #fff0f3;
-  --color-rose-100: #ffe0e5;
-  --color-rose-200: #ffb8c4;
-  --color-rose-300: var(--sys-red-light, #ff4d6d);
-  --color-rose-400: var(--sys-red, #ff073a);
-  --color-rose-500: var(--sys-red, #ff073a);
-  --color-rose-600: var(--sys-red-dark, #e6002f);
-  --color-rose-700: #bf0027;
-  --color-rose-800: #99001f;
-  --color-rose-900: #7a0019;
-  --color-rose-950: #42000d;
-
-  --color-amber-300: var(--sys-yellow-light, #fcd34d);
-  --color-amber-400: var(--sys-yellow-light, #fbbf24);
-  --color-amber-500: var(--sys-yellow, #f59e0b);
-  --color-amber-600: var(--sys-yellow-dark, #d97706);
-
-  --color-emerald-300: var(--sys-green-light, #6ee7b7);
-  --color-emerald-400: var(--sys-green-light, #34d399);
-  --color-emerald-500: var(--sys-green, #10b981);
-  --color-emerald-600: var(--sys-green-dark, #059669);
-
-  --color-sky-300: var(--sys-blue-light, #7dd3fc);
-  --color-sky-400: var(--sys-blue-light, #38bdf8);
-  --color-sky-500: var(--sys-blue, #0ea5e9);
-  --color-sky-600: var(--sys-blue-dark, #0284c7);
-
-  --color-purple-400: var(--sys-gradient-purple, #c084fc);
-  --color-purple-500: var(--sys-gradient-start, #a855f7);
-  --color-pink-400: var(--sys-gradient-pink, #f472b6);
-  --color-pink-500: var(--sys-gradient-end, #ec4899);
-}
-
 :root {
-  /* 5 System Master Colors & Dynamic Shading (Controlled by System Color Studio) */
-  --sys-red: #ff073a;
-  --sys-red-light: #ff4d6d;
-  --sys-red-dark: #e6002f;
+  /* =========================================================================
+     FIMA - System Core Color Palette (5 Master Colors & Dynamic Shading)
+     ========================================================================= */
 
-  --sys-yellow: #f59e0b;
-  --sys-yellow-light: #fbbf24;
-  --sys-yellow-dark: #d97706;
+  /* 1. Đỏ (Chi tiêu & Nợ) */
+  --sys-red: #ff3366;
+  --sys-red-light: #ff8fab;
+  --sys-red-dark: #eb003b;
 
-  --sys-green: #10b981;
-  --sys-green-light: #34d399;
-  --sys-green-dark: #059669;
+  /* 2. Vàng (Ví tiền & Số dư) */
+  --sys-yellow: #ffb300;
+  --sys-yellow-light: #ffd54f;
+  --sys-yellow-dark: #ff8f00;
 
-  --sys-blue: #0ea5e9;
-  --sys-blue-light: #38bdf8;
-  --sys-blue-dark: #0284c7;
+  /* 3. Xanh lá (Thu nhập & Tăng trưởng) */
+  --sys-green: #00e676;
+  --sys-green-light: #4dffa9;
+  --sys-green-dark: #009e52;
 
-  --sys-gradient-purple: #c084fc;
-  --sys-gradient-pink: #f472b6;
+  /* 4. Xanh dương (Ngân hàng & Chuyển khoản) */
+  --sys-blue: #00b0ff;
+  --sys-blue-light: #40c4ff;
+  --sys-blue-dark: #0091ea;
+
+  /* 5. Tím hồng Gradient (Thương hiệu & Điểm nhấn) */
   --sys-gradient-start: #a855f7;
   --sys-gradient-end: #ec4899;
+  --sys-gradient-purple: #c084fc;
+  --sys-gradient-pink: #f472b6;
 
   --glass-bg-opacity: 0.00;
   --glass-blur: 5.0px;
@@ -71,6 +45,40 @@
   --nav-shift: 41px;
   --orcid-shift: 0px;
   --mobile-shift: 0px;
+}
+
+@theme {
+  --color-rose-50: #fff0f3;
+  --color-rose-100: #ffe0e5;
+  --color-rose-200: #ffb8c4;
+  --color-rose-300: var(--sys-red-light, #ff8fab);
+  --color-rose-400: var(--sys-red, #ff3366);
+  --color-rose-500: var(--sys-red, #ff3366);
+  --color-rose-600: var(--sys-red-dark, #eb003b);
+  --color-rose-700: #bf0027;
+  --color-rose-800: #99001f;
+  --color-rose-900: #7a0019;
+  --color-rose-950: #42000d;
+
+  --color-amber-300: var(--sys-yellow-light, #ffd54f);
+  --color-amber-400: var(--sys-yellow-light, #ffd54f);
+  --color-amber-500: var(--sys-yellow, #ffb300);
+  --color-amber-600: var(--sys-yellow-dark, #ff8f00);
+
+  --color-emerald-300: var(--sys-green-light, #4dffa9);
+  --color-emerald-400: var(--sys-green-light, #4dffa9);
+  --color-emerald-500: var(--sys-green, #00e676);
+  --color-emerald-600: var(--sys-green-dark, #009e52);
+
+  --color-sky-300: var(--sys-blue-light, #40c4ff);
+  --color-sky-400: var(--sys-blue-light, #40c4ff);
+  --color-sky-500: var(--sys-blue, #00b0ff);
+  --color-sky-600: var(--sys-blue-dark, #0091ea);
+
+  --color-purple-400: var(--sys-gradient-purple, #c084fc);
+  --color-purple-500: var(--sys-gradient-start, #a855f7);
+  --color-pink-400: var(--sys-gradient-pink, #f472b6);
+  --color-pink-500: var(--sys-gradient-end, #ec4899);
 }
 
 /* =========================================================================

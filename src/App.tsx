@@ -38,7 +38,14 @@ import { usePWA } from './hooks/usePWA';
 import { initAutoUpdateChecker } from './services/updateService';
 import { getTodayString } from './utils/formatters';
 import { Check } from 'lucide-react';
-import { getCachedWallpaper, setCachedWallpaper, removeCachedWallpaper } from './utils/wallpaperManager';
+import {
+  getCachedWallpaper,
+  setCachedWallpaper,
+  removeCachedWallpaper,
+  getStoredWallpaperBlur,
+  setStoredWallpaperBlur,
+  applyWallpaperBlur,
+} from './utils/wallpaperManager';
 import { initUiTransparency } from './utils/uiAppearanceManager';
 
 export default function App() {
@@ -63,8 +70,9 @@ export default function App() {
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // App Wallpaper state (custom background)
+  // App Wallpaper state (custom background & blur)
   const [cachedWallpaper, setCachedWallpaperState] = useState<string | null>(() => getCachedWallpaper());
+  const [wallpaperBlur, setWallpaperBlur] = useState<number>(() => getStoredWallpaperBlur());
 
   const activeWallpaper = userSettings?.wallpaperDataUrl || cachedWallpaper;
 
@@ -135,6 +143,10 @@ export default function App() {
           setCachedWallpaperState(null);
         }
       }
+      if (settings?.wallpaperBlur !== undefined) {
+        setWallpaperBlur(settings.wallpaperBlur);
+        applyWallpaperBlur(settings.wallpaperBlur);
+      }
       const hasWallpaper = Boolean(settings?.wallpaperDataUrl || getCachedWallpaper());
       if (settings?.uiTransparency !== undefined) {
         initUiTransparency(settings.uiTransparency, hasWallpaper);
@@ -164,7 +176,10 @@ export default function App() {
     setCachedWallpaperState(null);
     removeCachedWallpaper();
     initUiTransparency(0, false);
-    await updateUserSettings({ wallpaperDataUrl: '', uiTransparency: 0 });
+    applyWallpaperBlur(0);
+    setStoredWallpaperBlur(0);
+    setWallpaperBlur(0);
+    await updateUserSettings({ wallpaperDataUrl: '', uiTransparency: 0, wallpaperBlur: 0 });
     await refreshData();
   };
 
@@ -321,6 +336,11 @@ export default function App() {
               <img
                 src={activeWallpaper}
                 alt="App Wallpaper"
+                style={{
+                  filter: wallpaperBlur > 0 ? `blur(${wallpaperBlur}px)` : undefined,
+                  transform: wallpaperBlur > 0 ? 'scale(1.08)' : undefined,
+                  transition: 'filter 0.2s ease, transform 0.2s ease',
+                }}
                 className="w-full h-full object-cover select-none pointer-events-none"
               />
               {/* Subtle tint to ensure high contrast & legibility */}

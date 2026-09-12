@@ -1,4 +1,5 @@
 export const WALLPAPER_STORAGE_KEY = 'finance_app_wallpaper';
+export const WALLPAPER_BLUR_STORAGE_KEY = 'finance_app_wallpaper_blur';
 
 /**
  * Retrieves the cached wallpaper data URL from localStorage for instant display on startup
@@ -31,6 +32,50 @@ export function removeCachedWallpaper(): void {
   } catch {
     // Ignore errors
   }
+}
+
+/**
+ * Retrieves the stored wallpaper blur radius (0 to 30 px). Defaults to 0.
+ */
+export function getStoredWallpaperBlur(): number {
+  try {
+    const val = localStorage.getItem(WALLPAPER_BLUR_STORAGE_KEY);
+    if (val !== null) {
+      const parsed = parseInt(val, 10);
+      if (!isNaN(parsed)) {
+        return Math.max(0, Math.min(30, parsed));
+      }
+    }
+  } catch {
+    // Fallback
+  }
+  return 0;
+}
+
+/**
+ * Applies wallpaper blur CSS variable to document root
+ */
+export function applyWallpaperBlur(blurPx: number): void {
+  const clamped = Math.max(0, Math.min(30, Math.round(blurPx)));
+  const root = document.documentElement;
+  if (clamped <= 0) {
+    root.style.removeProperty('--wallpaper-blur');
+  } else {
+    root.style.setProperty('--wallpaper-blur', `${clamped}px`);
+  }
+}
+
+/**
+ * Persists and immediately applies wallpaper blur
+ */
+export function setStoredWallpaperBlur(blurPx: number): void {
+  const clamped = Math.max(0, Math.min(30, Math.round(blurPx)));
+  try {
+    localStorage.setItem(WALLPAPER_BLUR_STORAGE_KEY, clamped.toString());
+  } catch (e) {
+    console.warn('Could not persist wallpaper blur to localStorage:', e);
+  }
+  applyWallpaperBlur(clamped);
 }
 
 /**

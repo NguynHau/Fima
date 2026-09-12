@@ -51,6 +51,7 @@ export interface UserSettings {
   nickname?: string;
   avatarDataUrl?: string;
   wallpaperDataUrl?: string;
+  wallpaperBlur?: number;
   uiTransparency?: number;
   createdAt: string;
   updatedAt: string;
