@@ -24,6 +24,7 @@ import {
   RotateCcw,
   Eye,
   Settings,
+  Palette,
 } from 'lucide-react';
 import { type UserSettings } from '../types';
 import { AIManager } from '../services/ai/AIManager';
@@ -41,8 +42,14 @@ import { CategoryManagementModal } from './CategoryManagementModal';
 import { CategoryIcon } from './CategoryIcon';
 import { LiquidGlassStudioLogo } from './LiquidGlassStudioLogo';
 import { ImageCropModal } from './ImageCropModal';
+import { SystemColorStudioModal } from './SystemColorStudioModal';
 import { optimizeWallpaper, setCachedWallpaper, removeCachedWallpaper } from '../utils/wallpaperManager';
 import { getStoredUiTransparency, setStoredUiTransparency, applyUiTransparency } from '../utils/uiAppearanceManager';
+import {
+  loadStoredSystemColors,
+  applySystemColorsToDocument,
+  type SystemColorsConfig,
+} from '../utils/systemColorManager';
 
 interface SettingsViewProps {
   onDataChanged: () => void;
@@ -137,6 +144,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [uiTransparency, setUiTransparency] = useState<number>(() => {
     return userSettings?.uiTransparency ?? getStoredUiTransparency(Boolean(activeWallpaper));
   });
+
+  // System Core Colors Studio state
+  const [isColorStudioOpen, setIsColorStudioOpen] = useState(false);
+  const [systemColors, setSystemColors] = useState<SystemColorsConfig>(() => loadStoredSystemColors());
+
+  useEffect(() => {
+    applySystemColorsToDocument(systemColors);
+  }, [systemColors]);
 
   useEffect(() => {
     if (userSettings?.uiTransparency !== undefined) {
@@ -487,7 +502,84 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </button>
       </div>
 
-      {/* 4. SECTION: HÌNH NỀN & ĐỘ TRONG GIAO DIỆN */}
+      {/* 4. SECTION: STUDIO MÀU SẮC HỆ THỐNG (5 MASTER COLORS) */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
+        <SettingsCardHeader
+          icon={Palette}
+          title="Studio Màu Sắc Hệ Thống"
+          description="Tùy chỉnh sắc độ của 5 gam màu chủ đạo: Đỏ (chi tiêu & nợ), Vàng (ví tiền), Xanh lá (thu nhập), Xanh dương (ngân hàng) và Tím hồng gradient. Hỗ trợ bộ theme sẵn, điều chỉnh chi tiết, reset xuất xưởng và sao chép mã CSS."
+        />
+
+        {/* 5 Master Colors Preview Bar */}
+        <div className="p-3 bg-[#1a1a1a] rounded-2xl border border-neutral-800 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-neutral-300">Dải 5 màu chủ đạo đang áp dụng:</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700">
+              {systemColors.activePresetId ? 'Bộ theme mẫu' : 'Tùy chỉnh riêng'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-5 gap-2 pt-0.5">
+            <div className="flex flex-col items-center gap-1 min-w-0">
+              <div
+                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
+                style={{ backgroundColor: systemColors.red.main }}
+                title="Đỏ (Chi tiêu)"
+              />
+              <span className="text-[10px] font-bold text-neutral-400 truncate">Đỏ</span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1 min-w-0">
+              <div
+                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
+                style={{ backgroundColor: systemColors.yellow.main }}
+                title="Vàng (Ví tiền)"
+              />
+              <span className="text-[10px] font-bold text-neutral-400 truncate">Vàng</span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1 min-w-0">
+              <div
+                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
+                style={{ backgroundColor: systemColors.green.main }}
+                title="Xanh lá (Thu nhập)"
+              />
+              <span className="text-[10px] font-bold text-neutral-400 truncate">Xanh lá</span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1 min-w-0">
+              <div
+                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
+                style={{ backgroundColor: systemColors.blue.main }}
+                title="Xanh dương (Ngân hàng)"
+              />
+              <span className="text-[10px] font-bold text-neutral-400 truncate">Xanh dương</span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1 min-w-0">
+              <div
+                className="w-full h-7 rounded-xl border border-white/10 shadow-xs transition-colors"
+                style={{
+                  background: `linear-gradient(to right, ${systemColors.gradient.start}, ${systemColors.gradient.end})`,
+                }}
+                title="Tím hồng Gradient"
+              />
+              <span className="text-[10px] font-bold text-neutral-400 truncate">Tím hồng</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsColorStudioOpen(true)}
+          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
+        >
+          <Palette size={16} className="text-neutral-300 shrink-0" />
+          <span>Chỉnh sửa màu sắc hệ thống</span>
+        </button>
+      </div>
+
+      {/* 5. SECTION: HÌNH NỀN & ĐỘ TRONG GIAO DIỆN */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
         <SettingsCardHeader
           icon={ImageIcon}
@@ -1035,6 +1127,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             setWallpaperCropSrc(null);
           }}
           onCropComplete={handleWallpaperCropComplete}
+        />
+      )}
+
+      {/* System Core Colors Studio Bottom Sheet Modal */}
+      {isColorStudioOpen && (
+        <SystemColorStudioModal
+          isOpen={isColorStudioOpen}
+          onClose={() => setIsColorStudioOpen(false)}
+          currentColorConfig={systemColors}
+          onColorConfigChange={(newCfg) => setSystemColors(newCfg)}
         />
       )}
     </div>

@@ -4,17 +4,59 @@
   --color-rose-50: #fff0f3;
   --color-rose-100: #ffe0e5;
   --color-rose-200: #ffb8c4;
-  --color-rose-300: #ff4d6d;
-  --color-rose-400: #ff073a;
-  --color-rose-500: #ff073a;
-  --color-rose-600: #e6002f;
+  --color-rose-300: var(--sys-red-light, #ff4d6d);
+  --color-rose-400: var(--sys-red, #ff073a);
+  --color-rose-500: var(--sys-red, #ff073a);
+  --color-rose-600: var(--sys-red-dark, #e6002f);
   --color-rose-700: #bf0027;
   --color-rose-800: #99001f;
   --color-rose-900: #7a0019;
   --color-rose-950: #42000d;
+
+  --color-amber-300: var(--sys-yellow-light, #fcd34d);
+  --color-amber-400: var(--sys-yellow-light, #fbbf24);
+  --color-amber-500: var(--sys-yellow, #f59e0b);
+  --color-amber-600: var(--sys-yellow-dark, #d97706);
+
+  --color-emerald-300: var(--sys-green-light, #6ee7b7);
+  --color-emerald-400: var(--sys-green-light, #34d399);
+  --color-emerald-500: var(--sys-green, #10b981);
+  --color-emerald-600: var(--sys-green-dark, #059669);
+
+  --color-sky-300: var(--sys-blue-light, #7dd3fc);
+  --color-sky-400: var(--sys-blue-light, #38bdf8);
+  --color-sky-500: var(--sys-blue, #0ea5e9);
+  --color-sky-600: var(--sys-blue-dark, #0284c7);
+
+  --color-purple-400: var(--sys-gradient-purple, #c084fc);
+  --color-purple-500: var(--sys-gradient-start, #a855f7);
+  --color-pink-400: var(--sys-gradient-pink, #f472b6);
+  --color-pink-500: var(--sys-gradient-end, #ec4899);
 }
 
 :root {
+  /* 5 System Master Colors & Dynamic Shading (Controlled by System Color Studio) */
+  --sys-red: #ff073a;
+  --sys-red-light: #ff4d6d;
+  --sys-red-dark: #e6002f;
+
+  --sys-yellow: #f59e0b;
+  --sys-yellow-light: #fbbf24;
+  --sys-yellow-dark: #d97706;
+
+  --sys-green: #10b981;
+  --sys-green-light: #34d399;
+  --sys-green-dark: #059669;
+
+  --sys-blue: #0ea5e9;
+  --sys-blue-light: #38bdf8;
+  --sys-blue-dark: #0284c7;
+
+  --sys-gradient-purple: #c084fc;
+  --sys-gradient-pink: #f472b6;
+  --sys-gradient-start: #a855f7;
+  --sys-gradient-end: #ec4899;
+
   --glass-bg-opacity: 0.00;
   --glass-blur: 5.0px;
   --glass-border-opacity: 0.09;
