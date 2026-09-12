@@ -131,9 +131,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/15 via-fuchsia-500/15 to-pink-500/15 border border-purple-500/30 flex items-center justify-center shadow-xs">
-                <Tag size={18} stroke="url(#category-modal-pink-purple-grad)" strokeWidth={2.3} />
-              </div>
+              <Tag size={22} stroke="url(#category-modal-pink-purple-grad)" strokeWidth={2.4} className="shrink-0" />
               <div>
                 <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
                   Quản lý danh mục
@@ -156,11 +154,11 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
 
         {/* Tabs: Danh mục chi & Danh mục thu */}
         <div className="px-4 pt-3 pb-1.5 shrink-0 bg-[#121212]">
-          <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-900 rounded-2xl border border-neutral-800">
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#1a1a1a] rounded-xl border border-neutral-800">
             <button
               type="button"
               onClick={() => setActiveTab('expense')}
-              className={`flex items-center justify-center gap-2 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-2 h-8 py-1.5 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                 activeTab === 'expense'
                   ? 'bg-rose-600 text-white shadow-md'
                   : 'text-neutral-400 hover:text-neutral-200'
@@ -179,7 +177,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
             <button
               type="button"
               onClick={() => setActiveTab('income')}
-              className={`flex items-center justify-center gap-2 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-2 h-8 py-1.5 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                 activeTab === 'income'
                   ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-neutral-400 hover:text-neutral-200'

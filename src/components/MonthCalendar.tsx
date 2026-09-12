@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, LayoutGroup } from 'motion/react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -361,94 +361,95 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         </div>
       </div>
 
-      {/* Filter & Month Navigation Container */}
+      {/* 2 & 3. Account Filter & Month Navigation Container */}
       <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm space-y-1.5">
-        {/* Account Filter Segmented Control (Tất cả | Ví | Bank) */}
-        <div
-          ref={accountControlRef}
-          onPointerDown={handleAccountPointerDown}
-          onPointerMove={handleAccountPointerMove}
-          onPointerUp={handleAccountPointerUp}
-          onPointerCancel={handleAccountPointerUp}
-          className="grid grid-cols-3 gap-2 relative touch-none select-none"
-        >
-          <button
-            type="button"
-            onClick={() => onAccountFilterChange('all')}
-            className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-              accountFilter === 'all'
-                ? 'text-black'
-                : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
-            }`}
+        <LayoutGroup id="month_calendar_account">
+          <div
+            ref={accountControlRef}
+            onPointerDown={handleAccountPointerDown}
+            onPointerMove={handleAccountPointerMove}
+            onPointerUp={handleAccountPointerUp}
+            onPointerCancel={handleAccountPointerUp}
+            className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
           >
-            {accountFilter === 'all' && (
-              <motion.div
-                layoutId="month_calendar_account_tab"
-                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                className="absolute inset-0 bg-white rounded-xl shadow-sm"
-              />
-            )}
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Layers
-                size={18}
-                className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
-              />
-              <span>Tất cả</span>
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => onAccountFilterChange('all')}
+              className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'all'
+                  ? 'text-black font-extrabold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              {accountFilter === 'all' && (
+                <motion.div
+                  layoutId="month_calendar_account_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Layers
+                  size={16}
+                  className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
+                />
+                <span>Tất cả</span>
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => onAccountFilterChange('wallet')}
-            className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-              accountFilter === 'wallet'
-                ? 'text-amber-300'
-                : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
-            }`}
-          >
-            {accountFilter === 'wallet' && (
-              <motion.div
-                layoutId="month_calendar_account_tab"
-                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                className="absolute inset-0 bg-amber-500/25 rounded-xl shadow-xs border border-amber-500/50"
-              />
-            )}
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Wallet
-                size={18}
-                className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
-              />
-              <span>Ví</span>
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => onAccountFilterChange('wallet')}
+              className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'wallet'
+                  ? 'text-amber-300 font-extrabold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              {accountFilter === 'wallet' && (
+                <motion.div
+                  layoutId="month_calendar_account_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-amber-500/25 rounded-lg shadow-xs border border-amber-500/40"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Wallet
+                  size={16}
+                  className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-400'}
+                />
+                <span>Ví</span>
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => onAccountFilterChange('bank')}
-            className={`relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-              accountFilter === 'bank'
-                ? 'text-cyan-300'
-                : 'text-neutral-300 hover:text-white hover:bg-[#1a1a1a]'
-            }`}
-          >
-            {accountFilter === 'bank' && (
-              <motion.div
-                layoutId="month_calendar_account_tab"
-                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                className="absolute inset-0 bg-cyan-500/25 rounded-xl shadow-xs border border-cyan-500/50"
-              />
-            )}
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Building2
-                size={18}
-                className={accountFilter === 'bank' ? 'text-cyan-300' : 'text-neutral-400'}
-              />
-              <span>Bank</span>
-            </span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => onAccountFilterChange('bank')}
+              className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'bank'
+                  ? 'text-cyan-300 font-extrabold'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              {accountFilter === 'bank' && (
+                <motion.div
+                  layoutId="month_calendar_account_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-cyan-500/25 rounded-lg shadow-xs border border-cyan-500/40"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Building2
+                  size={16}
+                  className={accountFilter === 'bank' ? 'text-cyan-400' : 'text-neutral-400'}
+                />
+                <span>Bank</span>
+              </span>
+            </button>
+          </div>
+        </LayoutGroup>
 
-        {/* Month Selector Bar */}
+        {/* Month Navigation */}
         <div className="flex items-center justify-between px-2 py-1">
           <button
             onClick={onPrevMonth}
@@ -561,10 +562,10 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                 className={`flex flex-col items-center justify-start p-1 transition-all relative cursor-pointer min-h-[78px] sm:min-h-[88px] ${
                   cell.isCurrentMonth
                     ? 'active:scale-95'
-                    : 'opacity-30 pointer-events-none'
+                    : 'opacity-25 hover:opacity-40 transition-opacity'
                 }`}
               >
-                {/* Top Section: Thumbnail or Placeholder */}
+                {/* Top Section: Thumbnail or Plus Placeholder */}
                 {cell.isCurrentMonth ? (
                   <CalendarCellThumbnail
                     count={cell.count}
@@ -572,7 +573,9 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                     transactions={cell.transactions}
                   />
                 ) : (
-                  <div className="w-10 h-10 sm:w-11 sm:h-11 shrink-0" />
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[14px] bg-[#1a1a1a] border border-neutral-700/60 flex items-center justify-center shrink-0 shadow-xs">
+                    <Plus size={18} className="text-neutral-400" strokeWidth={2.2} />
+                  </div>
                 )}
 
                 {/* Middle Section: Day Number (Today's number changes color, no dot) */}
@@ -585,7 +588,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                         ? 'text-purple-300 font-extrabold'
                         : cell.isCurrentMonth
                         ? 'text-white font-semibold'
-                        : 'text-neutral-600 font-medium'
+                        : 'text-neutral-500 font-medium'
                     }`}
                   >
                     {cell.dayNum}

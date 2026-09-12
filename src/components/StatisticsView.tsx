@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, LayoutGroup } from 'motion/react';
+import { SegmentedTabs, type TabItem } from './SegmentedTabs';
 import {
   type Transaction,
   type BalancesSummary,
@@ -364,13 +365,11 @@ const TransactionGridCard: React.FC<{
         </div>
       )}
 
-      {/* Sleek Frosted Ultra-Transparent Pill Badge for Amount with +/- signs */}
+      {/* Sleek Frosted Pill Badge for Amount with +/- signs, black background and colored text without colored borders */}
       <div className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 z-10 pointer-events-none">
         <div
-          className={`bg-black/60 backdrop-blur-md px-2 sm:px-2.5 py-0.5 rounded-full font-medium text-[10px] sm:text-xs tracking-tight border font-mono shadow-xs ${
-            tx.type === 'expense'
-              ? 'border-rose-500/30 text-rose-300'
-              : 'border-emerald-500/30 text-emerald-300'
+          className={`bg-black/60 backdrop-blur-md px-2 sm:px-2.5 py-0.5 rounded-full font-medium text-[10px] sm:text-xs tracking-tight font-mono shadow-xs ${
+            tx.type === 'expense' ? 'text-rose-300' : 'text-emerald-300'
           }`}
         >
           {badgeAmount}
@@ -1375,117 +1374,121 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       {/* 2 & 3. FILTERS (Account & Time) */}
       <div className="bg-[#121212] rounded-2xl p-2.5 border border-neutral-800 shadow-sm space-y-2.5">
         {/* Account Filter */}
-        <div
-          ref={accountControlRef}
-          onPointerDown={handleAccountPointerDown}
-          onPointerMove={handleAccountPointerMove}
-          onPointerUp={handleAccountPointerUp}
-          onPointerCancel={handleAccountPointerUp}
-          className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
-        >
-          <button
-            type="button"
-            onClick={() => setAccountFilter('all')}
-            className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-              accountFilter === 'all'
-                ? 'text-black font-extrabold'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
+        <LayoutGroup id="stats_account_filter_group">
+          <div
+            ref={accountControlRef}
+            onPointerDown={handleAccountPointerDown}
+            onPointerMove={handleAccountPointerMove}
+            onPointerUp={handleAccountPointerUp}
+            onPointerCancel={handleAccountPointerUp}
+            className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
           >
-            {accountFilter === 'all' && (
-              <motion.div
-                layoutId="stats_account_filter_tab"
-                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                className="absolute inset-0 bg-white rounded-lg shadow-xs"
-              />
-            )}
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Layers size={16} />
-              <span>Tất cả</span>
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setAccountFilter('wallet')}
-            className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-              accountFilter === 'wallet'
-                ? 'text-amber-300 font-extrabold'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            {accountFilter === 'wallet' && (
-              <motion.div
-                layoutId="stats_account_filter_tab"
-                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-lg shadow-xs"
-              />
-            )}
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Wallet size={16} className="text-amber-400" />
-              <span>Ví</span>
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setAccountFilter('bank')}
-            className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-              accountFilter === 'bank'
-                ? 'text-cyan-300 font-extrabold'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            {accountFilter === 'bank' && (
-              <motion.div
-                layoutId="stats_account_filter_tab"
-                transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                className="absolute inset-0 bg-cyan-500/25 border border-cyan-500/40 rounded-lg shadow-xs"
-              />
-            )}
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Building2 size={16} className="text-cyan-400" />
-              <span>Bank</span>
-            </span>
-          </button>
-        </div>
-
-        {/* Time Filter */}
-        <div
-          ref={timeControlRef}
-          onPointerDown={handleTimePointerDown}
-          onPointerMove={handleTimePointerMove}
-          onPointerUp={handleTimePointerUp}
-          onPointerCancel={handleTimePointerUp}
-          className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
-        >
-          {(
-            [
-              { id: 'week', label: 'Tuần' },
-              { id: 'month', label: 'Tháng' },
-              { id: 'year', label: 'Năm' },
-              { id: 'custom', label: 'Tùy chọn' },
-            ] as const
-          ).map((tab) => (
             <button
-              key={tab.id}
               type="button"
-              onClick={() => setTimeFilter(tab.id)}
-              className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
-                timeFilter === tab.id
+              onClick={() => setAccountFilter('all')}
+              className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'all'
                   ? 'text-black font-extrabold'
-                  : 'text-neutral-300 hover:text-white'
+                  : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              {timeFilter === tab.id && (
+              {accountFilter === 'all' && (
                 <motion.div
-                  layoutId="stats_time_filter_tab"
+                  layoutId="stats_account_filter_tab"
                   transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   className="absolute inset-0 bg-white rounded-lg shadow-xs"
                 />
               )}
-              <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Layers size={16} />
+                <span>Tất cả</span>
+              </span>
             </button>
-          ))}
-        </div>
+            <button
+              type="button"
+              onClick={() => setAccountFilter('wallet')}
+              className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'wallet'
+                  ? 'text-amber-300 font-extrabold'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              {accountFilter === 'wallet' && (
+                <motion.div
+                  layoutId="stats_account_filter_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-lg shadow-xs"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Wallet size={16} className="text-amber-400" />
+                <span>Ví</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountFilter('bank')}
+              className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                accountFilter === 'bank'
+                  ? 'text-cyan-300 font-extrabold'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              {accountFilter === 'bank' && (
+                <motion.div
+                  layoutId="stats_account_filter_tab"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute inset-0 bg-cyan-500/25 border border-cyan-500/40 rounded-lg shadow-xs"
+                />
+              )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <Building2 size={16} className="text-cyan-400" />
+                <span>Bank</span>
+              </span>
+            </button>
+          </div>
+        </LayoutGroup>
+
+        {/* Time Filter */}
+        <LayoutGroup id="stats_time_filter_group">
+          <div
+            ref={timeControlRef}
+            onPointerDown={handleTimePointerDown}
+            onPointerMove={handleTimePointerMove}
+            onPointerUp={handleTimePointerUp}
+            onPointerCancel={handleTimePointerUp}
+            className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
+          >
+            {(
+              [
+                { id: 'week', label: 'Tuần' },
+                { id: 'month', label: 'Tháng' },
+                { id: 'year', label: 'Năm' },
+                { id: 'custom', label: 'Tùy chọn' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setTimeFilter(tab.id)}
+                className={`relative flex-1 h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer flex items-center justify-center ${
+                  timeFilter === tab.id
+                    ? 'text-black font-extrabold'
+                    : 'text-neutral-300 hover:text-white'
+                }`}
+              >
+                {timeFilter === tab.id && (
+                  <motion.div
+                    layoutId="stats_time_filter_tab"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </LayoutGroup>
 
         {/* Time Period Navigation Controls */}
         {timeFilter !== 'custom' ? (
@@ -1521,30 +1524,31 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             </button>
           </div>
         ) : (
-          /* Custom Date Inputs - Compact and responsive on mobile to prevent overflow */
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1 px-0.5 max-w-full overflow-hidden">
-            <div className="min-w-0">
-              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 truncate">
-                Từ ngày
-              </label>
+          /* Custom Date Inputs - Compact & smaller size */
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-1 px-1">
+            <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
+                Từ
+              </span>
               <input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
+                className="bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0 w-[108px] sm:w-[120px]"
               />
-            </div>
-            <div className="min-w-0">
-              <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 truncate">
-                Đến ngày
-              </label>
+            </label>
+            <span className="text-neutral-500 text-xs font-bold shrink-0">→</span>
+            <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
+                Đến
+              </span>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
+                className="bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0 w-[108px] sm:w-[120px]"
               />
-            </div>
+            </label>
           </div>
         )}
       </div>
@@ -1673,7 +1677,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 type="monotone"
                                 dataKey="expense"
                                 name="Chi tiêu"
-                                stroke="#f43f5e"
+                                stroke="#ff073a"
                                 strokeWidth={2.5}
                                 dot={false}
                                 activeDot={{ r: 5 }}
@@ -2076,9 +2080,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                           <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
                             <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-[#f43f5e]" /> Bạn nợ người khác
+                              <span className="w-2 h-2 rounded-full bg-[#ff073a]" /> Bạn nợ người khác
                             </div>
-                            <div className="text-sm font-black text-[#f43f5e] font-mono mt-1">
+                            <div className="text-sm font-black text-[#ff073a] font-mono mt-1">
                               {formatVND(debtStats.totalBorrowRemaining)}
                             </div>
                             <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
@@ -2102,7 +2106,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 title="Cho vay"
                               />
                               <div
-                                className="h-full bg-[#f43f5e]"
+                                className="h-full bg-[#ff073a]"
                                 style={{ width: `${debtStats.borrowRatio}%` }}
                                 title="Đi vay"
                               />
@@ -2167,143 +2171,53 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 </button>
               </div>
 
-              {/* Account Filter: Tất cả - Ví - Bank */}
-              <div
-                className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
-              >
-                <button
-                  type="button"
-                  onClick={() => setTxListAccountFilter('all')}
-                  className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                    txListAccountFilter === 'all'
-                      ? 'text-black font-extrabold'
-                      : 'text-neutral-400 hover:text-neutral-200'
-                  }`}
-                >
-                  {txListAccountFilter === 'all' && (
-                    <motion.div
-                      layoutId="tx_sheet_account_filter_tab"
-                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                      className="absolute inset-0 bg-white rounded-lg shadow-xs"
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <Layers size={16} />
-                    <span>Tất cả</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTxListAccountFilter('wallet')}
-                  className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                    txListAccountFilter === 'wallet'
-                      ? 'text-amber-300 font-extrabold'
-                      : 'text-neutral-400 hover:text-neutral-200'
-                  }`}
-                >
-                  {txListAccountFilter === 'wallet' && (
-                    <motion.div
-                      layoutId="tx_sheet_account_filter_tab"
-                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                      className="absolute inset-0 bg-amber-500/25 border border-amber-500/40 rounded-lg shadow-xs"
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <Wallet size={16} className="text-amber-400" />
-                    <span>Ví</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTxListAccountFilter('bank')}
-                  className={`relative py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                    txListAccountFilter === 'bank'
-                      ? 'text-cyan-300 font-extrabold'
-                      : 'text-neutral-400 hover:text-neutral-200'
-                  }`}
-                >
-                  {txListAccountFilter === 'bank' && (
-                    <motion.div
-                      layoutId="tx_sheet_account_filter_tab"
-                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                      className="absolute inset-0 bg-cyan-500/25 border border-cyan-500/40 rounded-lg shadow-xs"
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <Building2 size={16} className="text-cyan-400" />
-                    <span>Bank</span>
-                  </span>
-                </button>
-              </div>
+              {/* 1. Account Filter: Tất cả - Ví - Bank */}
+              <SegmentedTabs<CalendarAccountFilter>
+                layoutId="tx_sheet_account_filter"
+                activeId={txListAccountFilter}
+                onChange={setTxListAccountFilter}
+                tabs={[
+                  {
+                    id: 'all',
+                    label: 'Tất cả',
+                    icon: Layers,
+                    activeBgClassName: 'bg-white',
+                    activeTextColor: 'text-black font-extrabold',
+                    activeIconColor: 'text-black',
+                  },
+                  {
+                    id: 'wallet',
+                    label: 'Ví',
+                    icon: Wallet,
+                    activeBgClassName: 'bg-amber-500/25 border border-amber-500/40',
+                    activeTextColor: 'text-amber-300 font-extrabold',
+                    activeIconColor: 'text-amber-400',
+                  },
+                  {
+                    id: 'bank',
+                    label: 'Bank',
+                    icon: Building2,
+                    activeBgClassName: 'bg-cyan-500/25 border border-cyan-500/40',
+                    activeTextColor: 'text-cyan-300 font-extrabold',
+                    activeIconColor: 'text-cyan-400',
+                  },
+                ]}
+              />
 
-              {/* Time Filter: Tuần - Tháng - Năm - Tùy chọn */}
-              <div
-                className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
-              >
-                {(
-                  [
-                    { id: 'week', label: 'Tuần' },
-                    { id: 'month', label: 'Tháng' },
-                    { id: 'year', label: 'Năm' },
-                    { id: 'custom', label: 'Tùy chọn' },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setTxListTimeFilter(tab.id)}
-                    className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
-                      txListTimeFilter === tab.id
-                        ? 'text-black font-extrabold'
-                        : 'text-neutral-300 hover:text-white'
-                    }`}
-                  >
-                    {txListTimeFilter === tab.id && (
-                      <motion.div
-                        layoutId="tx_sheet_time_filter_tab"
-                        transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                        className="absolute inset-0 bg-white rounded-lg shadow-xs"
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
-                  </button>
-                ))}
-              </div>
+              {/* 2. Time Filter: Tuần - Tháng - Năm - Tùy chọn */}
+              <SegmentedTabs<'week' | 'month' | 'year' | 'custom'>
+                layoutId="tx_sheet_time_filter"
+                activeId={txListTimeFilter}
+                onChange={setTxListTimeFilter}
+                tabs={[
+                  { id: 'week', label: 'Tuần' },
+                  { id: 'month', label: 'Tháng' },
+                  { id: 'year', label: 'Năm' },
+                  { id: 'custom', label: 'Tùy chọn' },
+                ]}
+              />
 
-              {/* Type Filter: Tất cả - Thu - Chi */}
-              <div
-                className="flex items-center justify-between gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 relative touch-none select-none"
-              >
-                {(
-                  [
-                    { id: 'all', label: 'Tất cả' },
-                    { id: 'income', label: 'Thu' },
-                    { id: 'expense', label: 'Chi' },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setTxListFilter(tab.id)}
-                    className={`relative flex-1 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
-                      txListFilter === tab.id
-                        ? 'text-black font-extrabold'
-                        : 'text-neutral-300 hover:text-white'
-                    }`}
-                  >
-                    {txListFilter === tab.id && (
-                      <motion.div
-                        layoutId="tx_sheet_type_filter_tab"
-                        transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                        className="absolute inset-0 bg-white rounded-lg shadow-xs"
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center justify-center">{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Time Period Navigation (Tháng / Tuần / Năm / Tùy chọn) */}
+              {/* 3. Time Period Navigation (Tháng / Tuần / Năm / Tùy chọn) - Swapped before Type Filter */}
               {txListTimeFilter !== 'custom' ? (
                 <div className="flex items-center justify-between px-2 pt-0.5">
                   <button
@@ -2340,31 +2254,65 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1 px-0.5 max-w-full overflow-hidden">
-                  <div className="min-w-0">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 truncate">
-                      Từ ngày
-                    </label>
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-1 px-1">
+                  <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
+                      Từ
+                    </span>
                     <input
                       type="date"
                       value={txListCustomStartDate}
                       onChange={(e) => setTxListCustomStartDate(e.target.value)}
-                      className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
+                      className="bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0 w-[108px] sm:w-[120px]"
                     />
-                  </div>
-                  <div className="min-w-0">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1 truncate">
-                      Đến ngày
-                    </label>
+                  </label>
+                  <span className="text-neutral-500 text-xs font-bold shrink-0">→</span>
+                  <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
+                      Đến
+                    </span>
                     <input
                       type="date"
                       value={txListCustomEndDate}
                       onChange={(e) => setTxListCustomEndDate(e.target.value)}
-                      className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-800 rounded-xl px-2 py-1.5 text-[11px] sm:text-xs text-white outline-none focus:border-neutral-500 font-mono box-border block truncate"
+                      className="bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0 w-[108px] sm:w-[120px]"
                     />
-                  </div>
+                  </label>
                 </div>
               )}
+
+              {/* 4. Type Filter: Tất cả - Thu - Chi */}
+              <SegmentedTabs<'all' | 'income' | 'expense'>
+                layoutId="tx_sheet_type_filter"
+                activeId={txListFilter}
+                onChange={setTxListFilter}
+                tabs={[
+                  {
+                    id: 'all',
+                    label: 'Tất cả',
+                    icon: Layers,
+                    activeBgClassName: 'bg-white',
+                    activeTextColor: 'text-black font-extrabold',
+                    activeIconColor: 'text-black',
+                  },
+                  {
+                    id: 'income',
+                    label: 'Thu',
+                    icon: TrendingUp,
+                    activeBgClassName: 'bg-emerald-500/25 border border-emerald-500/40',
+                    activeTextColor: 'text-emerald-300 font-extrabold',
+                    activeIconColor: 'text-emerald-400',
+                  },
+                  {
+                    id: 'expense',
+                    label: 'Chi',
+                    icon: TrendingDown,
+                    activeBgClassName: 'bg-rose-500/25 border border-rose-500/40',
+                    activeTextColor: 'text-rose-300 font-extrabold',
+                    activeIconColor: 'text-rose-400',
+                  },
+                ]}
+              />
             </div>
 
             {/* 2. SCROLLABLE TRANSACTION 3-COLUMN GRID */}

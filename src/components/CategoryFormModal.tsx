@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Check, Search } from 'lucide-react';
+import { X, Check, Search, Edit2, Plus } from 'lucide-react';
 import { type Category, type TransactionType } from '../types';
 import { CATEGORY_ICON_DEFINITIONS, DEFAULT_CATEGORY_PALETTE, CATEGORY_ICON_MAP } from '../utils/categoryIcons';
 import { createCategory, updateCategory } from '../services/categoryService';
@@ -127,9 +127,22 @@ export const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 shrink-0">
-          <h2 className="text-lg font-bold text-white">
-            {isEditing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}
-          </h2>
+          <div className="flex items-center gap-2.5">
+            {SelectedIconComponent ? (
+              <SelectedIconComponent
+                size={22}
+                color={color}
+                className="shrink-0"
+              />
+            ) : isEditing ? (
+              <Edit2 size={20} className="text-amber-400 shrink-0" />
+            ) : (
+              <Plus size={20} className="text-emerald-400 shrink-0" />
+            )}
+            <h2 className="text-base sm:text-lg font-bold text-white">
+              {isEditing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}
+            </h2>
+          </div>
           <button
             type="button"
             onClick={onClose}

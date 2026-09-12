@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+@theme {
+  --color-rose-50: #fff0f3;
+  --color-rose-100: #ffe0e5;
+  --color-rose-200: #ffb8c4;
+  --color-rose-300: #ff4d6d;
+  --color-rose-400: #ff073a;
+  --color-rose-500: #ff073a;
+  --color-rose-600: #e6002f;
+  --color-rose-700: #bf0027;
+  --color-rose-800: #99001f;
+  --color-rose-900: #7a0019;
+  --color-rose-950: #42000d;
+}
+
 :root {
   --glass-bg-opacity: 0.00;
   --glass-blur: 5.0px;
@@ -92,14 +106,14 @@ body[data-ui-transparency="active"] main [class*="bg-white/10"] {
 }
 
 body[data-ui-transparency="active"] main [class*="bg-rose-500/10"] {
-  background-color: rgba(244, 63, 94, calc(var(--ui-card-alpha, 1) * 0.12)) !important;
+  background-color: rgba(255, 7, 58, calc(var(--ui-card-alpha, 1) * 0.12)) !important;
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
-  border-color: rgba(244, 63, 94, calc(var(--ui-card-alpha, 1) * 0.28)) !important;
+  border-color: rgba(255, 7, 58, calc(var(--ui-card-alpha, 1) * 0.28)) !important;
 }
 
 body[data-ui-transparency="active"] main [class*="bg-rose-500/20"] {
-  background-color: rgba(244, 63, 94, calc(var(--ui-card-alpha, 1) * 0.22)) !important;
+  background-color: rgba(255, 7, 58, calc(var(--ui-card-alpha, 1) * 0.22)) !important;
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
 }

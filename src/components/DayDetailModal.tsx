@@ -875,15 +875,15 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               onPointerMove={handleAccountPointerMove}
               onPointerUp={handleAccountPointerUp}
               onPointerCancel={handleAccountPointerUp}
-              className="bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 grid grid-cols-3 gap-1.5 relative touch-none select-none"
+              className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
             >
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('all')}
-                className={`relative py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                   accountFilter === 'all'
                     ? 'text-black font-extrabold'
-                    : 'text-neutral-300 hover:text-white'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 {accountFilter === 'all' && (
@@ -893,9 +893,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                     className="absolute inset-0 bg-white rounded-lg shadow-xs"
                   />
                 )}
-                <span className="relative z-10 flex items-center justify-center gap-1.5">
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   <Layers
-                    size={14}
+                    size={16}
                     className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
                   />
                   <span>Tất cả</span>
@@ -905,23 +905,23 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('wallet')}
-                className={`relative py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                   accountFilter === 'wallet'
                     ? 'text-amber-300 font-extrabold'
-                    : 'text-neutral-300 hover:text-white'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 {accountFilter === 'wallet' && (
                   <motion.div
                     layoutId="day_detail_account_tab"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute inset-0 bg-amber-500/25 rounded-lg shadow-xs border border-amber-500/50"
+                    className="absolute inset-0 bg-amber-500/25 rounded-lg shadow-xs border border-amber-500/40"
                   />
                 )}
-                <span className="relative z-10 flex items-center justify-center gap-1.5">
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   <Wallet
-                    size={14}
-                    className={accountFilter === 'wallet' ? 'text-amber-300' : 'text-neutral-400'}
+                    size={16}
+                    className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-400'}
                   />
                   <span>Ví</span>
                 </span>
@@ -930,23 +930,23 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               <button
                 type="button"
                 onClick={() => onAccountFilterChange('bank')}
-                className={`relative py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                   accountFilter === 'bank'
                     ? 'text-cyan-300 font-extrabold'
-                    : 'text-neutral-300 hover:text-white'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
                 {accountFilter === 'bank' && (
                   <motion.div
                     layoutId="day_detail_account_tab"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                    className="absolute inset-0 bg-cyan-500/25 rounded-lg shadow-xs border border-cyan-500/50"
+                    className="absolute inset-0 bg-cyan-500/25 rounded-lg shadow-xs border border-cyan-500/40"
                   />
                 )}
-                <span className="relative z-10 flex items-center justify-center gap-1.5">
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   <Building2
-                    size={14}
-                    className={accountFilter === 'bank' ? 'text-cyan-300' : 'text-neutral-400'}
+                    size={16}
+                    className={accountFilter === 'bank' ? 'text-cyan-400' : 'text-neutral-400'}
                   />
                   <span>Bank</span>
                 </span>

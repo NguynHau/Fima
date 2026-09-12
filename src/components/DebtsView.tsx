@@ -277,10 +277,10 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
         {/* Filter Buttons */}
         <div className="flex flex-col sm:flex-row gap-2">
           {/* Type Filter */}
-          <div className="flex gap-1 bg-[#121212] p-1 rounded-xl border border-neutral-800/80 self-start">
+          <div className="flex gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 self-start">
             <button
               onClick={() => setTypeFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 h-8 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
                 typeFilter === 'all' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
@@ -288,7 +288,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
             </button>
             <button
               onClick={() => setTypeFilter('lend')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 h-8 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
                 typeFilter === 'lend' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
@@ -296,7 +296,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
             </button>
             <button
               onClick={() => setTypeFilter('borrow')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 h-8 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
                 typeFilter === 'borrow' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
@@ -305,10 +305,10 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
           </div>
 
           {/* Status Filter */}
-          <div className="flex gap-1 bg-[#121212] p-1 rounded-xl border border-neutral-800/80 self-start overflow-x-auto max-w-full">
+          <div className="flex gap-1.5 bg-[#1a1a1a] p-1 rounded-xl border border-neutral-800 self-start overflow-x-auto max-w-full">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2.5 h-8 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center justify-center ${
                 statusFilter === 'all' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
@@ -316,7 +316,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
             </button>
             <button
               onClick={() => setStatusFilter('unpaid')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2.5 h-8 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center justify-center ${
                 statusFilter === 'unpaid' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
@@ -324,7 +324,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
             </button>
             <button
               onClick={() => setStatusFilter('partially_paid')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2.5 h-8 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center justify-center ${
                 statusFilter === 'partially_paid' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
@@ -332,7 +332,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
             </button>
             <button
               onClick={() => setStatusFilter('paid')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-2.5 h-8 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center justify-center ${
                 statusFilter === 'paid' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
