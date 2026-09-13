@@ -16,8 +16,6 @@ import {
   Plus,
   Info,
   ChevronRight,
-  Eye,
-  EyeOff,
   Palette,
 } from 'lucide-react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'motion/react';
@@ -70,7 +68,6 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
   const [customSubTab, setCustomSubTab] = useState<'island' | 'droplet' | 'export'>('island');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [showControls, setShowControls] = useState(true);
 
   // Bottom sheet drag gesture controller with glowing handle
   const sheetDrag = useBottomSheetDrag({
@@ -455,14 +452,14 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
             </div>
           </div>
 
-          {/* CONTAINER 1: CHỦ ĐỀ & TÙY CHỈNH THEO DESIGN SYSTEM */}
-          <div className="pt-1 pb-1">
+          {/* CONTAINER 1: BỘ THEME & TÙY CHỈNH THEO DESIGN SYSTEM */}
+          <div className="pt-0.5">
             <SegmentedTabs
               layoutId="liquid_studio_main_tab"
               activeId={mainTab}
               onChange={(id) => setMainTab(id as 'presets' | 'custom')}
               tabs={[
-                { id: 'presets', label: 'Chủ đề', icon: Sparkles },
+                { id: 'presets', label: 'Bộ theme', icon: Palette },
                 { id: 'custom', label: 'Tùy chỉnh', icon: Sliders },
               ]}
             />
@@ -479,7 +476,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
               transition={{ type: 'spring', stiffness: 500, damping: 38 }}
               className="overflow-hidden"
             >
-              <div className="px-4 pb-2.5 space-y-2">
+              <div className="pt-1.5 pb-0.5">
                 <SegmentedTabs
                   layoutId="liquid_studio_custom_subtab"
                   activeId={customSubTab}
@@ -490,36 +487,10 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
                     { id: 'export', label: 'Mã CSS', icon: Copy },
                   ]}
                 />
-
-                <div className="flex items-center justify-end px-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowControls((prev) => !prev)}
-                    className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                    title={showControls ? 'Thu gọn bảng để quan sát rộng hơn' : 'Hiện bảng điều khiển'}
-                  >
-                    {showControls ? <EyeOff size={12} /> : <Eye size={12} />}
-                    <span>{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
-                  </button>
-                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Khi ở Chủ đề: Hàng tinh gọn với nút ẩn/hiện bảng */}
-        {mainTab === 'presets' && (
-          <div className="flex items-center justify-between px-4 pb-2 text-[11px] text-neutral-400">
-            <span>Chọn mức độ kính ({PRESET_INFOS.length} cấp độ):</span>
-            <button
-              onClick={() => setShowControls((prev) => !prev)}
-              className="px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs flex items-center gap-1 cursor-pointer"
-            >
-              {showControls ? <EyeOff size={12} /> : <Eye size={12} />}
-              <span>{showControls ? 'Ẩn bảng' : 'Hiện bảng'}</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Toast feedback */}
@@ -534,11 +505,7 @@ export const LiquidGlassStudioView: React.FC<LiquidGlassStudioViewProps> = ({
       {/* 2. SCROLLABLE CONTROLS AREA                         */}
       {/* DOES NOT MOVE DUMMY ISLAND; HAS LARGE PADDING BOTTOM */}
       {/* ---------------------------------------------------- */}
-      <div
-        className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-[220px] transition-opacity duration-200 ${
-          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-      >
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-[220px]">
         {/* SUBTAB 1: PRESETS THEO MỨC ĐỘ */}
         {mainTab === 'presets' && (
           <div className="space-y-3 max-w-xl mx-auto">
