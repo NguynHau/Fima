@@ -11,6 +11,7 @@ import {
   X,
   Camera,
   PiggyBank,
+  ReceiptText,
 } from 'lucide-react';
 import { type UserSettings, type Transaction, type BalancesSummary } from '../types';
 import { updateUserSettings } from '../db/database';
@@ -18,6 +19,7 @@ import { formatVND, formatDateVN, getTodayString, parseAmountInput } from '../ut
 import { t } from '../utils/translations';
 import { ImageCropModal } from './ImageCropModal';
 import { BudgetSettingsModal } from './BudgetSettingsModal';
+import { ExpenseReviewModal } from './ExpenseReviewModal';
 
 interface ProfileViewProps {
   userSettings: UserSettings | null;
@@ -40,6 +42,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   // Budget & Savings modal state
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+
+  // Expense & Budget Review modal state
+  const [isExpenseReviewOpen, setIsExpenseReviewOpen] = useState(false);
 
   // Initial Balance Edit State
   const [showEditBalanceModal, setShowEditBalanceModal] = useState(false);
@@ -482,7 +487,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </button>
       </div>
 
-      {/* 4. THẺ CÀI ĐẶT SỐ DƯ BAN ĐẦU (NẰM PHÍA DƯỚI CÙNG, THIẾT KẾ GIỐNG TAB CÀI ĐẶT, KHÔNG HIỆN SỐ BÊN NGOÀI) */}
+      {/* 4. THẺ XEM LẠI CHI TIÊU (LỊCH SỬ KỲ HẠN, NẰM NGAY DƯỚI CÀI ĐẶT BUDGET) */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <ReceiptText
+              size={18}
+              className="shrink-0"
+              stroke="url(#profile-pink-purple-grad)"
+              strokeWidth={2.3}
+            />
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-neutral-200">
+              {t('budget.review_title')}
+            </h3>
+          </div>
+          <p className="text-xs text-neutral-400 leading-relaxed font-medium">
+            {t('budget.review_subtitle')}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsExpenseReviewOpen(true)}
+          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
+        >
+          <ReceiptText size={16} className="text-neutral-400 shrink-0" />
+          <span>{t('budget.review_btn')}</span>
+        </button>
+      </div>
+
+      {/* 5. THẺ CÀI ĐẶT SỐ DƯ BAN ĐẦU (NẰM PHÍA DƯỚI CÙNG, THIẾT KẾ GIỐNG TAB CÀI ĐẶT, KHÔNG HIỆN SỐ BÊN NGOÀI) */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
@@ -610,6 +644,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Expense Review Modal */}
+      <ExpenseReviewModal
+        isOpen={isExpenseReviewOpen}
+        onClose={() => setIsExpenseReviewOpen(false)}
+      />
 
       {/* Image Crop Modal for Avatar */}
       {cropModalImageSrc && (

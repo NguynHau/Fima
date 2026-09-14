@@ -48,7 +48,7 @@ async function startServer() {
   }: ExecuteGeminiOptions) {
     const startMs = Date.now();
     const requestId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-    let modelAttempted = 'gemini-3.1-flash-lite';
+    let modelAttempted = 'gemini-3.8-flash';
     let modelSucceeded = '';
 
     try {
@@ -56,17 +56,26 @@ async function startServer() {
       try {
         response = await ai.models.generateContent({
           ...params,
-          model: 'gemini-3.1-flash-lite',
-        });
-        modelSucceeded = 'gemini-3.1-flash-lite';
-      } catch (primaryErr: any) {
-        console.warn('gemini-3.1-flash-lite failed, falling back to gemini-3.8-flash:', primaryErr?.message || primaryErr);
-        modelAttempted = 'gemini-3.8-flash';
-        response = await ai.models.generateContent({
-          ...params,
           model: 'gemini-3.8-flash',
         });
         modelSucceeded = 'gemini-3.8-flash';
+      } catch (primaryErr: any) {
+        // Fallback to gemini-2.5-flash or gemini-3.1-flash-lite without spamming loud warnings
+        modelAttempted = 'gemini-2.5-flash';
+        try {
+          response = await ai.models.generateContent({
+            ...params,
+            model: 'gemini-2.5-flash',
+          });
+          modelSucceeded = 'gemini-2.5-flash';
+        } catch {
+          modelAttempted = 'gemini-3.1-flash-lite';
+          response = await ai.models.generateContent({
+            ...params,
+            model: 'gemini-3.1-flash-lite',
+          });
+          modelSucceeded = 'gemini-3.1-flash-lite';
+        }
       }
 
       const latencyMs = Date.now() - startMs;
@@ -151,21 +160,10 @@ async function startServer() {
   let cachedRateTime: number | null = null;
   const CACHE_TTL = 3600000; // 1 hour
 
-  // API endpoint to fetch USD to VND exchange rate via Gemini with search tools
+  // API endpoint to fetch USD to VND exchange rate via open reliable API / fallback
   app.get('/api/exchange-rate', async (req, res) => {
     const requestTime = Date.now();
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        return res.json({
-          success: false,
-          rate: 25400, // Safe default fallback
-          cached: true,
-          updatedAt: new Date(requestTime).toISOString(),
-          message: 'GEMINI_API_KEY not configured. Using default rate.',
-        });
-      }
-
       if (cachedRate && cachedRateTime && (requestTime - cachedRateTime < CACHE_TTL)) {
         return res.json({
           success: true,
@@ -175,59 +173,40 @@ async function startServer() {
         });
       }
 
-      const ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          },
-        },
-      });
-
-      const prompt = `Bạn là trợ lý tài chính thông minh. Hãy tra cứu tỷ giá quy đổi 1 USD sang VND mới nhất hiện tại. Trả về kết quả dưới dạng số nguyên (ví dụ: 25450 hoặc 25520). Nếu không thể tìm thấy tỷ giá thực tế hôm nay, hãy trả về tỷ giá tham chiếu gần nhất khoảng 25400.`;
-
-      const response = await executeGeminiWithTracking({
-        ai,
-        params: {
-          contents: [{ text: prompt }],
-          config: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                rate: { type: Type.NUMBER, description: 'Tỷ giá quy đổi 1 USD sang VND, ví dụ 25450' },
-              },
-              required: ['rate'],
-            },
-            tools: [{ googleSearch: {} }],
-          },
-        },
-        endpoint: '/api/exchange-rate',
-        feature: 'text',
-      });
-
-      let rate = 25400; // default
+      // 1. Try free public exchange rate API first (saves Gemini quota, instant response)
       try {
-        const parsed = JSON.parse(response.text || '{}');
-        if (typeof parsed.rate === 'number' && parsed.rate > 15000 && parsed.rate < 40000) {
-          rate = parsed.rate;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const openRes = await fetch('https://open.er-api.com/v6/latest/USD', { signal: controller.signal });
+        clearTimeout(timeout);
+        if (openRes.ok) {
+          const openData: any = await openRes.json();
+          const vndRate = openData?.rates?.VND;
+          if (typeof vndRate === 'number' && vndRate > 15000 && vndRate < 40000) {
+            cachedRate = Math.round(vndRate);
+            cachedRateTime = requestTime;
+            return res.json({
+              success: true,
+              rate: cachedRate,
+              cached: false,
+              updatedAt: new Date(requestTime).toISOString(),
+            });
+          }
         }
-      } catch (err) {
-        console.warn('Failed to parse exchange rate JSON:', err);
+      } catch {
+        // Continue to fallback
       }
 
-      cachedRate = rate;
+      // 2. Fallback to cached or standard market rate 25,450
+      cachedRate = cachedRate || 25450;
       cachedRateTime = requestTime;
-
       return res.json({
         success: true,
-        rate,
-        cached: false,
+        rate: cachedRate,
+        cached: true,
         updatedAt: new Date(requestTime).toISOString(),
       });
-    } catch (error: any) {
-      console.warn('Exchange rate query error, using fallback default 25400:', error?.message || error);
-      // Cache the fallback rate for 15 minutes to avoid rate limit thrashing
+    } catch {
       cachedRate = cachedRate || 25400;
       cachedRateTime = requestTime;
       return res.json({

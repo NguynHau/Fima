@@ -122,13 +122,32 @@ export interface BalancesSummary {
   totalAssets: number;
 }
 
+export type BudgetPeriodType = 'month' | 'cycle';
+
 export interface Budget {
   id: string;
   categoryId: string;
   categoryName: string;
   limitAmount: number;
+  periodType?: BudgetPeriodType; // 'month' (Tháng hiện tại) | 'cycle' (Theo kỳ)
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BudgetHistoryRecord {
+  id: string;
+  budgetId?: string;
+  categoryId: string;
+  categoryName: string;
+  limitAmount: number;
+  spentAmount: number;
+  periodType: BudgetPeriodType;
+  periodLabel: string; // e.g. "Tháng 08/2026" or "Kỳ: 01/08/2026 - 15/08/2026"
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  closedAt: string;  // ISO string
 }
 
 export interface SavingsGoal {

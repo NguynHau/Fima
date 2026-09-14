@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
-import { X, Plus, Trash2, Edit2, PiggyBank, Layers, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { X, Plus, Trash2, Edit2, PiggyBank, Layers, Check, AlertCircle, Sparkles, Calendar } from 'lucide-react';
 import { type Budget, type SavingsGoal, type Category } from '../types';
 import {
   getBudgets,
@@ -89,6 +89,15 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
   const [isAddingBudget, setIsAddingBudget] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [budgetLimitInput, setBudgetLimitInput] = useState<string>('');
+  const [budgetPeriodType, setBudgetPeriodType] = useState<'month' | 'cycle'>('month');
+  const [budgetStartDate, setBudgetStartDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+  const [budgetEndDate, setBudgetEndDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  });
 
   // Form states - Savings
   const [editingSavings, setEditingSavings] = useState<SavingsGoal | null>(null);
@@ -178,12 +187,16 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
         categoryId: catId,
         categoryName: catName,
         limitAmount: limitVal,
+        periodType: budgetPeriodType,
+        startDate: budgetPeriodType === 'cycle' ? budgetStartDate : undefined,
+        endDate: budgetPeriodType === 'cycle' ? budgetEndDate : undefined,
       });
 
       setIsAddingBudget(false);
       setEditingBudget(null);
       setBudgetLimitInput('');
       setSelectedCategoryId('');
+      setBudgetPeriodType('month');
       showToast(editingBudget ? 'Đã cập nhật hạn mức' : 'Đã thêm hạn mức mới');
       await fetchData();
       if (onDataChanged) onDataChanged();
@@ -198,6 +211,9 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
     setIsAddingBudget(false);
     setSelectedCategoryId(b.categoryId);
     setBudgetLimitInput(b.limitAmount.toString());
+    setBudgetPeriodType(b.periodType || 'month');
+    if (b.startDate) setBudgetStartDate(b.startDate);
+    if (b.endDate) setBudgetEndDate(b.endDate);
     setFormError('');
   };
 
@@ -534,6 +550,67 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                     </div>
                   </div>
 
+                  {/* Kỳ hạn áp dụng (Tháng hiện tại hoặc Theo kỳ) */}
+                  <div className="space-y-2 pt-1">
+                    <label className="block text-[11px] font-bold text-neutral-400">
+                      {t('budget.period_type')}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setBudgetPeriodType('month')}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                          budgetPeriodType === 'month'
+                            ? 'bg-white text-black border-white shadow-xs'
+                            : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        <Calendar size={14} />
+                        <span>{t('budget.period_month')}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setBudgetPeriodType('cycle')}
+                        className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                          budgetPeriodType === 'cycle'
+                            ? 'bg-white text-black border-white shadow-xs'
+                            : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        <Calendar size={14} />
+                        <span>{t('budget.period_cycle')}</span>
+                      </button>
+                    </div>
+
+                    {budgetPeriodType === 'cycle' && (
+                      <div className="grid grid-cols-2 gap-2 pt-1.5 bg-[#121212] p-2.5 rounded-xl border border-neutral-800">
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-400 mb-1">
+                            {t('budget.start_date')}
+                          </label>
+                          <input
+                            type="date"
+                            value={budgetStartDate}
+                            onChange={(e) => setBudgetStartDate(e.target.value)}
+                            className="w-full bg-[#1a1a1a] border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-400 mb-1">
+                            {t('budget.end_date')}
+                          </label>
+                          <input
+                            type="date"
+                            value={budgetEndDate}
+                            onChange={(e) => setBudgetEndDate(e.target.value)}
+                            className="w-full bg-[#1a1a1a] border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-white"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex gap-2 pt-1">
                     <button
                       type="submit"
@@ -576,7 +653,14 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                         showBackground={false}
                       />
                       <div>
-                        <div className="text-xs font-black text-white">{tCategory(b.categoryName)}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-white">{tCategory(b.categoryName)}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 font-medium">
+                            {b.periodType === 'cycle' && b.startDate && b.endDate
+                              ? `${b.startDate.split('-').slice(1).reverse().join('/')} - ${b.endDate.split('-').slice(1).reverse().join('/')}`
+                              : t('budget.period_month')}
+                          </span>
+                        </div>
                         <div className="text-[11px] font-semibold text-neutral-400 mt-0.5">
                           {t('budget.limit_label')}{' '}
                           <span className="text-white font-extrabold font-mono">

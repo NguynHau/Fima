@@ -11,6 +11,8 @@ import {
   type Debt,
   type Budget,
   type SavingsGoal,
+  type BudgetPeriodType,
+  type BudgetHistoryRecord,
 } from '../types';
 
 export class FinanceDatabase extends Dexie {
@@ -21,6 +23,7 @@ export class FinanceDatabase extends Dexie {
   debts!: Table<Debt, string>;
   budgets!: Table<Budget, string>;
   savings!: Table<SavingsGoal, string>;
+  budgetHistory!: Table<BudgetHistoryRecord, string>;
 
   constructor() {
     super('FinanceJournalDB');
@@ -50,6 +53,16 @@ export class FinanceDatabase extends Dexie {
       debts: 'id, name, amount, date, type, status, createdAt',
       budgets: 'id, categoryId, categoryName, createdAt',
       savings: 'id, name, targetAmount, createdAt',
+    });
+    this.version(5).stores({
+      transactions: 'id, date, type, account, category, categoryId, createdAt, [date+type]',
+      images: 'id, createdAt',
+      settings: 'id',
+      categories: 'id, name, type, order, isDefault, createdAt',
+      debts: 'id, name, amount, date, type, status, createdAt',
+      budgets: 'id, categoryId, categoryName, createdAt',
+      savings: 'id, name, targetAmount, createdAt',
+      budgetHistory: 'id, budgetId, categoryId, periodType, startDate, endDate, closedAt',
     });
   }
 }
@@ -514,6 +527,9 @@ export async function saveBudget(input: {
   categoryId: string;
   categoryName: string;
   limitAmount: number;
+  periodType?: BudgetPeriodType;
+  startDate?: string;
+  endDate?: string;
 }): Promise<Budget> {
   if (!db.budgets) throw new Error('Database table for budgets is not ready');
   const now = new Date().toISOString();
@@ -523,6 +539,9 @@ export async function saveBudget(input: {
     categoryId: input.categoryId,
     categoryName: input.categoryName,
     limitAmount: Math.abs(input.limitAmount),
+    periodType: input.periodType || 'month',
+    startDate: input.startDate,
+    endDate: input.endDate,
     createdAt: now,
     updatedAt: now,
   };
@@ -535,6 +554,84 @@ export async function deleteBudget(id: string): Promise<void> {
   if (db.budgets) {
     await db.budgets.delete(id);
     notifyBudgetSubscribers();
+  }
+}
+
+/**
+ * Budget History Records (Xem lại Chi tiêu / Expense & Budget Review)
+ */
+export async function getBudgetHistory(): Promise<BudgetHistoryRecord[]> {
+  if (!db.budgetHistory) return [];
+  // Ensure table exists and sync any expired cycles/months
+  await syncExpiredBudgetsToHistory();
+  return await db.budgetHistory.orderBy('closedAt').reverse().toArray();
+}
+
+export async function saveBudgetHistoryRecord(record: BudgetHistoryRecord): Promise<void> {
+  if (!db.budgetHistory) return;
+  await db.budgetHistory.put(record);
+}
+
+export async function deleteBudgetHistoryRecord(id: string): Promise<void> {
+  if (!db.budgetHistory) return;
+  await db.budgetHistory.delete(id);
+}
+
+/**
+ * Automatically archives expired budget cycles or past months
+ */
+export async function syncExpiredBudgetsToHistory(): Promise<void> {
+  if (!db.budgetHistory || !db.budgets) return;
+
+  try {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const activeBudgets = await db.budgets.toArray();
+    const existingHistory = await db.budgetHistory.toArray();
+
+    // Check each budget
+    for (const b of activeBudgets) {
+      if (b.periodType === 'cycle' && b.startDate && b.endDate) {
+        // If the cycle has ended (today > endDate)
+        if (today > b.endDate) {
+          const historyId = `hist_${b.id}_${b.startDate}_${b.endDate}`;
+          const alreadyArchived = existingHistory.some(
+            (h) => h.id === historyId || (h.budgetId === b.id && h.startDate === b.startDate && h.endDate === b.endDate)
+          );
+
+          if (!alreadyArchived) {
+            // Calculate total expenses for this category in the date range
+            const txs = await db.transactions
+              .where('date')
+              .between(b.startDate, b.endDate, true, true)
+              .and((t) => t.type === 'expense' && (t.categoryId === b.categoryId || t.category.trim().toLowerCase() === b.categoryName.trim().toLowerCase()))
+              .toArray();
+
+            const spent = txs.reduce((sum, t) => sum + t.amount, 0);
+
+            const startFormatted = b.startDate.split('-').reverse().join('/');
+            const endFormatted = b.endDate.split('-').reverse().join('/');
+
+            const newRecord: BudgetHistoryRecord = {
+              id: historyId,
+              budgetId: b.id,
+              categoryId: b.categoryId,
+              categoryName: b.categoryName,
+              limitAmount: b.limitAmount,
+              spentAmount: spent,
+              periodType: 'cycle',
+              periodLabel: `Kỳ: ${startFormatted} - ${endFormatted}`,
+              startDate: b.startDate,
+              endDate: b.endDate,
+              closedAt: `${b.endDate}T23:59:59.000Z`,
+            };
+
+            await db.budgetHistory.put(newRecord);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error syncing expired budgets to history:', err);
   }
 }
 
