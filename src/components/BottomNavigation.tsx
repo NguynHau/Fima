@@ -4,6 +4,7 @@ import { type ActiveTab } from '../types';
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { useLiquidGlass } from '../context/LiquidGlassContext';
 import { getSvgGradientCoords, getReflectedEdgeBoxShadow } from '../utils/liquidGlassOptical';
+import { t } from '../utils/translations';
 
 interface BottomNavigationProps {
   activeTab: ActiveTab;
@@ -272,11 +273,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   };
 
   const TABS_NAV_ITEMS = [
-    { tab: 'flow' as ActiveTab, Icon: Layers, label: 'Dòng tiền' },
-    { tab: 'statistics' as ActiveTab, Icon: PieChart, label: 'Thống kê' },
-    { tab: 'profile' as ActiveTab, Icon: User, label: 'Cá nhân' },
-    { tab: 'debts' as ActiveTab, Icon: Users, label: 'Công nợ' },
-    { tab: 'settings' as ActiveTab, Icon: Settings, label: 'Cài đặt' },
+    { tab: 'flow' as ActiveTab, Icon: Layers, label: t('nav.flow') },
+    { tab: 'statistics' as ActiveTab, Icon: PieChart, label: t('nav.statistics') },
+    { tab: 'profile' as ActiveTab, Icon: User, label: t('nav.profile') },
+    { tab: 'debts' as ActiveTab, Icon: Users, label: t('nav.debts') },
+    { tab: 'settings' as ActiveTab, Icon: Settings, label: t('nav.settings') },
   ];
 
   return (

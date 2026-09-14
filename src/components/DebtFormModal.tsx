@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, DollarSign, User, FileText, CheckCircle2 } from 'lucide-react';
 import { type Debt } from '../types';
 import { formatVND } from '../utils/formatters';
+import { t } from '../utils/translations';
 
 interface DebtFormModalProps {
   isOpen: boolean;
@@ -70,11 +71,11 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
     const paidAmount = parseInt(paidAmountStr, 10) || 0;
 
     if (!name.trim()) {
-      alert('Vui lòng nhập tên người hoặc nội dung khoản nợ');
+      alert(t('debts.form.enter_name_alert'));
       return;
     }
     if (isNaN(amount) || amount <= 0) {
-      alert('Vui lòng nhập số tiền hợp lệ');
+      alert(t('debts.form.enter_amount_alert'));
       return;
     }
 
@@ -101,14 +102,14 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-neutral-800/80 flex items-center justify-between shrink-0 bg-[#161616]">
           <h2 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-neutral-400" />
-            {debt ? 'Cập nhật Công nợ' : 'Thêm Công nợ mới'}
+            {debt ? t('debts.form.edit_title') : t('debts.form.add_title')}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-            aria-label="Đóng"
-            title="Đóng"
+            aria-label={t('common.close')}
+            title={t('common.close')}
           >
             <X size={18} />
           </button>
@@ -120,7 +121,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           {/* Type Selection: Lend vs Borrow */}
           <div className="space-y-1.5">
             <label className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block px-0.5">
-              Loại công nợ
+              {t('debts.form.type_label')}
             </label>
             <div className="grid grid-cols-2 gap-2 bg-[#1e1e1e] p-1 rounded-2xl border border-neutral-800">
               <button
@@ -132,7 +133,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                     : 'text-neutral-400 hover:text-neutral-200'
                 }`}
               >
-                Người khác nợ mình (Cho vay)
+                {t('debts.form.lend_opt')}
               </button>
               <button
                 type="button"
@@ -143,7 +144,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                     : 'text-neutral-400 hover:text-neutral-200'
                 }`}
               >
-                Mình nợ người khác (Đi vay)
+                {t('debts.form.borrow_opt')}
               </button>
             </div>
           </div>
@@ -151,7 +152,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           {/* Debt Name / Partner */}
           <div className="space-y-1.5">
             <label className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block px-0.5">
-              Họ tên / Khoản nợ
+              {t('debts.form.name_label')}
             </label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
@@ -159,7 +160,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
               </span>
               <input
                 type="text"
-                placeholder="Nhập tên người nợ hoặc lý do..."
+                placeholder={t('debts.form.name_placeholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full bg-[#1e1e1e] rounded-2xl border border-neutral-800 py-3.5 pl-10 pr-4 text-xs sm:text-sm text-white font-semibold focus:outline-none focus:border-neutral-500 transition-all"
@@ -173,7 +174,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             {/* Total Amount */}
             <div className="space-y-1.5">
               <label className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block px-0.5">
-                Số tiền nợ gốc
+                {t('debts.form.principal_label')}
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 font-mono text-sm">
@@ -194,7 +195,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             {/* Paid Amount */}
             <div className="space-y-1.5">
               <label className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block px-0.5">
-                Số tiền đã thanh toán
+                {t('debts.form.paid_label')}
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 font-mono text-sm">
@@ -215,7 +216,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           {/* Date Picker */}
           <div className="space-y-1.5">
             <label className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block px-0.5">
-              Ngày ghi nhận
+              {t('debts.form.date_label')}
             </label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
@@ -233,14 +234,14 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           {/* Note */}
           <div className="space-y-1.5">
             <label className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block px-0.5">
-              Ghi chú thêm (Không bắt buộc)
+              {t('debts.form.note_label')}
             </label>
             <div className="relative">
               <span className="absolute left-3.5 top-3 text-neutral-500">
                 <FileText size={16} />
               </span>
               <textarea
-                placeholder="Ví dụ: Hẹn trả vào cuối tháng này..."
+                placeholder={t('debts.form.note_placeholder')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="w-full h-20 bg-[#1e1e1e] rounded-2xl border border-neutral-800 py-3 pl-10 pr-4 text-xs sm:text-sm text-white font-semibold focus:outline-none focus:border-neutral-500 transition-all resize-none"
@@ -251,7 +252,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           {/* Remainder math display */}
           {amountValue > 0 && (
             <div className="p-3.5 bg-neutral-900 rounded-2xl border border-neutral-800 text-xs text-neutral-400 flex items-center justify-between">
-              <span className="font-semibold">Còn lại cần trả:</span>
+              <span className="font-semibold">{t('debts.form.remaining_label')}</span>
               <span className="font-mono font-black text-white text-sm">
                 {formatVND(Math.max(0, amountValue - paidAmountValue))}
               </span>
@@ -268,14 +269,14 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             onClick={onClose}
             className="flex-1 bg-neutral-900 text-neutral-400 border border-neutral-800 hover:text-white py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all active:scale-95 cursor-pointer text-center"
           >
-            Hủy
+            {t('common.cancel')}
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             className="flex-1 bg-white hover:bg-neutral-200 text-black py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm font-black transition-all active:scale-95 cursor-pointer text-center"
           >
-            {debt ? 'Lưu cập nhật' : 'Thêm khoản nợ'}
+            {debt ? t('debts.form.submit_save') : t('debts.form.submit_add')}
           </button>
         </div>
       </div>

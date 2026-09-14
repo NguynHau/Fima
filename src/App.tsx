@@ -36,7 +36,8 @@ import { LiquidGlassStudioView } from './components/LiquidGlassStudioView';
 import { LiquidGlassProvider } from './context/LiquidGlassContext';
 import { usePWA } from './hooks/usePWA';
 import { initAutoUpdateChecker } from './services/updateService';
-import { getTodayString } from './utils/formatters';
+import { getTodayString, currencyConfig } from './utils/formatters';
+import { languageConfig, t } from './utils/translations';
 import { Check } from 'lucide-react';
 import {
   getCachedWallpaper,
@@ -113,6 +114,19 @@ export default function App() {
       ]);
 
       setUserSettings(settings);
+      
+      // Synchronize dynamic config
+      if (settings?.currency) {
+        currencyConfig.currency = settings.currency;
+      } else {
+        currencyConfig.currency = 'VND';
+      }
+      if (settings?.language) {
+        languageConfig.language = settings.language;
+      } else {
+        languageConfig.language = 'vi';
+      }
+
       setBalances(bal);
       setTransactions(txs);
       setDebts(dbs);
@@ -193,6 +207,23 @@ export default function App() {
       cleanupUpdateChecker();
     };
   }, [refreshData]);
+
+  // Fetch exchange rate in background on app load (non-blocking)
+  useEffect(() => {
+    async function fetchRate() {
+      try {
+        const res = await fetch('/api/exchange-rate');
+        const data = await res.json();
+        if (data && data.success && typeof data.rate === 'number') {
+          currencyConfig.exchangeRate = data.rate;
+          console.log('[Background Exchange Rate Loaded]:', data.rate);
+        }
+      } catch (err) {
+        console.warn('Failed to load exchange rate in background:', err);
+      }
+    }
+    fetchRate();
+  }, []);
 
   useEffect(() => {
     if (userSettings) {

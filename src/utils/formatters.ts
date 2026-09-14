@@ -1,11 +1,23 @@
+export const currencyConfig = {
+  currency: 'VND' as 'VND' | 'USD',
+  exchangeRate: 25400,
+};
+
 /**
- * Formats a number as Vietnamese Dong (VND)
- * Supports negative numbers cleanly (e.g. -85000 -> −85.000 ₫)
- * Example: 85000 -> 85.000 ₫
+ * Formats a number as Vietnamese Dong (VND) or US Dollars (USD) dynamically
+ * Supports negative numbers cleanly (e.g. -85000 -> −85.000 ₫ or -3.34 $)
+ * Example: 85000 -> 85.000 ₫ (VND) or $3.35 (USD)
  */
 export function formatVND(amount: number): string {
   if (isNaN(amount) || amount === null || amount === undefined) {
-    return '0 ₫';
+    return currencyConfig.currency === 'USD' ? '$0.00' : '0 ₫';
+  }
+  if (currencyConfig.currency === 'USD') {
+    const usdAmount = amount / currencyConfig.exchangeRate;
+    const isNegative = usdAmount < 0;
+    const abs = Math.abs(usdAmount);
+    const formatted = abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return isNegative ? `−$${formatted}` : `$${formatted}`;
   }
   const isNegative = Math.round(amount) < 0;
   const formatted = Math.abs(Math.round(amount))
@@ -15,11 +27,19 @@ export function formatVND(amount: number): string {
 }
 
 /**
- * Format signed VND
- * Example: formatSignedVND(85000, 'expense') -> −85.000 ₫
- * Example: formatSignedVND(500000, 'income') -> +500.000 ₫
+ * Format signed currency dynamically
+ * Example: formatSignedVND(85000, 'expense') -> −85.000 ₫ or −$3.35
  */
 export function formatSignedVND(amount: number, type: 'income' | 'expense' | 'net'): string {
+  if (currencyConfig.currency === 'USD') {
+    const usdAmount = amount / currencyConfig.exchangeRate;
+    const absFormatted = Math.abs(usdAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formattedWithSign = `$${absFormatted}`;
+    if (amount === 0) return `$0.00`;
+    if (type === 'expense') return `−${formattedWithSign}`;
+    if (type === 'income') return `+${formattedWithSign}`;
+    return usdAmount > 0 ? `+${formattedWithSign}` : `−${formattedWithSign}`;
+  }
   const absFormatted = Math.abs(Math.round(amount))
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₫';
@@ -30,10 +50,25 @@ export function formatSignedVND(amount: number, type: 'income' | 'expense' | 'ne
 }
 
 /**
- * Compact VND formatting for small calendar badges
- * Example: 500000 -> 500k, 1500000 -> 1.5tr, -50000 -> −50k
+ * Compact currency formatting for small calendar badges
+ * Example: 500000 -> 500k (VND) or $19.65 (USD)
  */
 export function formatCompactVND(amount: number): string {
+  if (currencyConfig.currency === 'USD') {
+    const usdAmount = amount / currencyConfig.exchangeRate;
+    const abs = Math.abs(usdAmount);
+    const sign = usdAmount < 0 ? '−' : '';
+    if (abs >= 1_000_000) {
+      const val = (abs / 1_000_000).toFixed(1).replace('.0', '');
+      return `${sign}$${val}M`;
+    }
+    if (abs >= 1_000) {
+      const val = (abs / 1_000).toFixed(1).replace('.0', '');
+      return `${sign}$${val}K`;
+    }
+    const val = abs.toFixed(2).replace('.00', '');
+    return `${sign}$${val}`;
+  }
   const abs = Math.abs(amount);
   const sign = amount < 0 ? '−' : '';
   if (abs >= 1_000_000_000) {
@@ -49,6 +84,32 @@ export function formatCompactVND(amount: number): string {
     return `${sign}${val}k`;
   }
   return `${sign}${abs}`;
+}
+
+/**
+ * Formats a cash flow difference as kđ (VND) or $ (USD)
+ */
+export function formatFlowDiff(amount: number): string {
+  if (amount === 0) return currencyConfig.currency === 'USD' ? '$0' : '0kđ';
+  if (currencyConfig.currency === 'USD') {
+    const usdAmount = amount / currencyConfig.exchangeRate;
+    const isNegative = usdAmount < 0;
+    const abs = Math.abs(usdAmount);
+    const sign = isNegative ? '−' : '+';
+    let valStr = '';
+    if (abs >= 1000) {
+      valStr = (abs / 1000).toFixed(2) + 'k';
+    } else {
+      valStr = abs.toFixed(2).replace('.00', '');
+    }
+    return `${sign}$${valStr}`;
+  }
+  const isNegative = amount < 0;
+  const abs = Math.abs(amount);
+  const inK = Math.round(abs / 1000);
+  const formatted = inK.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const sign = isNegative ? '−' : '+';
+  return `${sign}${formatted}kđ`;
 }
 
 /**
@@ -69,24 +130,39 @@ export function formatDateVN(dateStr: string): string {
   return `${day}/${month}/${year}`;
 }
 
+import { languageConfig } from './translations';
+
 /**
- * Formats a full readable Vietnamese date
- * Example: Thứ Tư, 02/09/2026
+ * Formats a full readable Vietnamese or English date
+ * Example: Thứ Tư, 02/09/2026 or Wednesday, 02/09/2026
  */
 export function formatFullDateVN(dateStr: string): string {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-').map(Number);
   const dateObj = new Date(y, m - 1, d);
-  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-  const dayName = days[dateObj.getDay()];
-  return `${dayName}, ${formatDateVN(dateStr)}`;
+  if (languageConfig.language === 'en') {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = days[dateObj.getDay()];
+    return `${dayName}, ${formatDateVN(dateStr)}`;
+  } else {
+    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const dayName = days[dateObj.getDay()];
+    return `${dayName}, ${formatDateVN(dateStr)}`;
+  }
 }
 
 /**
  * Formats Month Header
- * Example: 2026, 9 -> Tháng 9, 2026
+ * Example: 2026, 9 -> Tháng 9, 2026 or September 2026
  */
 export function formatMonthVN(year: number, month: number): string {
+  if (languageConfig.language === 'en') {
+    const enMonths = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return `${enMonths[month - 1]} ${year}`;
+  }
   return `Tháng ${month}, ${year}`;
 }
 

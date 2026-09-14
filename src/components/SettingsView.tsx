@@ -25,6 +25,9 @@ import {
   Eye,
   Settings,
   Palette,
+  Globe,
+  Coins,
+  ChevronDown,
 } from 'lucide-react';
 import { type UserSettings } from '../types';
 import { AIManager } from '../services/ai/AIManager';
@@ -36,7 +39,8 @@ import {
   isUpdateAvailable,
   subscribeUpdateState,
 } from '../services/updateService';
-import { parseAmountInput } from '../utils/formatters';
+import { parseAmountInput, currencyConfig } from '../utils/formatters';
+import { t, languageConfig } from '../utils/translations';
 import { useCategories } from '../hooks/useCategories';
 import { CategoryManagementModal } from './CategoryManagementModal';
 import { CategoryIcon } from './CategoryIcon';
@@ -158,6 +162,62 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [uiTransparency, setUiTransparency] = useState<number>(() => {
     return userSettings?.uiTransparency ?? getStoredUiTransparency(Boolean(activeWallpaper));
   });
+
+  // Currency & Language States
+  const [selectedCurrency, setSelectedCurrency] = useState<'VND' | 'USD'>(() => {
+    return userSettings?.currency ?? 'VND';
+  });
+  const [selectedLanguage, setSelectedLanguage] = useState<'vi' | 'en'>(() => {
+    return userSettings?.language ?? 'vi';
+  });
+  const [exchangeRate, setExchangeRate] = useState<number>(() => currencyConfig.exchangeRate);
+  const [rateUpdatedDate, setRateUpdatedDate] = useState<Date | null>(null);
+
+  // Sync states if userSettings changes
+  useEffect(() => {
+    if (userSettings?.currency) {
+      setSelectedCurrency(userSettings.currency);
+    }
+    if (userSettings?.language) {
+      setSelectedLanguage(userSettings.language);
+    }
+  }, [userSettings]);
+
+  // Fetch exchange rate once on SettingsView mount
+  useEffect(() => {
+    async function loadRate() {
+      try {
+        const res = await fetch('/api/exchange-rate');
+        const data = await res.json();
+        if (data && data.success && typeof data.rate === 'number') {
+          setExchangeRate(data.rate);
+          currencyConfig.exchangeRate = data.rate;
+          if (data.updatedAt) {
+            setRateUpdatedDate(new Date(data.updatedAt));
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load exchange rate in settings:', e);
+      }
+    }
+    loadRate();
+  }, []);
+
+  const handleCurrencyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const cur = e.target.value as 'VND' | 'USD';
+    setSelectedCurrency(cur);
+    currencyConfig.currency = cur;
+    await updateUserSettings({ currency: cur });
+    onDataChanged();
+  };
+
+  const handleLanguageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const lang = e.target.value as 'vi' | 'en';
+    setSelectedLanguage(lang);
+    languageConfig.language = lang;
+    await updateUserSettings({ language: lang });
+    onDataChanged();
+  };
 
   // System Core Colors Studio state
   const [isColorStudioOpen, setIsColorStudioOpen] = useState(false);
@@ -447,7 +507,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
             <Settings className="text-white" size={24} />
-            Cài đặt ứng dụng
+            {t('settings.title')}
           </h1>
         </div>
       </div>
@@ -482,30 +542,79 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </defs>
       </svg>
 
-      {/* 1. SECTION: SỐ DƯ BAN ĐẦU */}
+      {/* NEW SECTION: CURRENCY */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
-          icon={Wallet}
-          title="Số dư ban đầu"
-          description="Số dư ban đầu là số tiền gốc trong Ví và Ngân hàng khi bạn bắt đầu theo dõi thu chi. Việc thay đổi số dư này sẽ ảnh hưởng trực tiếp đến tổng tài sản hiện có."
+          icon={Coins}
+          title={t('settings.currency.title')}
+          description={t('settings.currency.desc')}
         />
 
-        <button
-          type="button"
-          onClick={() => setShowWarningModal(true)}
-          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
-        >
-          <Wallet size={16} className="text-neutral-300 shrink-0" />
-          <span>Chỉnh sửa</span>
-        </button>
+        <div className="relative">
+          <select
+            value={selectedCurrency}
+            onChange={handleCurrencyChange}
+            className="w-full bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 focus:border-purple-500 rounded-xl px-4 py-3 text-xs sm:text-sm font-bold appearance-none outline-none transition-colors cursor-pointer pr-10"
+          >
+            <option value="VND">🇻🇳 VND – Vietnamese Dong</option>
+            <option value="USD">🇺🇸 USD – US Dollar</option>
+          </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
+            <ChevronDown size={16} />
+          </div>
+        </div>
+
+        {selectedCurrency === 'USD' && (
+          <div className="text-xs text-purple-300 bg-purple-950/20 border border-purple-900/30 rounded-xl p-3 flex flex-col gap-0.5">
+            <div>
+              • <span className="font-bold">{t('settings.currency.rate')}:</span> 1 USD = {exchangeRate.toLocaleString('vi-VN')} ₫
+            </div>
+            {rateUpdatedDate && (
+              <div className="text-neutral-400">
+                • <span className="font-medium">{t('settings.currency.updated_at')}:</span> {(() => {
+                  const hrs = rateUpdatedDate.getHours().toString().padStart(2, '0');
+                  const mins = rateUpdatedDate.getMinutes().toString().padStart(2, '0');
+                  const day = rateUpdatedDate.getDate().toString().padStart(2, '0');
+                  const month = (rateUpdatedDate.getMonth() + 1).toString().padStart(2, '0');
+                  return languageConfig.language === 'en'
+                    ? `${hrs}:${mins} on ${month}/${day}`
+                    : `${hrs}:${mins} ngày ${day}/${month}`;
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* NEW SECTION: LANGUAGE */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <SettingsCardHeader
+          icon={Globe}
+          title={t('settings.language.title')}
+          description={t('settings.language.desc')}
+        />
+
+        <div className="relative">
+          <select
+            value={selectedLanguage}
+            onChange={handleLanguageChange}
+            className="w-full bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 focus:border-purple-500 rounded-xl px-4 py-3 text-xs sm:text-sm font-bold appearance-none outline-none transition-colors cursor-pointer pr-10"
+          >
+            <option value="vi">🇻🇳 Tiếng Việt – Vietnamese</option>
+            <option value="en">🇺🇸 English – English</option>
+          </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
+            <ChevronDown size={16} />
+          </div>
+        </div>
       </div>
 
       {/* 2. SECTION: QUẢN LÝ DANH MỤC */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
           icon={Tag}
-          title="Quản lý danh mục"
-          description="Tùy chỉnh toàn bộ danh mục Thu và Chi: thêm mới, đổi tên, đổi icon, màu sắc và sắp xếp."
+          title={t('settings.categories.title')}
+          description={t('settings.categories.desc')}
         />
 
         <button
@@ -514,7 +623,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
           <Tag size={16} className="text-neutral-300 shrink-0" />
-          <span>Chỉnh sửa ({expenseCategories.length} khoản chi • {incomeCategories.length} khoản thu)</span>
+          <span>{t('settings.categories.btn')} ({expenseCategories.length} {t('stats.tab.expense').toLowerCase()} • {incomeCategories.length} {t('stats.tab.income').toLowerCase()})</span>
         </button>
       </div>
 
@@ -522,8 +631,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
           customIcon={<LiquidGlassStudioLogo size={20} />}
-          title="Liquid Glass Studio"
-          description="Tinh chỉnh hiệu ứng kính quang học, độ mờ (blur), độ trong suốt, bóng đổ 3D và vật lý lò xo giọt nước của Đảo chính & vòng tròn chọn tab với Đảo giả lập thử nghiệm."
+          title={t('settings.glass.title')}
+          description={t('settings.glass.desc')}
         />
 
         <button
@@ -532,7 +641,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
           <LiquidGlassStudioLogo size={16} hasColor={false} className="text-neutral-300" />
-          <span>Mở liquid glass studio</span>
+          <span>{t('settings.glass.btn')}</span>
         </button>
       </div>
 
@@ -540,8 +649,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
         <SettingsCardHeader
           icon={Palette}
-          title="Studio Màu Sắc Hệ Thống"
-          description="Tùy chỉnh sắc độ của 5 gam màu chủ đạo: Đỏ (chi tiêu & nợ), Vàng (ví tiền), Xanh lá (thu nhập), Xanh dương (ngân hàng) và Tím hồng gradient. Hỗ trợ bộ theme sẵn, điều chỉnh chi tiết, reset xuất xưởng và sao chép mã CSS."
+          title={t('settings.colors.title')}
+          description={t('settings.colors.desc')}
         />
 
         <button
@@ -550,7 +659,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
           <Palette size={16} className="text-neutral-300 shrink-0" />
-          <span>Chỉnh sửa màu sắc hệ thống</span>
+          <span>{t('settings.colors.btn')}</span>
         </button>
       </div>
 
@@ -558,8 +667,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
         <SettingsCardHeader
           icon={ImageIcon}
-          title="Hình nền ứng dụng"
-          description="Đổi hình nền toàn bộ ứng dụng, tùy chỉnh độ mờ của ảnh nền và độ trong suốt của giao diện (loại trừ Main Island) để làm nổi bật hình nền sau các lớp kính."
+          title={t('settings.wallpaper.title')}
+          description={t('settings.wallpaper.desc')}
         />
 
         {/* Chỉnh sửa hình nền ứng dụng button (Colorless icon on button) */}
@@ -569,7 +678,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
           <ImageIcon size={16} className="text-neutral-300 shrink-0" />
-          <span>Chỉnh sửa hình nền ứng dụng</span>
+          <span>{t('settings.wallpaper.btn')}</span>
         </button>
       </div>
 
@@ -577,8 +686,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
           icon={Database}
-          title="Sao lưu & Khôi phục Dữ liệu"
-          description="Dữ liệu và ảnh được lưu an toàn trên máy (IndexedDB). Xuất file .zip để sao lưu hoặc chuyển sang thiết bị mới."
+          title={t('settings.data.title')}
+          description={t('settings.data.desc')}
         />
 
         <input
@@ -601,7 +710,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             ) : (
               <>
                 <Download size={16} className="text-white" />
-                Xuất backup (.zip)
+                {t('settings.data.export')}
               </>
             )}
           </button>
@@ -617,7 +726,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             ) : (
               <>
                 <Upload size={16} className="text-neutral-300" />
-                Nhập backup (.zip)
+                {t('settings.data.import')}
               </>
             )}
           </button>
@@ -628,8 +737,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
           icon={Smartphone}
-          title="Cài đặt Màn hình chính (PWA)"
-          description="Dùng như ứng dụng native trên iPhone & Android với trải nghiệm toàn màn hình và mở nhanh từ biểu tượng màn hình chính."
+          title={t('settings.pwa.title')}
+          description={t('settings.pwa.desc')}
         />
 
         <button
@@ -638,7 +747,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
         >
           <Smartphone size={16} className="text-neutral-300" />
-          <span>Xem hướng dẫn cài đặt</span>
+          <span>{t('settings.pwa.btn')}</span>
         </button>
       </div>
 
@@ -646,13 +755,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <SettingsCardHeader
           icon={RefreshCw}
-          title="Phiên bản ứng dụng"
+          title={t('settings.version.title')}
           description={
             <div>
-              {updateStatus === 'idle' && <span>Kiểm tra bản cập nhật mới nhất từ máy chủ để luôn có tính năng mới nhất.</span>}
-              {updateStatus === 'checking' && <span className="text-neutral-300">Đang kiểm tra cập nhật...</span>}
-              {updateStatus === 'latest' && <span className="text-emerald-400 font-bold">Bạn đang sử dụng phiên bản mới nhất!</span>}
-              {updateStatus === 'available' && <span className="text-amber-400 font-bold">Có phiên bản mới! Nhấn cập nhật để nâng cấp ngay.</span>}
+              {updateStatus === 'idle' && <span>{t('settings.version.desc')}</span>}
+              {updateStatus === 'checking' && <span className="text-neutral-300">{t('settings.version.checking')}</span>}
+              {updateStatus === 'latest' && <span className="text-emerald-400 font-bold">{t('settings.version.latest')}</span>}
+              {updateStatus === 'available' && <span className="text-amber-400 font-bold">{t('settings.version.available')}</span>}
             </div>
           }
         />
@@ -664,7 +773,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-md"
           >
             <RefreshCw size={16} />
-            Cập nhật ngay
+            {t('settings.version.updateNow')}
           </button>
         ) : (
           <button
@@ -674,7 +783,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="w-full py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer border border-neutral-800 disabled:opacity-50"
           >
             <RefreshCw size={16} className={updateStatus === 'checking' ? 'animate-spin' : ''} />
-            Kiểm tra cập nhật
+            {t('settings.version.checkBtn')}
           </button>
         )}
       </div>
@@ -683,26 +792,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 space-y-3.5 shadow-sm">
         <SettingsCardHeader
           icon={Server}
-          title="Máy chủ AI (Cloud Backend)"
-          description="Kết nối backend Gemini để dùng AI trên GitHub Pages, di động & mạng 4G/5G không cần lưu API key trên thiết bị."
+          title={t('settings.ai.title')}
+          description={t('settings.ai.desc')}
         />
 
         <div className="space-y-2">
           <label className="block text-[11px] font-bold text-neutral-300">
-            URL Backend Public (HTTPS)
+            {t('settings.ai.label')}
           </label>
           <div className="relative">
             <input
               type="text"
               value={backendUrl}
               onChange={(e) => setBackendUrl(e.target.value)}
-              placeholder="Để trống nếu chạy cùng máy chủ, hoặc https://..."
+              placeholder={t('settings.ai.placeholder')}
               className="w-full bg-[#1a1a1a] border border-neutral-700 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-neutral-100 placeholder-neutral-500 outline-none transition-colors"
             />
           </div>
           <p className="text-[10px] text-neutral-400 leading-relaxed">
-            • <strong className="text-neutral-300">GitHub Pages</strong>: Nhập URL máy chủ backend (Render, Railway, Cloud Run...) để mọi người dùng đều dùng được AI không cần API key riêng.<br />
-            • <strong className="text-neutral-300">Bảo mật</strong>: GEMINI_API_KEY được lưu an toàn trên máy chủ, không lộ ra mã nguồn hay trình duyệt.
+            • <strong className="text-neutral-300">GitHub Pages</strong>: {t('settings.ai.tip_github')}<br />
+            • <strong className="text-neutral-300">{languageConfig.language === 'en' ? 'Security' : 'Bảo mật'}</strong>: {t('settings.ai.tip_security')}
           </p>
         </div>
 
@@ -721,11 +830,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
             <div>
               <div className="font-bold">
-                {backendStatus.ok ? 'Kết nối máy chủ AI thành công!' : 'Không thể kết nối máy chủ AI'}
+                {backendStatus.ok ? t('settings.ai.success') : t('settings.ai.failed')}
               </div>
               <div className="text-[11px] opacity-90 mt-0.5">
                 {backendStatus.ok
-                  ? `Phản hồi trong ${backendStatus.latency}ms • ${backendStatus.server || 'Fima AI Server'}`
+                  ? `${t('settings.ai.latency').replace('{ms}', String(backendStatus.latency))} • ${backendStatus.server || 'Fima AI Server'}`
                   : backendStatus.message}
               </div>
             </div>
@@ -740,7 +849,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="flex-1 py-2.5 rounded-xl bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-98 transition-colors border border-neutral-800 disabled:opacity-50 cursor-pointer"
           >
             <Activity size={14} className={isTestingBackend ? 'animate-spin' : ''} />
-            {isTestingBackend ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
+            {isTestingBackend ? t('settings.ai.testing') : t('settings.ai.test')}
           </button>
 
           <button
@@ -749,7 +858,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 active:scale-98 transition-colors cursor-pointer shadow-md"
           >
             <Check size={14} />
-            Lưu URL
+            {t('settings.ai.save_btn')}
           </button>
 
           {backendUrl && (
@@ -759,12 +868,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 setBackendUrl('');
                 await AIManager.setBackendUrl('');
                 setBackendStatus(null);
-                setStatusMessage({ type: 'success', text: 'Đã đặt lại về URL mặc định!' });
+                setStatusMessage({ type: 'success', text: languageConfig.language === 'en' ? 'Reset to default URL!' : 'Đã đặt lại về URL mặc định!' });
                 setTimeout(() => setStatusMessage(null), 3000);
               }}
               className="px-3 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs font-medium transition-colors cursor-pointer"
             >
-              Mặc định
+              {t('settings.ai.default')}
             </button>
           )}
         </div>
@@ -774,7 +883,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-white/5 rounded-2xl p-3.5 border border-white/10 flex items-start gap-2.5">
         <ShieldCheck size={18} className="text-white shrink-0 mt-0.5" />
         <div className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
-          <span className="font-bold text-white">Bảo mật:</span> 100% dữ liệu và ảnh lưu trực tiếp trên thiết bị của bạn. Không qua máy chủ bên ngoài.
+          <span className="font-bold text-white">{t('settings.privacy.title')}</span> {t('settings.privacy.desc')}
         </div>
       </div>
 
@@ -782,8 +891,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div className="bg-rose-500/10 rounded-3xl p-4 sm:p-5 border border-rose-500/25 space-y-3">
         <SettingsCardHeader
           icon={Trash2}
-          title="Xóa toàn bộ dữ liệu"
-          description="Hành động này sẽ xóa vĩnh viễn toàn bộ số dư, lịch sử giao dịch và hình ảnh chứng từ trên thiết bị này."
+          title={t('settings.danger.title')}
+          description={t('settings.danger.desc')}
           isDanger={true}
         />
 
@@ -793,7 +902,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-md"
         >
           <Trash2 size={16} />
-          Xóa toàn bộ dữ liệu
+          {t('settings.danger.btn')}
         </button>
       </div>
 
@@ -805,10 +914,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <AlertTriangle size={28} />
             </div>
             <h3 className="text-base font-extrabold text-white mb-1.5">
-              Xác nhận xóa tất cả?
+              {t('settings.danger.confirm_title')}
             </h3>
             <p className="text-xs sm:text-sm text-neutral-300 mb-6 leading-relaxed font-medium">
-              Tất cả dữ liệu giao dịch và ảnh hóa đơn sẽ bị xóa vĩnh viễn khỏi thiết bị.
+              {t('settings.danger.confirm_desc')}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -816,14 +925,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => setShowClearConfirm(false)}
                 className="py-3 rounded-2xl bg-[#1a1a1a] text-neutral-200 text-xs sm:text-sm font-bold hover:bg-[#262626] active:scale-95 cursor-pointer border border-neutral-800"
               >
-                Hủy
+                {t('datepicker.prev_day') === 'Ngày trước' ? 'Hủy' : 'Cancel'}
               </button>
               <button
                 type="button"
                 onClick={handleClearAll}
                 className="py-3 rounded-2xl bg-rose-600 text-white text-xs sm:text-sm font-bold hover:bg-rose-500 active:scale-95 cursor-pointer shadow-md"
               >
-                Xác nhận xóa
+                {t('settings.danger.confirm_btn')}
               </button>
             </div>
           </div>
@@ -836,138 +945,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         onClose={() => onSetCategoryModalOpen(false)}
         onDataChanged={onDataChanged}
       />
-
-      {/* Warning Notice Modal */}
-      {showWarningModal && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
-          <div className="w-full max-w-xs sm:max-w-sm bg-[#121212] border border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3">
-              <Wallet
-                size={26}
-                className="shrink-0"
-                stroke="url(#settings-pink-purple-grad)"
-                strokeWidth={2.3}
-              />
-              <div>
-                <h3 className="text-base font-extrabold text-white">
-                  Lưu ý thay đổi số dư
-                </h3>
-                <p className="text-[11px] text-neutral-400 font-medium">
-                  Cảnh báo ảnh hưởng dữ liệu
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium bg-[#1a1a1a] p-3.5 rounded-2xl border border-neutral-800">
-              Việc thay đổi số dư ban đầu sẽ tính toán lại toàn bộ tổng tài sản hiện tại. Bạn có chắc chắn muốn điều chỉnh số dư ban đầu không?
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setShowWarningModal(false)}
-                className="py-3 rounded-2xl bg-[#1a1a1a] text-neutral-200 text-xs sm:text-sm font-bold hover:bg-[#262626] active:scale-95 cursor-pointer border border-neutral-800"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowWarningModal(false);
-                  setShowEditBalanceModal(true);
-                }}
-                className="py-3 rounded-2xl bg-rose-600 text-white text-xs sm:text-sm font-extrabold hover:bg-rose-500 active:scale-95 cursor-pointer shadow-md"
-              >
-                Chấp nhận
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Balance Inputs Modal */}
-      {showEditBalanceModal && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
-          <div className="w-full max-w-xs sm:max-w-sm bg-[#121212] border border-neutral-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                <Wallet
-                  size={20}
-                  className="shrink-0"
-                  stroke="url(#settings-pink-purple-grad)"
-                  strokeWidth={2.3}
-                />
-                Thay đổi số dư ban đầu
-              </h3>
-              <button
-                onClick={() => setShowEditBalanceModal(false)}
-                className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-                aria-label="Đóng"
-                title="Đóng"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveBalances} noValidate className="space-y-3.5">
-              <div>
-                <label htmlFor="settings-wallet-input-modal" className="block text-xs sm:text-sm font-bold text-neutral-200 mb-1 flex items-center gap-2">
-                  <Wallet size={16} className="text-amber-400" />
-                  Số dư ban đầu của Ví
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    id="settings-wallet-input-modal"
-                    type="text"
-                    inputMode="numeric"
-                    value={walletNum > 0 ? walletNum.toLocaleString('vi-VN') : ''}
-                    onChange={(e) => setWalletStr(e.target.value)}
-                    placeholder="0"
-                    className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#1a1a1a] border border-neutral-800 rounded-xl px-3.5 py-2.5 outline-none focus:border-amber-400"
-                  />
-                  <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="settings-bank-input-modal" className="block text-xs sm:text-sm font-bold text-neutral-200 mb-1 flex items-center gap-2">
-                  <Building2 size={16} className="text-cyan-400" />
-                  Số dư ban đầu của Ngân hàng
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    id="settings-bank-input-modal"
-                    type="text"
-                    inputMode="numeric"
-                    value={bankNum > 0 ? bankNum.toLocaleString('vi-VN') : ''}
-                    onChange={(e) => setBankStr(e.target.value)}
-                    placeholder="0"
-                    className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#1a1a1a] border border-neutral-800 rounded-xl px-3.5 py-2.5 outline-none focus:border-cyan-400"
-                  />
-                  <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEditBalanceModal(false)}
-                  className="py-3 rounded-2xl bg-[#1a1a1a] text-neutral-200 text-xs sm:text-sm font-bold hover:bg-[#262626] active:scale-95 cursor-pointer border border-neutral-800"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingBalances}
-                  className="py-3 bg-white hover:bg-neutral-200 text-black rounded-2xl text-xs sm:text-sm font-extrabold transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-                >
-                  {isSavingBalances ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Image Crop Modal for Wallpaper */}
       {isWallpaperCropOpen && wallpaperCropSrc && (

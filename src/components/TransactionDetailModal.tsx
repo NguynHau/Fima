@@ -21,6 +21,7 @@ import {
   formatTimeVN,
 } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
+import { t, tCategory } from '../utils/translations';
 
 interface TransactionDetailModalProps {
   isOpen: boolean;
@@ -387,7 +388,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             <div className="w-full bg-[#1a1a1a]/95 border border-neutral-800 rounded-2xl p-3.5 text-center backdrop-blur-md shadow-2xl flex flex-col items-center gap-1.5 shrink-0">
               <div className="flex items-center gap-2 text-xs font-bold text-neutral-300">
                 <CategoryIcon category={currentTx.category} type={currentTx.type} size={16} />
-                <span>{currentTx.category}</span>
+                <span>{tCategory(currentTx.category)}</span>
                 <span className="text-neutral-500">•</span>
                 <span
                   className={
@@ -396,7 +397,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       : 'text-cyan-400 font-bold'
                   }
                 >
-                  {currentTx.account === 'wallet' ? 'Ví tiền' : 'Ngân hàng'}
+                  {currentTx.account === 'wallet' ? t('tx.wallet') : t('tx.bank')}
                 </span>
               </div>
 

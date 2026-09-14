@@ -15,6 +15,7 @@ import {
   formatFullDateVN,
   formatTimeVN,
 } from '../utils/formatters';
+import { t, tCategory } from '../utils/translations';
 import { CategoryIcon, getCategoryInfo } from './CategoryIcon';
 import { getImageBlob } from '../db/database';
 import { TransactionDetailModal } from './TransactionDetailModal';
@@ -144,7 +145,7 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
     if (!finalQuestion.trim()) return;
     
     if (!isOnline) {
-      setAnswer('Bạn đang ở chế độ ngoại tuyến (Offline). Trợ lý AI cần kết nối Internet để phân tích dữ liệu và trả lời.');
+      setAnswer(t('ai.offline_error'));
       return;
     }
 
@@ -156,15 +157,15 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
       setQuestion('');
     } catch (err: any) {
       console.error('AI Assistant Error:', err);
-      setAnswer(err?.message || 'Rất tiếc, AI gặp lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.');
+      setAnswer(err?.message || t('ai.ask_error'));
     } finally {
       setIsLoading(false);
     }
   };
 
   const suggestions = [
-    'Tháng này tôi tiêu bao nhiêu?',
-    'Xu hướng chi tiêu của tôi?',
+    t('ai.suggestion_1'),
+    t('ai.suggestion_2'),
   ];
 
   return (
@@ -176,14 +177,14 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
               type="button"
               onClick={() => setIsQuotaOpen(true)}
               className="w-10 h-10 rounded-2xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 flex items-center justify-center text-purple-300 active:scale-95 transition-all cursor-pointer shadow-xs"
-              title="Xem thông tin Quota & Token AI"
-              aria-label="Xem thông tin Quota & Token AI"
+              title={t('ai.quota_btn_tooltip')}
+              aria-label={t('ai.quota_btn_tooltip')}
             >
               <Sparkles size={22} className="animate-pulse" />
             </button>
             <div>
-              <h3 className="text-sm sm:text-base font-black text-white">Trợ lý Tài chính AI</h3>
-              <p className="text-[10px] text-purple-200/60 font-bold uppercase tracking-wider">Financial Reasoning Engine</p>
+              <h3 className="text-sm sm:text-base font-black text-white">{t('ai.assistant_title')}</h3>
+              <p className="text-[10px] text-purple-200/60 font-bold uppercase tracking-wider">{t('ai.reasoning_engine')}</p>
             </div>
           </div>
 
@@ -191,7 +192,7 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
             {!isOnline && (
               <div className="flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold">
                 <WifiOff size={13} className="text-amber-400" />
-                <span className="hidden sm:inline">Ngoại tuyến</span>
+                <span className="hidden sm:inline">{t('ai.offline_badge')}</span>
               </div>
             )}
           </div>
@@ -201,7 +202,7 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-xs text-amber-200 flex items-start gap-2.5">
             <WifiOff size={16} className="text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold text-amber-300">Chế độ Ngoại tuyến:</span> Tất cả dữ liệu thống kê, biểu đồ thu chi và danh mục hoạt động 100% không cần mạng. Trợ lý AI sẽ tự động hoạt động trở lại ngay khi có kết nối Internet.
+              <span className="font-bold text-amber-300">{t('ai.offline_badge')}:</span> {t('ai.offline_banner')}
             </div>
           </div>
         )}
@@ -211,13 +212,13 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Sparkles size={14} className="text-purple-400 shrink-0" />
-                <span className="font-extrabold text-purple-300">Phản hồi từ Fima AI:</span>
+                <span className="font-extrabold text-purple-300">{t('ai.response_title')}</span>
               </div>
               <button
                 onClick={() => setAnswer(null)}
                 className="text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
               >
-                Đóng
+                {t('ai.close')}
               </button>
             </div>
             <div className="whitespace-pre-line text-neutral-200 space-y-2 font-normal leading-relaxed">
@@ -229,7 +230,7 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
         <div className="relative group">
           <input
             type="text"
-            placeholder={isOnline ? "Hỏi AI về tài chính của bạn..." : "Trợ lý AI cần kết nối Internet..."}
+            placeholder={isOnline ? t('ai.input_placeholder') : t('ai.input_placeholder_offline')}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
@@ -241,7 +242,7 @@ const AIAssistantSection: React.FC<{ transactions: Transaction[] }> = ({ transac
             disabled={isLoading || !question.trim() || !isOnline}
             className="absolute right-2 top-2 bottom-2 px-3 bg-purple-600 hover:bg-purple-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg flex items-center justify-center cursor-pointer"
           >
-            {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'HỎI'}
+            {isLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : t('ai.btn_ask')}
           </button>
         </div>
 
@@ -339,7 +340,7 @@ const TransactionGridCard: React.FC<{
     };
   }, [tx.imageId]);
 
-  const badgeAmount = formatBadgeAmount(tx.amount, tx.type);
+  const badgeAmount = formatSignedVND(tx.amount, tx.type);
 
   return (
     <div
@@ -360,7 +361,7 @@ const TransactionGridCard: React.FC<{
             <CategoryIcon category={tx.category} type={tx.type} size={16} />
           </div>
           <span className="text-[10px] sm:text-[11px] font-medium text-neutral-400 line-clamp-1 px-1">
-            {tx.category}
+            {tCategory(tx.category)}
           </span>
         </div>
       )}
@@ -1082,9 +1083,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
     });
 
     return [
-      { metric: 'Thu nhập', 'Ví': walletInc, 'Bank': bankInc },
-      { metric: 'Chi tiêu', 'Ví': walletExp, 'Bank': bankExp },
-      { metric: 'Chênh lệch', 'Ví': walletInc - walletExp, 'Bank': bankInc - bankExp },
+      { metric: t('stats.tab.income'), 'Ví': walletInc, 'Bank': bankInc },
+      { metric: t('stats.tab.expense'), 'Ví': walletExp, 'Bank': bankExp },
+      { metric: t('flow.net_short'), 'Ví': walletInc - walletExp, 'Bank': bankInc - bankExp },
     ];
   }, [transactions, startDateStr, endDateStr]);
 
@@ -1295,10 +1296,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
             <BarChart3 className="text-white" size={24} />
-            Thống kê tài chính
+            {t('stats.header.title')}
           </h1>
           <p className="text-xs text-neutral-400 font-medium mt-0.5">
-            Báo cáo chi tiết dòng tiền & số dư
+            {t('stats.header.desc')}
           </p>
         </div>
       </div>
@@ -1320,17 +1321,17 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               </div>
               <div>
                 <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                  Danh sách các giao dịch
+                  {t('stats.tx_list')}
                 </h3>
                 <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
-                  {txListFilteredTransactions.length} giao dịch trong bộ lọc riêng
+                  {txListFilteredTransactions.length} {t('stats.tx_list_suffix')}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
-                Xem tất cả
+                {t('stats.view_all')}
               </span>
               <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
                 <ChevronRight size={18} />
@@ -1351,17 +1352,17 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               </div>
               <div>
                 <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
-                  Gợi ý & Thông tin nhanh
+                  {t('stats.insights')}
                 </h3>
                 <p className="text-[10px] sm:text-xs font-bold text-neutral-400 mt-0.5">
-                  {quickInsights.length} điểm nổi bật
+                  {quickInsights.length} {t('stats.insights_suffix')}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold text-neutral-400 group-hover:text-neutral-200 transition-colors hidden sm:inline">
-                Xem chi tiết
+                {t('stats.view_detail')}
               </span>
               <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:bg-neutral-800 transition-all">
                 <ChevronRight size={18} />
@@ -1404,7 +1405,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   size={16}
                   className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
                 />
-                <span>Tất cả</span>
+                <span>{t('flow.all')}</span>
               </span>
             </button>
             <button
@@ -1428,7 +1429,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   size={16}
                   className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-400'}
                 />
-                <span>Ví</span>
+                <span>{t('flow.wallet')}</span>
               </span>
             </button>
             <button
@@ -1452,7 +1453,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   size={16}
                   className={accountFilter === 'bank' ? 'text-cyan-400' : 'text-neutral-400'}
                 />
-                <span>Bank</span>
+                <span>{t('flow.bank')}</span>
               </span>
             </button>
           </div>
@@ -1470,10 +1471,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
           >
             {(
               [
-                { id: 'week', label: 'Tuần' },
-                { id: 'month', label: 'Tháng' },
-                { id: 'year', label: 'Năm' },
-                { id: 'custom', label: 'Tùy chọn' },
+                { id: 'week', label: t('stats.period.week') },
+                { id: 'month', label: t('stats.period.month') },
+                { id: 'year', label: t('stats.period.year') },
+                { id: 'custom', label: t('stats.period.custom') },
               ] as const
             ).map((tab) => (
               <button
@@ -1624,17 +1625,17 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'empty_state':
                     return (
-                      <div className="bg-[#121212] border border-neutral-800 rounded-2xl p-6 sm:p-8 text-center space-y-3 relative">
+                      <div key={cardId} className="bg-[#121212] border border-neutral-800 rounded-2xl p-6 sm:p-8 text-center space-y-3 relative">
                         <div className="w-14 h-14 rounded-2xl bg-[#1a1a1a] border border-neutral-800 flex items-center justify-center mx-auto text-neutral-400 shadow-inner">
                           <AlertCircle size={28} />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-base font-extrabold text-white">Chưa có dữ liệu</h3>
+                          <h3 className="text-base font-extrabold text-white">{t('stats.no_data_title')}</h3>
                           <p className="text-xs sm:text-sm text-neutral-300 font-medium">
-                            Không có giao dịch nào trong khoảng thời gian đã chọn.
+                            {t('stats.no_data_desc')}
                           </p>
                           <p className="text-xs text-white font-bold pt-1">
-                            Thêm giao dịch đầu tiên để xem thống kê.
+                            {t('stats.no_data_action')}
                           </p>
                         </div>
                       </div>
@@ -1642,19 +1643,19 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'chart_income_vs_expense':
                     return (
-                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                      <div key={cardId} className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
                         <div className="flex items-center justify-between">
                           <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                             <LineChartIcon size={18} className="text-white" />
-                            Thu nhập vs Chi tiêu
+                            {t('stats.income_vs_expense')}
                           </h3>
                           <div className="flex items-center gap-2.5">
                             <div className="flex items-center gap-3 text-xs font-bold">
                               <span className="flex items-center gap-1 text-emerald-400">
-                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Thu
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> {t('stats.tab.income')}
                               </span>
                               <span className="flex items-center gap-1 text-rose-400">
-                                <span className="w-2.5 h-2.5 rounded-full bg-rose-400" /> Chi
+                                <span className="w-2.5 h-2.5 rounded-full bg-rose-400" /> {t('stats.tab.expense')}
                               </span>
                             </div>
                           </div>
@@ -1676,7 +1677,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                               <Line
                                 type="monotone"
                                 dataKey="income"
-                                name="Thu nhập"
+                                name={t('stats.tab.income')}
                                 stroke="var(--sys-green, #10b981)"
                                 strokeWidth={2.5}
                                 dot={false}
@@ -1685,7 +1686,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                               <Line
                                 type="monotone"
                                 dataKey="expense"
-                                name="Chi tiêu"
+                                name={t('stats.tab.expense')}
                                 stroke="var(--sys-red, #ff073a)"
                                 strokeWidth={2.5}
                                 dot={false}
@@ -1699,11 +1700,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'chart_net_cashflow':
                     return (
-                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                      <div key={cardId} className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
                         <div className="flex items-center justify-between">
                           <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                             <BarChart3 size={18} className="text-blue-400" />
-                            Dòng tiền ròng (Net = Thu − Chi)
+                            {t('stats.net_cashflow')} (Net = {t('stats.tab.income')} − {t('stats.tab.expense')})
                           </h3>
                         </div>
 
@@ -1746,11 +1747,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'chart_category_expense':
                     return (
-                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-4">
+                      <div key={cardId} className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-4">
                         <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
                           <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                             <PieChartIcon size={18} className="text-purple-400" />
-                            Chi tiêu theo hạng mục
+                            {t('stats.category_expense')}
                           </h3>
                           <div className="flex items-center gap-2.5">
                             <span className="text-xs font-bold text-neutral-300 font-mono">
@@ -1761,7 +1762,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                         {categoryBreakdown.list.length === 0 ? (
                           <div className="py-6 text-center text-neutral-400 text-xs">
-                            Không có khoản chi tiêu nào trong kỳ này.
+                            {t('stats.no_expense')}
                           </div>
                         ) : (
                           <>
@@ -1788,7 +1789,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                                   <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                                    Tổng chi
+                                    {t('stats.total_spent')}
                                   </span>
                                   <span className="text-xs sm:text-sm font-black text-rose-400 font-mono">
                                     {formatVND(categoryBreakdown.totalExpenseInFilter)}
@@ -1804,7 +1805,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                     <div className="flex items-center gap-2">
                                       <CategoryIcon category={cat.name} type="expense" size={16} />
                                       <span className="font-bold text-neutral-100 text-xs sm:text-sm">
-                                        {cat.name}
+                                        {tCategory(cat.name)}
                                       </span>
                                       <span className="text-xs text-neutral-400 font-medium">({cat.count})</span>
                                     </div>
@@ -1837,22 +1838,22 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'chart_balance_over_time':
                     return (
-                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                      <div key={cardId} className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
                         <div className="flex items-center justify-between">
                           <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                             <LineChartIcon size={18} className="text-amber-400" />
-                            Số dư Ví & Bank theo thời gian
+                            {t('stats.balance_over_time')}
                           </h3>
                           <div className="flex items-center gap-2.5">
                             <div className="flex items-center gap-2.5 text-xs font-bold">
                               {(accountFilter === 'all' || accountFilter === 'wallet') && (
                                 <span className="flex items-center gap-1 text-amber-400">
-                                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Ví
+                                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> {t('flow.wallet')}
                                 </span>
                               )}
                               {(accountFilter === 'all' || accountFilter === 'bank') && (
                                 <span className="flex items-center gap-1 text-cyan-400">
-                                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Bank
+                                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> {t('flow.bank')}
                                 </span>
                               )}
                             </div>
@@ -1880,7 +1881,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 <Line
                                   type="monotone"
                                   dataKey="wallet"
-                                  name="Số dư Ví"
+                                  name={t('stats.wallet_balance')}
                                   stroke="var(--sys-yellow, #f59e0b)"
                                   strokeWidth={2.5}
                                   dot={false}
@@ -1890,7 +1891,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                 <Line
                                   type="monotone"
                                   dataKey="bank"
-                                  name="Số dư Bank"
+                                  name={t('stats.bank_balance')}
                                   stroke="var(--sys-blue, #0ea5e9)"
                                   strokeWidth={2.5}
                                   dot={false}
@@ -1904,19 +1905,19 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'chart_wallet_vs_bank':
                     return (
-                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                      <div key={cardId} className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
                         <div className="flex items-center justify-between">
                           <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                             <BarChart3 size={18} className="text-indigo-400" />
-                            So sánh Ví vs Bank
+                            {t('stats.wallet_vs_bank')}
                           </h3>
                           <div className="flex items-center gap-2.5">
                             <div className="flex items-center gap-2.5 text-xs font-bold">
                               <span className="flex items-center gap-1 text-amber-400">
-                                <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Ví
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> {t('flow.wallet')}
                               </span>
                               <span className="flex items-center gap-1 text-cyan-400">
-                                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Bank
+                                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> {t('flow.bank')}
                               </span>
                             </div>
                           </div>
@@ -1949,11 +1950,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
 
                   case 'compare_prev_period':
                     return (
-                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+                      <div key={cardId} className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
                         <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
                           <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                             <Scale size={18} className="text-white" />
-                            So sánh với kỳ trước
+                            {t('stats.prev_period_compare')}
                           </h3>
                         </div>
 
@@ -1964,13 +1965,13 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             return (
                               <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
                                 <div>
-                                  <div className="text-xs font-bold text-neutral-300">Chi tiêu kỳ này</div>
+                                  <div className="text-xs font-bold text-neutral-300">{t('stats.expense_current_period')}</div>
                                   <div className="text-sm font-black text-white font-mono mt-0.5">
                                     {formatVND(currentKPI.expense)}
                                   </div>
                                 </div>
                                 <div className="text-right flex items-center gap-1.5">
-                                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
+                                  <span className="text-xs font-medium text-neutral-400">{t('stats.compared_to_previous')}</span>
                                   <div
                                     className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
                                       expMeta.direction === 'up'
@@ -1996,13 +1997,13 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             return (
                               <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
                                 <div>
-                                  <div className="text-xs font-bold text-neutral-300">Thu nhập kỳ này</div>
+                                  <div className="text-xs font-bold text-neutral-300">{t('stats.income_current_period')}</div>
                                   <div className="text-sm font-black text-white font-mono mt-0.5">
                                     {formatVND(currentKPI.income)}
                                   </div>
                                 </div>
                                 <div className="text-right flex items-center gap-1.5">
-                                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
+                                  <span className="text-xs font-medium text-neutral-400">{t('stats.compared_to_previous')}</span>
                                   <div
                                     className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
                                       incMeta.direction === 'up'
@@ -2028,7 +2029,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                             return (
                               <div className="flex items-center justify-between p-3 rounded-xl bg-[#1a1a1a] border border-neutral-800">
                                 <div>
-                                  <div className="text-xs font-bold text-neutral-300">Chênh lệch kỳ này</div>
+                                  <div className="text-xs font-bold text-neutral-300">{t('stats.net_current_period')}</div>
                                   <div
                                     className={`text-sm font-black font-mono mt-0.5 ${
                                       currentKPI.net !== 0
@@ -2040,7 +2041,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                                   </div>
                                 </div>
                                 <div className="text-right flex items-center gap-1.5">
-                                  <span className="text-xs font-medium text-neutral-400">So kỳ trước:</span>
+                                  <span className="text-xs font-medium text-neutral-400">{t('stats.compared_to_previous')}</span>
                                   <div
                                     className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
                                       netMeta.direction === 'up'
@@ -2066,36 +2067,36 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   case 'debt_summary':
                     if (!debtStats) return null;
                     return (
-                      <div className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
+                      <div key={cardId} className="bg-[#121212] rounded-2xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3.5">
                         <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
                           <h3 className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                             <Users size={18} className="text-[#94a3b8]" />
-                            Thống kê Công nợ & Vay mượn (Độc lập)
+                            {t('stats.debt_borrowing_title')}
                           </h3>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2.5">
                           <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
                             <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> Người khác nợ bạn
+                              <span className="w-2 h-2 rounded-full bg-[#38bdf8]" /> {t('stats.lend_title')}
                             </div>
                             <div className="text-sm font-black text-[#38bdf8] font-mono mt-1">
                               {formatVND(debtStats.totalLendRemaining)}
                             </div>
                             <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
-                              {debtStats.activeLendCount} khoản chưa thu hồi
+                              {debtStats.activeLendCount} {t('stats.lend_remaining')}
                             </div>
                           </div>
 
                           <div className="bg-[#1a1a1a] rounded-xl p-3 border border-neutral-800">
                             <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-[#ff073a]" /> Bạn nợ người khác
+                              <span className="w-2 h-2 rounded-full bg-[#ff073a]" /> {t('stats.borrow_title')}
                             </div>
                             <div className="text-sm font-black text-[#ff073a] font-mono mt-1">
                               {formatVND(debtStats.totalBorrowRemaining)}
                             </div>
                             <div className="text-[9px] text-neutral-400 font-bold mt-0.5">
-                              {debtStats.activeBorrowCount} khoản chưa hoàn trả
+                              {debtStats.activeBorrowCount} {t('stats.borrow_remaining')}
                             </div>
                           </div>
                         </div>
@@ -2103,21 +2104,21 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                         {debtStats.grandTotalDebtRemaining > 0 && (
                           <div className="space-y-1.5 pt-1">
                             <div className="flex items-center justify-between text-xs font-bold text-neutral-300">
-                              <span>Tỷ lệ nợ ròng</span>
+                              <span>{t('stats.net_debt_ratio')}</span>
                               <span className="font-mono text-[10px]">
-                                {debtStats.lendRatio.toFixed(0)}% Cho vay | {debtStats.borrowRatio.toFixed(0)}% Đi vay
+                                {debtStats.lendRatio.toFixed(0)}% {t('stats.lend')} | {debtStats.borrowRatio.toFixed(0)}% {t('stats.borrow')}
                               </span>
                             </div>
                             <div className="w-full h-2.5 bg-[#262626] rounded-full overflow-hidden flex border border-neutral-800">
                               <div
                                 className="h-full bg-[#38bdf8]"
                                 style={{ width: `${debtStats.lendRatio}%` }}
-                                title="Cho vay"
+                                title={t('stats.lend')}
                               />
                               <div
                                 className="h-full bg-[#ff073a]"
                                 style={{ width: `${debtStats.borrowRatio}%` }}
-                                title="Đi vay"
+                                title={t('stats.borrow')}
                               />
                             </div>
                           </div>
@@ -2162,10 +2163,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm sm:text-base font-black text-white tracking-tight flex items-center gap-2">
-                    Danh sách các giao dịch
+                    {t('stats.tx_list')}
                   </h2>
                   <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">
-                    {txListVisibleTransactions.length} giao dịch
+                    {txListVisibleTransactions.length} {t('common.transactions')}
                   </p>
                 </div>
 
@@ -2173,8 +2174,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   type="button"
                   onClick={txSheetDrag.closeWithAnimation}
                   className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-                  title="Đóng"
-                  aria-label="Đóng"
+                  title={t('common.close')}
+                  aria-label={t('common.close')}
                 >
                   <X size={18} />
                 </button>
@@ -2188,7 +2189,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 tabs={[
                   {
                     id: 'all',
-                    label: 'Tất cả',
+                    label: t('flow.all'),
                     icon: Layers,
                     activeBgClassName: 'bg-white',
                     activeTextColor: 'text-black font-extrabold',
@@ -2196,7 +2197,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   },
                   {
                     id: 'wallet',
-                    label: 'Ví',
+                    label: t('flow.wallet'),
                     icon: Wallet,
                     activeBgClassName: 'bg-amber-500/25 border border-amber-500/40',
                     activeTextColor: 'text-amber-300 font-extrabold',
@@ -2204,7 +2205,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   },
                   {
                     id: 'bank',
-                    label: 'Bank',
+                    label: t('flow.bank'),
                     icon: Building2,
                     activeBgClassName: 'bg-cyan-500/25 border border-cyan-500/40',
                     activeTextColor: 'text-cyan-300 font-extrabold',
@@ -2219,10 +2220,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 activeId={txListTimeFilter}
                 onChange={setTxListTimeFilter}
                 tabs={[
-                  { id: 'week', label: 'Tuần' },
-                  { id: 'month', label: 'Tháng' },
-                  { id: 'year', label: 'Năm' },
-                  { id: 'custom', label: 'Tùy chọn' },
+                  { id: 'week', label: t('stats.period.week') },
+                  { id: 'month', label: t('stats.period.month') },
+                  { id: 'year', label: t('stats.period.year') },
+                  { id: 'custom', label: t('stats.period.custom') },
                 ]}
               />
 
@@ -2233,7 +2234,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                     type="button"
                     onClick={handleTxListPrevPeriod}
                     className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
-                    title="Kỳ trước"
+                    title={t('flow.prev_month')}
                   >
                     <ChevronLeft size={18} />
                   </button>
@@ -2248,7 +2249,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                         onClick={handleTxListResetToToday}
                         className="text-[11px] sm:text-xs font-bold text-black bg-white hover:bg-neutral-200 px-2.5 py-0.5 sm:py-1 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95"
                       >
-                        Hôm nay
+                        {t('flow.today')}
                       </button>
                     )}
                   </div>
@@ -2257,7 +2258,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                     type="button"
                     onClick={handleTxListNextPeriod}
                     className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors cursor-pointer shrink-0 active:scale-95"
-                    title="Kỳ sau"
+                    title={t('flow.next_month')}
                   >
                     <ChevronRight size={18} />
                   </button>
@@ -2266,7 +2267,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-1 px-1">
                   <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
-                      Từ
+                      {t('common.from')}
                     </span>
                     <input
                       type="date"
@@ -2278,7 +2279,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   <span className="text-neutral-500 text-xs font-bold shrink-0">→</span>
                   <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
-                      Đến
+                      {t('common.to')}
                     </span>
                     <input
                       type="date"
@@ -2298,7 +2299,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 tabs={[
                   {
                     id: 'all',
-                    label: 'Tất cả',
+                    label: t('flow.all'),
                     icon: Layers,
                     activeBgClassName: 'bg-white',
                     activeTextColor: 'text-black font-extrabold',
@@ -2306,7 +2307,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   },
                   {
                     id: 'income',
-                    label: 'Thu',
+                    label: t('flow.income_short'),
                     icon: TrendingUp,
                     activeBgClassName: 'bg-emerald-500/25 border border-emerald-500/40',
                     activeTextColor: 'text-emerald-300 font-extrabold',
@@ -2314,7 +2315,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   },
                   {
                     id: 'expense',
-                    label: 'Chi',
+                    label: t('flow.expense_short'),
                     icon: TrendingDown,
                     activeBgClassName: 'bg-rose-500/25 border border-rose-500/40',
                     activeTextColor: 'text-rose-300 font-extrabold',
@@ -2331,7 +2332,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   <div className="w-12 h-12 rounded-2xl bg-neutral-800/60 border border-neutral-700/40 flex items-center justify-center mx-auto text-neutral-400">
                     <List size={22} />
                   </div>
-                  <p>Không có giao dịch nào trong khoảng thời gian này</p>
+                  <p>{t('stats.no_data_desc')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
@@ -2383,10 +2384,10 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 </div>
                 <div>
                   <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
-                    Gợi ý & Thông tin nhanh
+                    {t('stats.insights')}
                   </h2>
                   <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">
-                    {quickInsights.length} điểm nổi bật
+                    {quickInsights.length} {t('stats.insights_suffix')}
                   </p>
                 </div>
               </div>
@@ -2395,8 +2396,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 type="button"
                 onClick={insightsSheetDrag.closeWithAnimation}
                 className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-                title="Đóng"
-                aria-label="Đóng"
+                title={t('common.close')}
+                aria-label={t('common.close')}
               >
                 <X size={18} />
               </button>
@@ -2407,7 +2408,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
               {quickInsights.length === 0 ? (
                 <div className="py-12 text-center text-xs font-bold text-neutral-500">
-                  Không đủ dữ liệu để tạo gợi ý
+                  {t('stats.no_insights')}
                 </div>
               ) : (
                 quickInsights.map((insight) => (
@@ -2442,7 +2443,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                       </div>
                       {insight.hasArrow && insight.onClick && (
                         <span className="text-[10px] text-white font-bold flex items-center gap-0.5 justify-end mt-0.5">
-                          Chi tiết <ArrowRight size={12} />
+                          {t('common.details')} <ArrowRight size={12} />
                         </span>
                       )}
                     </div>

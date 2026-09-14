@@ -1,21 +1,16 @@
 import React, { useState, useRef } from 'react';
 import {
   X,
-  Wallet,
-  Building2,
   Download,
   Upload,
   Trash2,
   Check,
   AlertTriangle,
   Smartphone,
-  Info,
   ShieldCheck,
-  Edit3,
 } from 'lucide-react';
-import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
+import { clearAllData } from '../db/database';
 import { exportBackupZip, importBackupZip, triggerBlobDownload } from '../services/backupService';
-import { parseAmountInput } from '../utils/formatters';
 import appLogo from '../assets/logo.png';
 
 interface SettingsModalProps {
@@ -31,52 +26,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onDataChanged,
   onOpenInstallGuide,
 }) => {
-  const [walletStr, setWalletStr] = useState('');
-  const [bankStr, setBankStr] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [isSavingBalances, setIsSavingBalances] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false);
-  const [showEditBalanceModal, setShowEditBalanceModal] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load initial balances when opened
   React.useEffect(() => {
     if (!isOpen) return;
-    getUserSettings().then((s) => {
-      setWalletStr(s.initialWalletBalance ? s.initialWalletBalance.toString() : '0');
-      setBankStr(s.initialBankBalance ? s.initialBankBalance.toString() : '0');
-    });
     setStatusMessage(null);
     setShowClearConfirm(false);
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const walletNum = parseAmountInput(walletStr);
-  const bankNum = parseAmountInput(bankStr);
-
-  const handleSaveBalances = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setIsSavingBalances(true);
-      await updateUserSettings({
-        initialWalletBalance: walletNum,
-        initialBankBalance: bankNum,
-      });
-      setStatusMessage({ type: 'success', text: 'Đã cập nhật số dư ban đầu thành công!' });
-      setShowEditBalanceModal(false);
-      onDataChanged();
-    } catch (err) {
-      console.error(err);
-      setStatusMessage({ type: 'error', text: 'Lỗi khi lưu số dư ban đầu.' });
-    } finally {
-      setIsSavingBalances(false);
-    }
-  };
 
   const handleExport = async () => {
     try {
@@ -173,27 +136,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           )}
 
-          {/* 1. Initial Balances Card */}
-          <div className="bg-[#282c34] rounded-2xl p-4 border border-[#3a3f4b] shadow-sm space-y-2.5">
-            <h3 className="text-xs font-black text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Wallet size={15} className="text-amber-400" />
-              Tài chính & Số dư ban đầu
-            </h3>
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
-              Số dư ban đầu là số tiền gốc trong Ví và Ngân hàng khi bạn bắt đầu theo dõi thu chi. Việc thay đổi số dư này sẽ ảnh hưởng trực tiếp đến tổng tài sản hiện có.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setShowWarningModal(true)}
-              className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-md"
-            >
-              <Edit3 size={16} />
-              Chỉnh sửa
-            </button>
-          </div>
-
-          {/* 2. Backup & Restore */}
+          {/* 1. Backup & Restore */}
           <div className="bg-[#282c34] rounded-2xl p-4 border border-[#3a3f4b] shadow-sm space-y-2.5">
             <h3 className="text-xs font-black text-neutral-300 uppercase tracking-wider">
               Sao lưu & Khôi phục
@@ -245,7 +188,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* 3. PWA Install Guide */}
+          {/* 2. PWA Install Guide */}
           <div className="bg-[#282c34] rounded-2xl p-4 border border-[#3a3f4b] shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 flex items-center justify-center shrink-0">
@@ -269,7 +212,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
           </div>
 
-          {/* 4. Privacy & Info */}
+          {/* 3. Privacy & Info */}
           <div className="bg-emerald-500/15 rounded-2xl p-3.5 border border-emerald-500/30 flex items-start gap-2.5">
             <ShieldCheck size={18} className="text-emerald-300 shrink-0 mt-0.5" />
             <div className="text-xs sm:text-sm text-neutral-200 leading-relaxed font-medium">
@@ -277,7 +220,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* 5. Danger Zone */}
+          {/* 4. Danger Zone */}
           <div className="bg-rose-500/15 rounded-2xl p-4 border border-rose-500/30 space-y-2">
             <h3 className="text-xs font-black text-rose-300 uppercase tracking-wider">
               Xóa toàn bộ dữ liệu
@@ -340,138 +283,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </linearGradient>
           </defs>
         </svg>
-
-        {/* Warning Notice Modal */}
-        {showWarningModal && (
-          <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
-            <div className="w-full max-w-xs sm:max-w-sm bg-[#282c34] border border-[#3a3f4b] rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
-              <div className="flex items-center gap-3">
-                <Wallet
-                  size={26}
-                  className="shrink-0"
-                  stroke="url(#settings-modal-pink-purple-grad)"
-                  strokeWidth={2.3}
-                />
-                <div>
-                  <h3 className="text-base font-extrabold text-white">
-                    Lưu ý thay đổi số dư
-                  </h3>
-                  <p className="text-[11px] text-neutral-400 font-medium">
-                    Cảnh báo ảnh hưởng dữ liệu
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium bg-[#202328] p-3.5 rounded-2xl border border-[#3a3f4b]">
-                Việc thay đổi số dư ban đầu sẽ tính toán lại toàn bộ tổng tài sản hiện tại. Bạn có chắc chắn muốn điều chỉnh số dư ban đầu không?
-              </p>
-
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowWarningModal(false)}
-                  className="py-3 rounded-2xl bg-[#323640] text-neutral-200 text-xs sm:text-sm font-bold hover:bg-[#3c414f] active:scale-95 cursor-pointer border border-[#3a3f4b]"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowWarningModal(false);
-                    setShowEditBalanceModal(true);
-                  }}
-                  className="py-3 rounded-2xl bg-rose-600 text-white text-xs sm:text-sm font-extrabold hover:bg-rose-500 active:scale-95 cursor-pointer shadow-md"
-                >
-                  Chấp nhận
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Balance Inputs Modal */}
-        {showEditBalanceModal && (
-          <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 pb-4 pt-[max(env(safe-area-inset-top,0px),16px)]">
-            <div className="w-full max-w-xs sm:max-w-sm bg-[#282c34] border border-[#3a3f4b] rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between border-b border-[#3a3f4b] pb-3">
-                <h3 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                  <Wallet
-                    size={20}
-                    className="shrink-0"
-                    stroke="url(#settings-modal-pink-purple-grad)"
-                    strokeWidth={2.3}
-                  />
-                  Thay đổi số dư ban đầu
-                </h3>
-                <button
-                  onClick={() => setShowEditBalanceModal(false)}
-                  className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-                  aria-label="Đóng"
-                  title="Đóng"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveBalances} noValidate className="space-y-3.5">
-                <div>
-                  <label htmlFor="modal-settings-wallet-input" className="block text-xs sm:text-sm font-bold text-neutral-200 mb-1 flex items-center gap-2">
-                    <Wallet size={16} className="text-amber-400" />
-                    Số dư ban đầu của Ví
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      id="modal-settings-wallet-input"
-                      type="text"
-                      inputMode="numeric"
-                      value={walletNum > 0 ? walletNum.toLocaleString('vi-VN') : ''}
-                      onChange={(e) => setWalletStr(e.target.value)}
-                      placeholder="0"
-                      className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#313540] border border-[#3e4350] rounded-xl px-3.5 py-2.5 outline-none focus:border-amber-400"
-                    />
-                    <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="modal-settings-bank-input" className="block text-xs sm:text-sm font-bold text-neutral-200 mb-1 flex items-center gap-2">
-                    <Building2 size={16} className="text-cyan-400" />
-                    Số dư ban đầu của Ngân hàng
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      id="modal-settings-bank-input"
-                      type="text"
-                      inputMode="numeric"
-                      value={bankNum > 0 ? bankNum.toLocaleString('vi-VN') : ''}
-                      onChange={(e) => setBankStr(e.target.value)}
-                      placeholder="0"
-                      className="w-full text-sm sm:text-base font-bold text-white font-mono bg-[#313540] border border-[#3e4350] rounded-xl px-3.5 py-2.5 outline-none focus:border-cyan-400"
-                    />
-                    <span className="absolute right-3.5 text-sm font-bold text-neutral-400">₫</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditBalanceModal(false)}
-                    className="py-3 rounded-2xl bg-[#323640] text-neutral-200 text-xs sm:text-sm font-bold hover:bg-[#3c414f] active:scale-95 cursor-pointer border border-[#3a3f4b]"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingBalances}
-                    className="py-3 bg-white hover:bg-neutral-200 text-black rounded-2xl text-xs sm:text-sm font-extrabold transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-                  >
-                    {isSavingBalances ? 'Đang lưu...' : 'Lưu thay đổi'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -45,6 +45,7 @@ import {
 } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 import { TransactionDetailModal } from './TransactionDetailModal';
+import { t, tCategory } from '../utils/translations';
 
 interface DayDetailModalProps {
   isOpen: boolean;
@@ -355,7 +356,7 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-black text-white leading-tight drop-shadow-md">
-                    {tx.category}
+                    {tCategory(tx.category)}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
@@ -370,7 +371,7 @@ export const SwipeableTransactionRow: React.FC<SwipeableTransactionRowProps> = (
                       ) : (
                         <Building2 size={9} strokeWidth={3} />
                       )}
-                      {tx.account === 'wallet' ? 'Ví' : 'Bank'}
+                      {tx.account === 'wallet' ? t('tx.wallet_short') : t('tx.bank_short')}
                     </span>
 
                     {/* Giờ giao dịch */}

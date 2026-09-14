@@ -2,6 +2,7 @@ import React from 'react';
 import { Wallet, Building2, WifiOff } from 'lucide-react';
 import { type BalancesSummary } from '../types';
 import { formatVND } from '../utils/formatters';
+import { t } from '../utils/translations';
 
 interface HeaderProps {
   balances: BalancesSummary;
@@ -20,9 +21,9 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Chào buổi sáng,';
-    if (hour < 18) return 'Chào buổi chiều,';
-    return 'Chào buổi tối,';
+    if (hour < 12) return t('greeting.morning');
+    if (hour < 18) return t('greeting.afternoon');
+    return t('greeting.evening');
   };
 
   return (
@@ -34,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
             {getGreeting()}
           </p>
           <h1 className="text-3xl font-black tracking-tight text-white leading-tight flex items-center gap-1.5 mt-0.5">
-            <span className="truncate max-w-[200px] sm:max-w-[260px]">{nickname || 'Bạn'}</span>
+            <span className="truncate max-w-[200px] sm:max-w-[260px]">{nickname || t('greeting.default_user')}</span>
             <span>👋</span>
           </h1>
         </div>

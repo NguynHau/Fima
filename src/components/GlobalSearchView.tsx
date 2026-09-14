@@ -17,6 +17,7 @@ import { type Transaction } from '../types';
 import { formatVND, formatDateVN, formatSignedVND, formatTimeVN } from '../utils/formatters';
 import { CategoryIcon } from './CategoryIcon';
 import { getImageBlob } from '../db/database';
+import { t, tCategory } from '../utils/translations';
 
 interface GlobalSearchViewProps {
   isOpen: boolean;
@@ -227,12 +228,12 @@ export const GlobalSearchView: React.FC<GlobalSearchViewProps> = ({
                         )}
                         <span className="text-neutral-700">•</span>
                         {tx.account === 'wallet' ? <Wallet size={10} className="text-amber-500" /> : <Building2 size={10} className="text-cyan-500" />}
-                        {tx.account === 'wallet' ? 'Ví tiền' : 'Ngân hàng'}
+                        {tx.account === 'wallet' ? t('tx.wallet') : t('tx.bank')}
                       </span>
                     </div>
                     
                     <h4 className="text-sm font-black text-white truncate mt-0.5">
-                      {tx.category}
+                      {tCategory(tx.category)}
                     </h4>
                     
                     {tx.note && (

@@ -53,6 +53,8 @@ export interface UserSettings {
   wallpaperDataUrl?: string;
   wallpaperBlur?: number;
   uiTransparency?: number;
+  currency?: 'VND' | 'USD';
+  language?: 'vi' | 'en';
   createdAt: string;
   updatedAt: string;
 }
@@ -116,4 +118,23 @@ export interface BalancesSummary {
   walletBalance: number;
   bankBalance: number;
   totalAssets: number;
+}
+
+export interface Budget {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  limitAmount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  iconName?: string;
+  createdAt: string;
+  updatedAt: string;
 }

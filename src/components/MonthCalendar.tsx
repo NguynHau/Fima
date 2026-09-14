@@ -18,8 +18,12 @@ import {
   formatMonthVN,
   formatVND,
   getTodayString,
+  formatFlowDiff,
+  currencyConfig,
 } from '../utils/formatters';
+import { t } from '../utils/translations';
 import { getImageBlob } from '../db/database';
+import { BudgetSavingsCard } from './BudgetSavingsCard';
 
 interface MonthCalendarProps {
   currentYear: number;
@@ -54,8 +58,21 @@ interface DayCellData {
  */
 const formatDailyNetCompact = (net: number): string => {
   if (net === 0) return '';
-  const sign = net > 0 ? '+' : '-';
-  const abs = Math.abs(net);
+  const isUSD = currencyConfig.currency === 'USD';
+  const displayAmount = isUSD ? (net / currencyConfig.exchangeRate) : net;
+  const sign = displayAmount > 0 ? '+' : '-';
+  const abs = Math.abs(displayAmount);
+
+  if (isUSD) {
+    if (abs >= 1000) {
+      const inK = abs / 1000;
+      const formatted = inK.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      return `${sign}$${formatted}k`;
+    } else {
+      const formatted = abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `${sign}$${formatted}`;
+    }
+  }
 
   if (abs >= 1000) {
     const inK = Math.round(abs / 1000);
@@ -353,13 +370,22 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
             <Layers className="text-white" size={24} />
-            Dòng tiền
+            {t('nav.flow')}
           </h1>
           <p className="text-xs text-neutral-400 font-medium mt-0.5">
-            Theo dõi & quản lý thu chi hàng ngày
+            {t('flow.desc')}
           </p>
         </div>
       </div>
+
+      {/* BUDGET & SAVINGS PROGRESS AREA (Clean progress bars without title, logo, settings button) */}
+      <BudgetSavingsCard
+        transactions={transactions}
+        currentYear={currentYear}
+        currentMonth={currentMonth}
+        compact={true}
+        showCardHeader={false}
+      />
 
       {/* 2 & 3. Account Filter & Month Navigation Container */}
       <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm space-y-1.5">
@@ -393,7 +419,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   size={16}
                   className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
                 />
-                <span>Tất cả</span>
+                <span>{t('flow.all')}</span>
               </span>
             </button>
 
@@ -418,7 +444,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   size={16}
                   className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-400'}
                 />
-                <span>Ví</span>
+                <span>{t('flow.wallet')}</span>
               </span>
             </button>
 
@@ -443,7 +469,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   size={16}
                   className={accountFilter === 'bank' ? 'text-cyan-400' : 'text-neutral-400'}
                 />
-                <span>Bank</span>
+                <span>{t('flow.bank')}</span>
               </span>
             </button>
           </div>
@@ -454,7 +480,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
           <button
             onClick={onPrevMonth}
             className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer shrink-0"
-            aria-label="Tháng trước"
+            aria-label={t('flow.prev_month')}
           >
             <ChevronLeft size={18} />
           </button>
@@ -468,7 +494,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                 onClick={onTodayMonth}
                 className="text-[11px] sm:text-xs font-bold text-black bg-white hover:bg-neutral-200 px-2.5 py-0.5 sm:py-1 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0 active:scale-95"
               >
-                Hôm nay
+                {t('flow.today')}
               </button>
             )}
           </div>
@@ -476,7 +502,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
           <button
             onClick={onNextMonth}
             className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-200 flex items-center justify-center transition-colors active:scale-95 cursor-pointer shrink-0"
-            aria-label="Tháng sau"
+            aria-label={t('flow.next_month')}
           >
             <ChevronRight size={18} />
           </button>
@@ -490,7 +516,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
           <div className="pr-1.5 text-center">
             <div className="text-xs sm:text-xs font-bold text-neutral-400 flex items-center justify-center gap-1 uppercase tracking-wider">
               <TrendingUp size={14} className="text-emerald-400" />
-              <span>Thu</span>
+              <span>{t('flow.income_short')}</span>
             </div>
             <div className="text-sm sm:text-base font-bold text-emerald-400 mt-1 truncate font-mono">
               +{formatVND(monthSummary.income)}
@@ -501,7 +527,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
           <div className="px-1.5 text-center">
             <div className="text-xs sm:text-xs font-bold text-neutral-400 flex items-center justify-center gap-1 uppercase tracking-wider">
               <TrendingDown size={14} className="text-rose-400" />
-              <span>Chi</span>
+              <span>{t('flow.expense_short')}</span>
             </div>
             <div className="text-sm sm:text-base font-bold text-rose-400 mt-1 truncate font-mono">
               −{formatVND(monthSummary.expense)}
@@ -512,7 +538,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
           <div className="pl-1.5 text-center">
             <div className="text-xs sm:text-xs font-bold text-neutral-400 flex items-center justify-center gap-1 uppercase tracking-wider">
               <Scale size={14} className="text-neutral-400" />
-              <span>Lệch</span>
+              <span>{t('flow.net_short')}</span>
             </div>
             <div
               className={`text-sm sm:text-base font-bold mt-1 truncate font-mono ${
@@ -521,9 +547,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
                   : 'text-neutral-200'
               }`}
             >
-              {monthSummary.net !== 0
-                ? (monthSummary.net > 0 ? '+' : '−') + formatVND(Math.abs(monthSummary.net))
-                : '0 ₫'}
+              {formatFlowDiff(monthSummary.net)}
             </div>
           </div>
         </div>
@@ -533,14 +557,25 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({
       <div className="bg-[#121212] rounded-[24px] p-2.5 sm:p-3.5 border border-neutral-800/80 shadow-xl">
         {/* Day of week headers */}
         <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
-          {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day) => (
-            <div
-              key={day}
-              className="text-[12px] sm:text-xs font-semibold text-neutral-400 py-1"
-            >
-              {day}
-            </div>
-          ))}
+          {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day, idx) => {
+            const translationKeys = [
+              'flow.days.short.1',
+              'flow.days.short.2',
+              'flow.days.short.3',
+              'flow.days.short.4',
+              'flow.days.short.5',
+              'flow.days.short.6',
+              'flow.days.short.0',
+            ];
+            return (
+              <div
+                key={day}
+                className="text-[12px] sm:text-xs font-semibold text-neutral-400 py-1"
+              >
+                {t(translationKeys[idx])}
+              </div>
+            );
+          })}
         </div>
 
         {/* Day Cells Grid */}

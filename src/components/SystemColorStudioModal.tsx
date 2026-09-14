@@ -493,7 +493,7 @@ export const SystemColorStudioModal: React.FC<SystemColorStudioModalProps> = ({
                   />
                 )}
                 <span
-                  className={`relative z-10 font-bold ${
+                  className={`relative z-10 font-bold flex items-center gap-1.5 ${
                     isPresetInUse
                       ? mainMode === 'presets'
                         ? 'bg-gradient-to-r from-purple-700 via-pink-600 to-rose-600 bg-clip-text text-transparent font-black tracking-tight'
@@ -503,6 +503,7 @@ export const SystemColorStudioModal: React.FC<SystemColorStudioModalProps> = ({
                       : 'text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
+                  <Sparkles size={14} className={mainMode === 'presets' && !isPresetInUse ? 'text-black' : 'text-current'} />
                   Bộ theme
                 </span>
               </button>
@@ -521,7 +522,7 @@ export const SystemColorStudioModal: React.FC<SystemColorStudioModalProps> = ({
                   />
                 )}
                 <span
-                  className={`relative z-10 font-bold ${
+                  className={`relative z-10 font-bold flex items-center gap-1.5 ${
                     isCustomInUse
                       ? mainMode === 'custom'
                         ? 'bg-gradient-to-r from-purple-700 via-pink-600 to-rose-600 bg-clip-text text-transparent font-black tracking-tight'
@@ -531,6 +532,7 @@ export const SystemColorStudioModal: React.FC<SystemColorStudioModalProps> = ({
                       : 'text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
+                  <Sliders size={14} className={mainMode === 'custom' && !isCustomInUse ? 'text-black' : 'text-current'} />
                   Tùy chỉnh
                 </span>
               </button>

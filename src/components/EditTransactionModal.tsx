@@ -28,6 +28,7 @@ import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
 import { ImageCropModal } from './ImageCropModal';
 import { useCategories } from '../hooks/useCategories';
+import { t, tCategory } from '../utils/translations';
 
 interface EditTransactionModalProps {
   isOpen: boolean;
@@ -462,7 +463,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <CategoryIcon category={category} type={type} size={18} showBackground={false} />
-              <span className="truncate">{category || 'Hạng mục'}</span>
+              <span className="truncate">{tCategory(category) || t('tx.select_category')}</span>
             </div>
             <ChevronDown size={18} className="text-neutral-300 shrink-0 ml-1" />
           </button>
@@ -479,7 +480,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               ) : (
                 <Building2 size={18} className="text-cyan-400 shrink-0" />
               )}
-              <span className="truncate">{account === 'wallet' ? 'Ví' : 'Bank'}</span>
+              <span className="truncate">{account === 'wallet' ? t('tx.wallet_short') : t('tx.bank_short')}</span>
             </div>
             <ChevronDown size={18} className="text-neutral-300 shrink-0 ml-1" />
           </button>
@@ -502,7 +503,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               }`}
             >
               <Plus size={16} strokeWidth={3} className={type === 'income' ? 'text-emerald-300' : 'text-neutral-400'} />
-              <span>Thu</span>
+              <span>{t('tx.type_income')}</span>
             </button>
 
             {/* Chi Button */}
@@ -519,7 +520,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               }`}
             >
               <Minus size={16} strokeWidth={3} className={type === 'expense' ? 'text-rose-300' : 'text-neutral-400'} />
-              <span>Chi</span>
+              <span>{t('tx.type_expense')}</span>
             </button>
           </div>
         </div>
@@ -617,7 +618,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[75vh]">
             <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
               <h3 className="text-base font-extrabold text-white">
-                Chọn hạng mục {type === 'expense' ? 'chi tiêu' : 'thu nhập'}
+                {t('tx.select_category')} {type === 'expense' ? t('stats.tab.expense').toLowerCase() : t('stats.tab.income').toLowerCase()}
               </h3>
               <button
                 type="button"
@@ -646,7 +647,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                     }`}
                   >
                     <CategoryIcon category={cat.name} type={type} size={22} />
-                    <span className="text-xs font-bold leading-tight line-clamp-1">{cat.name}</span>
+                    <span className="text-xs font-bold leading-tight line-clamp-1">{tCategory(cat.name)}</span>
                   </button>
                 );
               })}
@@ -660,7 +661,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-4 animate-in fade-in duration-150">
           <div className="w-full max-w-xs bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col">
             <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
-              <h3 className="text-base font-extrabold text-white">Chọn nguồn tiền</h3>
+              <h3 className="text-base font-extrabold text-white">{t('tx.select_account')}</h3>
               <button
                 type="button"
                 onClick={() => setIsAccountSheetOpen(false)}

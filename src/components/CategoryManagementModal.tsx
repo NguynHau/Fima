@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, LayoutGroup } from 'motion/react';
 import { Plus, Edit2, Trash2, Tag, CheckCircle2, X } from 'lucide-react';
 import { type Category, type TransactionType } from '../types';
 import { useCategories } from '../hooks/useCategories';
@@ -8,6 +9,7 @@ import { CategoryFormModal } from './CategoryFormModal';
 import { DeleteCategoryModal } from './DeleteCategoryModal';
 import { useBottomSheetDrag } from '../hooks/useBottomSheetDrag';
 import { BottomSheetDragHandle } from './BottomSheetDragHandle';
+import { t, tCategory } from '../utils/translations';
 
 interface CategoryManagementModalProps {
   isOpen: boolean;
@@ -22,6 +24,45 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
 }) => {
   const [activeTab, setActiveTab] = useState<TransactionType>('expense');
   const { categories, expenseCategories, incomeCategories } = useCategories();
+
+  const categoryTabs: Array<TransactionType> = ['expense', 'income'];
+  const tabsControlRef = useRef<HTMLDivElement>(null);
+  const isDraggingTabsRef = useRef(false);
+
+  const updateTabFromPointer = (clientX: number) => {
+    if (!tabsControlRef.current) return;
+    const rect = tabsControlRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relX = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(0.999, relX / rect.width));
+    const targetIdx = Math.floor(ratio * categoryTabs.length);
+    const selected = categoryTabs[targetIdx];
+    if (selected && selected !== activeTab) {
+      setActiveTab(selected);
+    }
+  };
+
+  const handleTabsPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingTabsRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updateTabFromPointer(e.clientX);
+  };
+
+  const handleTabsPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingTabsRef.current) return;
+    updateTabFromPointer(e.clientX);
+  };
+
+  const handleTabsPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingTabsRef.current) {
+      isDraggingTabsRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
 
   // Bottom sheet drag gesture with light-up glow handle
   const sheetDrag = useBottomSheetDrag({
@@ -81,7 +122,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
   };
 
   const handleFormSuccess = (cat: Category, isEdit: boolean) => {
-    showToast(isEdit ? `Đã cập nhật danh mục "${cat.name}"` : `Đã thêm danh mục "${cat.name}"`);
+    showToast(isEdit ? `Đã cập nhật danh mục "${tCategory(cat.name)}"` : `Đã thêm danh mục "${tCategory(cat.name)}"`);
     refreshCounts();
     if (onDataChanged) onDataChanged();
   };
@@ -134,9 +175,11 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
               <Tag size={22} stroke="url(#category-modal-pink-purple-grad)" strokeWidth={2.4} className="shrink-0" />
               <div>
                 <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
-                  Quản lý danh mục
+                  {t('category.manager_title')}
                 </h1>
-                <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">Tùy chỉnh danh mục Thu và Chi của bạn</p>
+                <p className="text-[10px] sm:text-xs text-neutral-400 font-bold mt-0.5">
+                  {t('category.manager_subtitle')}
+                </p>
               </div>
             </div>
 
@@ -144,55 +187,86 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
               type="button"
               onClick={sheetDrag.closeWithAnimation}
               className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-              title="Đóng"
-              aria-label="Đóng"
+              title={t('common.close')}
+              aria-label={t('common.close')}
             >
               <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* Tabs: Danh mục chi & Danh mục thu */}
+        {/* Tabs: Danh mục chi & Danh mục thu with Spring Pill Animation and Draggable Gesture */}
         <div className="px-4 pt-3 pb-1.5 shrink-0 bg-[#121212]">
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#1a1a1a] rounded-xl border border-neutral-800">
-            <button
-              type="button"
-              onClick={() => setActiveTab('expense')}
-              className={`flex items-center justify-center gap-2 h-8 py-1.5 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                activeTab === 'expense'
-                  ? 'bg-rose-600 text-white shadow-md'
-                  : 'text-neutral-400 hover:text-neutral-200'
-              }`}
+          <LayoutGroup id="category_management_type_tabs">
+            <div
+              ref={tabsControlRef}
+              onPointerDown={handleTabsPointerDown}
+              onPointerMove={handleTabsPointerMove}
+              onPointerUp={handleTabsPointerUp}
+              onPointerCancel={handleTabsPointerUp}
+              className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-2 gap-1.5 relative touch-none select-none"
             >
-              <span>Danh mục chi</span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full ${
-                  activeTab === 'expense' ? 'bg-white/20 text-white' : 'bg-neutral-800 text-neutral-400'
+              <button
+                type="button"
+                onClick={() => setActiveTab('expense')}
+                className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                  activeTab === 'expense'
+                    ? 'text-rose-300 font-extrabold'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                {expenseCategories.length}
-              </span>
-            </button>
+                {activeTab === 'expense' && (
+                  <motion.div
+                    layoutId="category_active_tab_pill"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-rose-500/25 rounded-lg shadow-xs border border-rose-500/40"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <span>{t('category.tab_expense')}</span>
+                  <span
+                    className={`text-[11px] px-1.5 py-0.5 rounded-full font-black ${
+                      activeTab === 'expense'
+                        ? 'bg-rose-500/20 text-rose-300'
+                        : 'bg-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    {expenseCategories.length}
+                  </span>
+                </span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('income')}
-              className={`flex items-center justify-center gap-2 h-8 py-1.5 rounded-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                activeTab === 'income'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-neutral-400 hover:text-neutral-200'
-              }`}
-            >
-              <span>Danh mục thu</span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full ${
-                  activeTab === 'income' ? 'bg-white/20 text-white' : 'bg-neutral-800 text-neutral-400'
+              <button
+                type="button"
+                onClick={() => setActiveTab('income')}
+                className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                  activeTab === 'income'
+                    ? 'text-emerald-300 font-extrabold'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                {incomeCategories.length}
-              </span>
-            </button>
-          </div>
+                {activeTab === 'income' && (
+                  <motion.div
+                    layoutId="category_active_tab_pill"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    className="absolute inset-0 bg-emerald-500/25 rounded-lg shadow-xs border border-emerald-500/40"
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <span>{t('category.tab_income')}</span>
+                  <span
+                    className={`text-[11px] px-1.5 py-0.5 rounded-full font-black ${
+                      activeTab === 'income'
+                        ? 'bg-emerald-500/20 text-emerald-300'
+                        : 'bg-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    {incomeCategories.length}
+                  </span>
+                </span>
+              </button>
+            </div>
+          </LayoutGroup>
         </div>
 
         {/* Toast Notification */}
@@ -207,7 +281,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
         <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-2.5 space-y-2.5">
           {currentList.length === 0 ? (
             <div className="py-16 text-center text-neutral-500 text-sm">
-              Chưa có danh mục nào. Nhấn "+ Thêm danh mục" để tạo mới.
+              {t('category.empty')}
             </div>
           ) : (
             currentList.map((cat) => {
@@ -222,15 +296,19 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
                     <CategoryIcon category={cat.name} type={cat.type} size={22} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm truncate">{cat.name}</span>
+                        <span className="font-bold text-white text-sm truncate">
+                          {tCategory(cat.name)}
+                        </span>
                         {cat.isDefault && (
                           <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md bg-neutral-800 text-neutral-400 border border-neutral-700/60 shrink-0">
-                            Mặc định
+                            {t('category.default_tag')}
                           </span>
                         )}
                       </div>
                       <span className="text-xs text-neutral-400 block mt-0.5">
-                        {count > 0 ? `${count} giao dịch` : 'Chưa có giao dịch'}
+                        {count > 0
+                          ? t('category.tx_count').replace('{count}', count.toString())
+                          : t('category.no_tx')}
                       </span>
                     </div>
                   </div>
@@ -241,7 +319,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
                       type="button"
                       onClick={() => handleOpenEdit(cat)}
                       className="p-2 text-neutral-400 hover:text-white rounded-xl hover:bg-neutral-800 transition-colors"
-                      title="Chỉnh sửa danh mục"
+                      title={t('category.edit')}
                     >
                       <Edit2 size={17} />
                     </button>
@@ -249,7 +327,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
                       type="button"
                       onClick={() => handleOpenDelete(cat)}
                       className="p-2 text-neutral-400 hover:text-rose-400 rounded-xl hover:bg-rose-500/10 transition-colors"
-                      title="Xóa danh mục"
+                      title={t('common.delete')}
                     >
                       <Trash2 size={17} />
                     </button>
@@ -268,7 +346,7 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
             className="w-full py-3.5 bg-white hover:bg-neutral-200 text-black font-black text-sm rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
           >
             <Plus size={18} strokeWidth={3} />
-            <span>Thêm danh mục mới</span>
+            <span>{t('category.add_new')}</span>
           </button>
         </div>
       </div>
@@ -292,3 +370,4 @@ export const CategoryManagementModal: React.FC<CategoryManagementModalProps> = (
     </div>
   );
 };
+

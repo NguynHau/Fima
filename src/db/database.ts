@@ -9,6 +9,8 @@ import {
   type TransactionType,
   type PhotoQuality,
   type Debt,
+  type Budget,
+  type SavingsGoal,
 } from '../types';
 
 export class FinanceDatabase extends Dexie {
@@ -17,6 +19,8 @@ export class FinanceDatabase extends Dexie {
   settings!: Table<UserSettings, string>;
   categories!: Table<Category, string>;
   debts!: Table<Debt, string>;
+  budgets!: Table<Budget, string>;
+  savings!: Table<SavingsGoal, string>;
 
   constructor() {
     super('FinanceJournalDB');
@@ -37,6 +41,15 @@ export class FinanceDatabase extends Dexie {
       settings: 'id',
       categories: 'id, name, type, order, isDefault, createdAt',
       debts: 'id, name, amount, date, type, status, createdAt',
+    });
+    this.version(4).stores({
+      transactions: 'id, date, type, account, category, categoryId, createdAt, [date+type]',
+      images: 'id, createdAt',
+      settings: 'id',
+      categories: 'id, name, type, order, isDefault, createdAt',
+      debts: 'id, name, amount, date, type, status, createdAt',
+      budgets: 'id, categoryId, categoryName, createdAt',
+      savings: 'id, name, targetAmount, createdAt',
     });
   }
 }
@@ -397,4 +410,160 @@ export async function deleteDebt(id: string): Promise<void> {
   if (db.debts) {
     await db.debts.delete(id);
   }
+}
+
+// ---------------------------------------------------------------------------
+// BUDGETS & SAVINGS HELPERS
+// ---------------------------------------------------------------------------
+const BUDGETS_EVENT = 'fima-budgets-updated';
+const SAVINGS_EVENT = 'fima-savings-updated';
+
+function notifyBudgetSubscribers() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(BUDGETS_EVENT));
+  }
+}
+
+function notifySavingsSubscribers() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SAVINGS_EVENT));
+  }
+}
+
+/**
+ * Get all budgets. Auto seeds default budgets (Ăn uống & Giải trí) if table is empty.
+ */
+export async function getBudgets(): Promise<Budget[]> {
+  if (!db.budgets) return [];
+  const list = await db.budgets.orderBy('createdAt').toArray();
+  if (list.length === 0) {
+    const now = new Date().toISOString();
+    const defaults: Budget[] = [
+      {
+        id: 'budget_default_food',
+        categoryId: 'cat_exp_food',
+        categoryName: 'Ăn uống',
+        limitAmount: 3000000,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: 'budget_default_entertainment',
+        categoryId: 'cat_exp_entertainment',
+        categoryName: 'Giải trí',
+        limitAmount: 2000000,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+    await db.budgets.bulkPut(defaults);
+    notifyBudgetSubscribers();
+    return defaults;
+  }
+  return list;
+}
+
+export async function saveBudget(input: {
+  id?: string;
+  categoryId: string;
+  categoryName: string;
+  limitAmount: number;
+}): Promise<Budget> {
+  if (!db.budgets) throw new Error('Database table for budgets is not ready');
+  const now = new Date().toISOString();
+  const id = input.id || `budget_${crypto.randomUUID()}`;
+  const budget: Budget = {
+    id,
+    categoryId: input.categoryId,
+    categoryName: input.categoryName,
+    limitAmount: Math.abs(input.limitAmount),
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db.budgets.put(budget);
+  notifyBudgetSubscribers();
+  return budget;
+}
+
+export async function deleteBudget(id: string): Promise<void> {
+  if (db.budgets) {
+    await db.budgets.delete(id);
+    notifyBudgetSubscribers();
+  }
+}
+
+/**
+ * Get all savings goals. Auto seeds default savings goal (Tiết kiệm) if table is empty.
+ */
+export async function getSavings(): Promise<SavingsGoal[]> {
+  if (!db.savings) return [];
+  const list = await db.savings.orderBy('createdAt').toArray();
+  if (list.length === 0) {
+    const now = new Date().toISOString();
+    const defaults: SavingsGoal[] = [
+      {
+        id: 'savings_default_general',
+        name: 'Tiết kiệm',
+        targetAmount: 10000000,
+        currentAmount: 4000000,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+    await db.savings.bulkPut(defaults);
+    notifySavingsSubscribers();
+    return defaults;
+  }
+  return list;
+}
+
+export async function saveSavings(input: {
+  id?: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+}): Promise<SavingsGoal> {
+  if (!db.savings) throw new Error('Database table for savings is not ready');
+  const now = new Date().toISOString();
+  const id = input.id || `savings_${crypto.randomUUID()}`;
+  const goal: SavingsGoal = {
+    id,
+    name: input.name.trim() || 'Mục tiêu tiết kiệm',
+    targetAmount: Math.abs(input.targetAmount),
+    currentAmount: Math.max(0, input.currentAmount),
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db.savings.put(goal);
+  notifySavingsSubscribers();
+  return goal;
+}
+
+export async function deleteSavings(id: string): Promise<void> {
+  if (db.savings) {
+    await db.savings.delete(id);
+    notifySavingsSubscribers();
+  }
+}
+
+export function subscribeBudgets(callback: () => void): () => void {
+  if (typeof window !== 'undefined') {
+    window.addEventListener(BUDGETS_EVENT, callback);
+  }
+  return () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener(BUDGETS_EVENT, callback);
+    }
+  };
+}
+
+export function subscribeSavings(callback: () => void): () => void {
+  if (typeof window !== 'undefined') {
+    window.addEventListener(SAVINGS_EVENT, callback);
+  }
+  return () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener(SAVINGS_EVENT, callback);
+    }
+  };
 }

@@ -20,6 +20,7 @@ import {
 import { type Debt } from '../types';
 import { getDebts, createDebt, updateDebt, deleteDebt } from '../db/database';
 import { formatVND } from '../utils/formatters';
+import { t } from '../utils/translations';
 import { DebtFormModal } from './DebtFormModal';
 
 interface DebtsViewProps {
@@ -103,12 +104,12 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
       if (onRefreshStats) onRefreshStats();
     } catch (err) {
       console.error('Lỗi khi lưu công nợ:', err);
-      alert('Không thể lưu công nợ, vui lòng thử lại.');
+      alert(t('debts.save_error'));
     }
   };
 
   const handleDeleteDebt = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa khoản công nợ này?')) {
+    if (window.confirm(t('debts.confirm_delete'))) {
       try {
         await deleteDebt(id);
         await fetchDebts();
@@ -125,7 +126,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
 
     const amountToPay = parseInt(quickPayAmount, 10);
     if (isNaN(amountToPay) || amountToPay <= 0) {
-      alert('Vui lòng nhập số tiền hợp lệ');
+      alert(t('debts.invalid_amount'));
       return;
     }
 
@@ -187,10 +188,10 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
               <Users size={20} className="text-neutral-400" />
-              Sổ Công nợ
+              {t('debts.title')}
             </h1>
             <p className="text-xs font-semibold text-neutral-400 mt-1">
-              Quản lý độc lập nợ cho vay & đi vay của bạn
+              {t('debts.subtitle')}
             </p>
           </div>
           <button
@@ -198,7 +199,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
             className="px-4 py-2 bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-white font-extrabold text-xs rounded-2xl flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-md"
           >
             <Plus size={14} />
-            Thêm nợ
+            {t('debts.add')}
           </button>
         </div>
 
@@ -212,11 +213,11 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                   <ArrowUpRight size={14} />
                 </div>
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                  Người khác nợ mình
+                  {t('debts.lend_title')}
                 </span>
               </div>
               <span className="text-[10px] font-bold text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded-full">
-                {debts.filter(d => d.type === 'lend' && d.status !== 'paid').length} khoản
+                {debts.filter(d => d.type === 'lend' && d.status !== 'paid').length} {t('debts.active_records')}
               </span>
             </div>
             
@@ -225,8 +226,8 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 {formatVND(totalLendRemaining)}
               </div>
               <div className="text-[11px] font-semibold text-neutral-400 mt-1 flex justify-between">
-                <span>Tổng cho vay: {formatVND(totalLend)}</span>
-                <span>Đã thu: {formatVND(totalLendPaid)}</span>
+                <span>{t('debts.total_lend_short')} {formatVND(totalLend)}</span>
+                <span>{t('debts.amount_paid')}: {formatVND(totalLendPaid)}</span>
               </div>
             </div>
           </div>
@@ -239,11 +240,11 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                   <ArrowDownLeft size={14} />
                 </div>
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                  Mình nợ người khác
+                  {t('debts.borrow_title')}
                 </span>
               </div>
               <span className="text-[10px] font-bold text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded-full">
-                {debts.filter(d => d.type === 'borrow' && d.status !== 'paid').length} khoản
+                {debts.filter(d => d.type === 'borrow' && d.status !== 'paid').length} {t('debts.active_records')}
               </span>
             </div>
 
@@ -252,8 +253,8 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 {formatVND(totalBorrowRemaining)}
               </div>
               <div className="text-[11px] font-semibold text-neutral-400 mt-1 flex justify-between">
-                <span>Tổng đi vay: {formatVND(totalBorrow)}</span>
-                <span>Đã trả: {formatVND(totalBorrowPaid)}</span>
+                <span>{t('debts.total_borrow_short')} {formatVND(totalBorrow)}</span>
+                <span>{t('debts.amount_paid')}: {formatVND(totalBorrowPaid)}</span>
               </div>
             </div>
           </div>
@@ -267,7 +268,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
           <input
             type="text"
-            placeholder="Tìm theo tên hoặc ghi chú..."
+            placeholder={t('debts.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-[#121212] rounded-2xl border border-neutral-800/80 py-3 pl-10 pr-4 text-xs sm:text-sm text-white font-semibold focus:outline-none focus:border-neutral-500 transition-all placeholder-neutral-500"
@@ -284,7 +285,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 typeFilter === 'all' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              Tất cả
+              {t('debts.tab.all')}
             </button>
             <button
               onClick={() => setTypeFilter('lend')}
@@ -292,7 +293,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 typeFilter === 'lend' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              Cho vay
+              {t('debts.tab.lend')}
             </button>
             <button
               onClick={() => setTypeFilter('borrow')}
@@ -300,7 +301,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 typeFilter === 'borrow' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              Đi vay
+              {t('debts.tab.borrow')}
             </button>
           </div>
 
@@ -312,7 +313,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 statusFilter === 'all' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              Mọi trạng thái
+              {t('debts.filter_all_status')}
             </button>
             <button
               onClick={() => setStatusFilter('unpaid')}
@@ -320,7 +321,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 statusFilter === 'unpaid' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              Chưa trả
+              {t('debts.filter_unpaid')}
             </button>
             <button
               onClick={() => setStatusFilter('partially_paid')}
@@ -328,7 +329,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 statusFilter === 'partially_paid' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              Đã trả một phần
+              {t('debts.filter_partially_paid')}
             </button>
             <button
               onClick={() => setStatusFilter('paid')}
@@ -336,7 +337,7 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
                 statusFilter === 'paid' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              Đã trả xong
+              {t('debts.filter_paid')}
             </button>
           </div>
         </div>
@@ -346,20 +347,20 @@ export const DebtsView: React.FC<DebtsViewProps> = ({
       {isLoading ? (
         <div className="flex-1 flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-8 h-8 border-4 border-neutral-700 border-t-white rounded-full animate-spin" />
-          <span className="text-xs font-bold text-neutral-400">Đang tải sổ công nợ...</span>
+          <span className="text-xs font-bold text-neutral-400">{t('debts.loading')}</span>
         </div>
       ) : filteredDebts.length === 0 ? (
         <div className="bg-[#121212] border border-neutral-800 rounded-3xl py-12 px-4 text-center">
-          <p className="text-sm font-extrabold text-neutral-300">Sổ công nợ trống</p>
+          <p className="text-sm font-extrabold text-neutral-300">{t('debts.empty_title')}</p>
           <p className="text-xs text-neutral-400 mt-1 max-w-[260px] mx-auto">
-            {searchQuery ? 'Không tìm thấy khoản nợ nào khớp với tìm kiếm.' : 'Hãy tạo một khoản ghi nợ đầu tiên để theo dõi.'}
+            {searchQuery ? t('debts.empty_search') : t('debts.empty_desc')}
           </p>
           {!searchQuery && (
             <button
               onClick={handleOpenAddModal}
               className="mt-4 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer inline-flex items-center gap-1.5"
             >
-              <Plus size={14} /> Thêm ghi nợ mới
+              <Plus size={14} /> {t('debts.add_btn')}
             </button>
           )}
         </div>

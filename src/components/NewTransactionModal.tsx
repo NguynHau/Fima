@@ -24,6 +24,7 @@ import {
 } from '../types';
 import { createTransaction } from '../db/database';
 import { formatDateVN, formatVND, getTodayString } from '../utils/formatters';
+import { t, tCategory } from '../utils/translations';
 import { CategoryIcon } from './CategoryIcon';
 import { DatePickerModal } from './DatePickerModal';
 import { ImageCropModal } from './ImageCropModal';
@@ -250,7 +251,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
     }
 
     if (!account) {
-      setErrorMessage('Vui lòng chọn nguồn tiền.');
+      setErrorMessage(t('tx.select_account_error'));
       return;
     }
 
@@ -273,14 +274,14 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
       onSuccess();
     } catch (err) {
       console.error(err);
-      setErrorMessage('Đã xảy ra lỗi khi lưu giao dịch vào thiết bị.');
+      setErrorMessage(t('tx.save_error'));
     } finally {
       setIsSaving(false);
     }
   };
 
   const isToday = date === getTodayString();
-  const dateDisplayText = isToday ? 'Hôm nay' : formatDateVN(date);
+  const dateDisplayText = isToday ? t('flow.today') : formatDateVN(date);
 
   return (
     <div className="fixed inset-0 z-50 bg-[#181a1e]/95 backdrop-blur-md flex flex-col justify-between overflow-hidden text-neutral-100">
@@ -291,12 +292,12 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           {isAnalyzing ? (
             <div className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-1.5 transition-all duration-300 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 text-white shadow-lg shadow-purple-500/30 border border-pink-300/40 animate-pulse">
               <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-              <span className="tracking-wide">Đang phân tích...</span>
+              <span className="tracking-wide">{t('tx.analyzing')}</span>
             </div>
           ) : !isOnline ? (
             <div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30">
               <WifiOff size={13} className="text-amber-400" />
-              <span>Ngoại tuyến (Lưu máy)</span>
+              <span>{t('tx.offline_save')}</span>
             </div>
           ) : photoBlob ? (
             <button
@@ -305,10 +306,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
               className="px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/40 text-purple-200 hover:text-white transition-all active:scale-95 cursor-pointer shadow-xs"
             >
               <Sparkles size={13} className="text-purple-300" />
-              <span>Quét lại AI</span>
+              <span>{t('tx.scan_ai_again')}</span>
             </button>
           ) : (
-            <span className="text-sm font-extrabold text-white">Giao dịch mới</span>
+            <span className="text-sm font-extrabold text-white">{t('tx.add_title')}</span>
           )}
         </div>
 
@@ -316,8 +317,8 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           type="button"
           onClick={onClose}
           className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
-          aria-label="Đóng"
-          title="Đóng"
+          aria-label={t('ai.close')}
+          title={t('ai.close')}
         >
           <X size={18} />
         </button>
@@ -331,7 +332,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           </div>
           <input
             type="text"
-            placeholder="Nhập nhanh: 'ăn phở 50k', 'đổ xăng 100k'..."
+            placeholder={t('tx.quick_input_placeholder')}
             value={aiInput}
             onChange={(e) => setAiInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAiTextProcess()}
@@ -343,7 +344,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             disabled={!aiInput.trim() || isAnalyzing}
             className="absolute right-2 top-1.5 bottom-1.5 px-3 bg-purple-600 hover:bg-purple-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg"
           >
-            GỬI
+            {t('tx.send')}
           </button>
         </div>
       </div>
@@ -374,10 +375,10 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                   setCropModalImageSrc(photoPreviewUrl);
                 }}
                 className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer z-10"
-                title="Cắt / Căn chỉnh ảnh"
+                title={t('tx.crop')}
               >
                 <Crop size={13} className="text-purple-300" />
-                <span>Cắt lại</span>
+                <span>{t('tx.crop')}</span>
               </button>
             </>
           ) : (
@@ -387,7 +388,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
               className="w-full h-full flex flex-col items-center justify-center gap-3 text-neutral-300 hover:text-emerald-300 cursor-pointer p-4"
             >
               <Camera size={48} className="text-neutral-400" />
-              <span className="text-base font-bold">Chạm để chụp ảnh giao dịch</span>
+              <span className="text-base font-bold">{t('tx.tap_to_shoot')}</span>
             </button>
           )}
 
@@ -431,7 +432,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
               <Pencil size={15} className="text-neutral-200 shrink-0 drop-shadow-sm" />
               <input
                 type="text"
-                placeholder="Thêm ghi chú / chi tiết"
+                placeholder={t('tx.note_placeholder')}
                 value={note}
                 onChange={(e) => {
                   userEditedRef.current = true;
@@ -453,7 +454,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <CategoryIcon category={category} type={type} size={18} showBackground={false} />
-              <span className="truncate">{category}</span>
+              <span className="truncate">{tCategory(category)}</span>
             </div>
             <ChevronDown size={18} className="text-neutral-300 shrink-0 ml-1" />
           </button>
@@ -470,7 +471,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
               ) : (
                 <Building2 size={18} className="text-cyan-400 shrink-0" />
               )}
-              <span className="truncate">{account === 'wallet' ? 'Ví' : 'Bank'}</span>
+              <span className="truncate">{account === 'wallet' ? t('tx.wallet_short') : t('tx.bank_short')}</span>
             </div>
             <ChevronDown size={18} className="text-neutral-300 shrink-0 ml-1" />
           </button>
@@ -493,7 +494,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
               }`}
             >
               <Plus size={16} strokeWidth={3} className={type === 'income' ? 'text-emerald-300' : 'text-neutral-400'} />
-              <span>Thu</span>
+              <span>{t('tx.type_income')}</span>
             </button>
 
             {/* Chi Button */}
@@ -510,7 +511,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
               }`}
             >
               <Minus size={16} strokeWidth={3} className={type === 'expense' ? 'text-rose-300' : 'text-neutral-400'} />
-              <span>Chi</span>
+              <span>{t('tx.type_expense')}</span>
             </button>
           </div>
         </div>
@@ -539,7 +540,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             <Camera size={20} className="sm:w-[22px] sm:h-[22px]" />
           </div>
           <span className="text-[10px] sm:text-[11px] font-bold text-neutral-300 group-hover:text-white truncate">
-            Camera
+            {t('tx.camera')}
           </span>
         </button>
 
@@ -553,7 +554,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             <ImageIcon size={20} className="sm:w-[22px] sm:h-[22px]" />
           </div>
           <span className="text-[10px] sm:text-[11px] font-bold text-neutral-300 group-hover:text-white truncate">
-            Thư viện
+            {t('tx.library')}
           </span>
         </button>
 
@@ -564,7 +565,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           onClick={() => handleSubmit()}
           disabled={isSaving || numericAmount <= 0 || !photoBlob}
           className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white hover:bg-neutral-200 disabled:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed text-black flex items-center justify-center shadow-xl border-4 border-black active:scale-95 transition-all cursor-pointer shrink-0 mx-0.5"
-          title="Xác nhận lưu giao dịch"
+          title={t('tx.save')}
         >
           {isSaving ? (
             <div className="w-6 h-6 sm:w-7 sm:h-7 border-3 border-black border-t-transparent rounded-full animate-spin" />
@@ -583,7 +584,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             <CalendarIcon size={20} className="sm:w-[22px] sm:h-[22px]" />
           </div>
           <span className="text-[10px] sm:text-[11px] font-bold text-neutral-300 group-hover:text-white truncate">
-            Chọn ngày
+            {t('tx.select_date')}
           </span>
         </button>
 
@@ -597,7 +598,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
             <Trash2 size={20} className="sm:w-[22px] sm:h-[22px]" />
           </div>
           <span className="text-[10px] sm:text-[11px] font-bold text-rose-300 group-hover:text-rose-200 truncate">
-            Xóa
+            {t('tx.delete')}
           </span>
         </button>
       </div>
@@ -608,7 +609,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
           <div className="w-full max-w-sm bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[75vh]">
             <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
               <h3 className="text-base font-extrabold text-white">
-                Chọn hạng mục {type === 'expense' ? 'chi tiêu' : 'thu nhập'}
+                {t('tx.select_category')} {type === 'expense' ? t('stats.tab.expense').toLowerCase() : t('stats.tab.income').toLowerCase()}
               </h3>
               <button
                 type="button"
@@ -638,7 +639,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                     }`}
                   >
                     <CategoryIcon category={cat.name} type={type} size={22} />
-                    <span className="text-xs font-bold leading-tight line-clamp-1">{cat.name}</span>
+                    <span className="text-xs font-bold leading-tight line-clamp-1">{tCategory(cat.name)}</span>
                   </button>
                 );
               })}
@@ -652,7 +653,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
         <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[max(env(safe-area-inset-top,0px),16px)] sm:pt-4 animate-in fade-in duration-150">
           <div className="w-full max-w-xs bg-[#121212] border border-neutral-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col">
             <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800 mb-3.5">
-              <h3 className="text-base font-extrabold text-white">Chọn nguồn tiền</h3>
+              <h3 className="text-base font-extrabold text-white">{t('tx.select_account')}</h3>
               <button
                 type="button"
                 onClick={() => setIsAccountSheetOpen(false)}
@@ -680,8 +681,8 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                     <Wallet size={18} />
                   </div>
                   <div className="text-left">
-                    <div className="text-sm font-bold text-white">Ví tiền (Wallet)</div>
-                    <div className="text-xs text-neutral-300">Tiền mặt trong ví</div>
+                    <div className="text-sm font-bold text-white">{t('tx.wallet_label')}</div>
+                    <div className="text-xs text-neutral-300">{t('tx.wallet_desc')}</div>
                   </div>
                 </div>
                 {account === 'wallet' && <Check size={18} className="text-amber-300" />}
@@ -704,8 +705,8 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                     <Building2 size={18} />
                   </div>
                   <div className="text-left">
-                    <div className="text-sm font-bold text-white">Ngân hàng (Bank)</div>
-                    <div className="text-xs text-neutral-300">Tài khoản ngân hàng / thẻ</div>
+                    <div className="text-sm font-bold text-white">{t('tx.bank_label')}</div>
+                    <div className="text-xs text-neutral-300">{t('tx.bank_desc')}</div>
                   </div>
                 </div>
                 {account === 'bank' && <Check size={18} className="text-cyan-300" />}
