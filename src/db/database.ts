@@ -170,20 +170,22 @@ export async function createTransaction(params: {
   photoQuality?: PhotoQuality;
 }): Promise<Transaction> {
   const id = crypto.randomUUID();
-  const imageId = crypto.randomUUID();
+  const imageId = params.imageBlob ? crypto.randomUUID() : undefined;
   const now = new Date().toISOString();
 
   await db.transaction('rw', db.transactions, db.images, async () => {
-    // 1. Save Image Blob
-    await db.images.put({
-      id: imageId,
-      blob: params.imageBlob,
-      mimeType: params.imageBlob.type || 'image/jpeg',
-      createdAt: now,
-      quality: params.photoQuality || 'low',
-    });
+    // 1. Save Image Blob if present
+    if (params.imageBlob && imageId) {
+      await db.images.put({
+        id: imageId,
+        blob: params.imageBlob,
+        mimeType: params.imageBlob.type || 'image/jpeg',
+        createdAt: now,
+        quality: params.photoQuality || 'low',
+      });
+    }
 
-    // 2. Save Transaction Record
+    // 2. Save Main Transaction Record
     await db.transactions.put({
       id,
       date: params.date,
@@ -197,6 +199,36 @@ export async function createTransaction(params: {
       createdAt: now,
       updatedAt: now,
     });
+
+    // 3. Auto companion transaction for "Chuyển tiền" (Expense -> Income)
+    const isTransferExpense =
+      params.type === 'expense' &&
+      params.category.trim().toLowerCase() === 'chuyển tiền';
+
+    if (isTransferExpense) {
+      const companionAccount: AccountType = params.account === 'bank' ? 'wallet' : 'bank';
+      const companionId = crypto.randomUUID();
+      const companionCreatedAt = new Date(Date.now() + 10).toISOString();
+      const companionNote = params.note
+        ? params.note
+        : params.account === 'bank'
+        ? 'Nhận từ Ngân hàng'
+        : 'Nhận từ Ví';
+
+      await db.transactions.put({
+        id: companionId,
+        date: params.date,
+        type: 'income',
+        amount: Math.abs(params.amount),
+        category: 'Nhận tiền',
+        categoryId: 'cat_inc_receive',
+        note: companionNote,
+        account: companionAccount,
+        imageId, // Reuse same image
+        createdAt: companionCreatedAt,
+        updatedAt: companionCreatedAt,
+      });
+    }
   });
 
   const created = await db.transactions.get(id);
@@ -226,9 +258,16 @@ export async function updateTransaction(
 
   await db.transaction('rw', db.transactions, db.images, async () => {
     if (params.newImageBlob) {
-      // Delete previous image if exists
+      // Delete previous image if exists and not referenced elsewhere
       if (existing.imageId) {
-        await db.images.delete(existing.imageId);
+        const otherUsing = await db.transactions
+          .where('imageId')
+          .equals(existing.imageId)
+          .and((t) => t.id !== id)
+          .count();
+        if (otherUsing === 0) {
+          await db.images.delete(existing.imageId);
+        }
       }
       // Create new image
       imageId = crypto.randomUUID();
@@ -266,7 +305,14 @@ export async function deleteTransaction(id: string): Promise<void> {
 
   await db.transaction('rw', db.transactions, db.images, async () => {
     if (existing.imageId) {
-      await db.images.delete(existing.imageId);
+      const otherTxUsingImage = await db.transactions
+        .where('imageId')
+        .equals(existing.imageId)
+        .and((t) => t.id !== id)
+        .count();
+      if (otherTxUsingImage === 0) {
+        await db.images.delete(existing.imageId);
+      }
     }
     await db.transactions.delete(id);
   });

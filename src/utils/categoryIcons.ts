@@ -83,6 +83,7 @@ import {
   DollarSign,
   Coins,
   BadgePercent,
+  ArrowRightLeft,
   MoreHorizontal,
   CircleDot,
   Star,
@@ -179,6 +180,7 @@ export const CATEGORY_ICON_DEFINITIONS: IconDefinition[] = [
   { name: 'CreditCard', label: 'Thanh toán thẻ', group: 'Dịch vụ & Kỹ thuật', component: CreditCard },
   { name: 'Wallet', label: 'Ví tiền', group: 'Dịch vụ & Kỹ thuật', component: Wallet },
   { name: 'Banknote', label: 'Tiền mặt', group: 'Dịch vụ & Kỹ thuật', component: Banknote },
+  { name: 'ArrowRightLeft', label: 'Chuyển tiền / Luân chuyển', group: 'Dịch vụ & Kỹ thuật', component: ArrowRightLeft },
 
   // Thu nhập & Đầu tư
   { name: 'Briefcase', label: 'Lương cố định / Công việc', group: 'Thu nhập & Tài chính', component: Briefcase },

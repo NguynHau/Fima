@@ -92,7 +92,8 @@ export const DEFAULT_EXPENSE_CATEGORIES: Omit<Category, 'createdAt' | 'updatedAt
   { id: 'cat_exp_health', name: 'Sức khỏe', type: 'expense', iconName: 'HeartPulse', color: '#ff4d6d', bgColor: 'rgba(255, 77, 109, 0.25)', isDefault: true, order: 5 },
   { id: 'cat_exp_education', name: 'Giáo dục', type: 'expense', iconName: 'GraduationCap', color: '#22d3ee', bgColor: 'rgba(34, 211, 238, 0.25)', isDefault: true, order: 6 },
   { id: 'cat_exp_housing', name: 'Nhà cửa', type: 'expense', iconName: 'Home', color: '#34d399', bgColor: 'rgba(52, 211, 153, 0.25)', isDefault: true, order: 7 },
-  { id: 'cat_exp_other', name: 'Khác', type: 'expense', iconName: 'MoreHorizontal', color: '#94a3b8', bgColor: 'rgba(148, 163, 184, 0.25)', isDefault: true, order: 8 },
+  { id: 'cat_exp_transfer', name: 'Chuyển tiền', type: 'expense', iconName: 'ArrowRightLeft', color: '#818cf8', bgColor: 'rgba(129, 140, 248, 0.25)', isDefault: true, order: 8 },
+  { id: 'cat_exp_other', name: 'Khác', type: 'expense', iconName: 'MoreHorizontal', color: '#94a3b8', bgColor: 'rgba(148, 163, 184, 0.25)', isDefault: true, order: 9 },
 ];
 
 export const DEFAULT_INCOME_CATEGORIES: Omit<Category, 'createdAt' | 'updatedAt'>[] = [
@@ -102,7 +103,8 @@ export const DEFAULT_INCOME_CATEGORIES: Omit<Category, 'createdAt' | 'updatedAt'
   { id: 'cat_inc_gift', name: 'Được cho', type: 'income', iconName: 'Gift', color: '#f472b6', bgColor: 'rgba(244, 114, 182, 0.25)', isDefault: true, order: 3 },
   { id: 'cat_inc_sales', name: 'Bán hàng', type: 'income', iconName: 'Store', color: '#22d3ee', bgColor: 'rgba(34, 211, 238, 0.25)', isDefault: true, order: 4 },
   { id: 'cat_inc_investment', name: 'Đầu tư', type: 'income', iconName: 'TrendingUp', color: '#38bdf8', bgColor: 'rgba(56, 189, 248, 0.25)', isDefault: true, order: 5 },
-  { id: 'cat_inc_other', name: 'Khác', type: 'income', iconName: 'MoreHorizontal', color: '#94a3b8', bgColor: 'rgba(148, 163, 184, 0.25)', isDefault: true, order: 6 },
+  { id: 'cat_inc_receive', name: 'Nhận tiền', type: 'income', iconName: 'HandCoins', color: '#2dd4bf', bgColor: 'rgba(45, 212, 191, 0.25)', isDefault: true, order: 6 },
+  { id: 'cat_inc_other', name: 'Khác', type: 'income', iconName: 'MoreHorizontal', color: '#94a3b8', bgColor: 'rgba(148, 163, 184, 0.25)', isDefault: true, order: 7 },
 ];
 
 export const EXPENSE_CATEGORIES: CategoryInfo[] = DEFAULT_EXPENSE_CATEGORIES;

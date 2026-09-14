@@ -871,6 +871,8 @@ const CATEGORY_NAMES_EN: Record<string, string> = {
   'được cho': 'Gifts',
   'bán hàng': 'Sales',
   'đầu tư': 'Investment',
+  'chuyển tiền': 'Transfer',
+  'nhận tiền': 'Received',
 };
 
 const CATEGORY_NAMES_VI: Record<string, string> = {
@@ -895,6 +897,10 @@ const CATEGORY_NAMES_VI: Record<string, string> = {
   'gift': 'Được cho',
   'sales': 'Bán hàng',
   'investment': 'Đầu tư',
+  'transfer': 'Chuyển tiền',
+  'money transfer': 'Chuyển tiền',
+  'received': 'Nhận tiền',
+  'money received': 'Nhận tiền',
 };
 
 export function tCategory(categoryName?: string | null): string {

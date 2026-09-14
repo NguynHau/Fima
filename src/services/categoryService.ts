@@ -45,6 +45,42 @@ export async function ensureDefaultCategories(): Promise<Category[]> {
         })),
       ];
       await db.categories.bulkPut(defaults);
+    } else {
+      // Add any missing default categories into existing databases
+      const existing = await db.categories.toArray();
+      const existingNames = new Set(existing.map((c) => `${c.type}_${c.name.trim().toLowerCase()}`));
+      const now = new Date().toISOString();
+      const missing: Category[] = [];
+
+      DEFAULT_EXPENSE_CATEGORIES.forEach((c, idx) => {
+        if (!existingNames.has(`expense_${c.name.trim().toLowerCase()}`)) {
+          missing.push({
+            ...c,
+            bgColor: c.bgColor || 'rgba(255,255,255,0.1)',
+            isDefault: true,
+            order: existing.length + idx,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+      });
+
+      DEFAULT_INCOME_CATEGORIES.forEach((c, idx) => {
+        if (!existingNames.has(`income_${c.name.trim().toLowerCase()}`)) {
+          missing.push({
+            ...c,
+            bgColor: c.bgColor || 'rgba(255,255,255,0.1)',
+            isDefault: true,
+            order: existing.length + idx,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+      });
+
+      if (missing.length > 0) {
+        await db.categories.bulkPut(missing);
+      }
     }
 
     // Load current categories into memory cache
