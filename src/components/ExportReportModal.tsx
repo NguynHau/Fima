@@ -256,32 +256,41 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                 <span>Kỳ Thống Kê Báo Cáo</span>
               </label>
 
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { key: 'this_month', label: 'Tháng này' },
-                  { key: 'last_month', label: 'Tháng trước' },
-                  { key: 'last_3_months', label: '3 tháng qua' },
-                  { key: 'this_year', label: `Năm ${currentYear}` },
-                  { key: 'all', label: 'Tất cả' },
-                  { key: 'custom', label: 'Tùy chọn' },
-                ].map((p) => {
-                  const isSelected = datePreset === p.key;
-                  return (
-                    <button
-                      key={p.key}
-                      type="button"
-                      onClick={() => setDatePreset(p.key as DatePreset)}
-                      className={`py-2 px-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
-                        isSelected
-                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-xs'
-                          : 'bg-[#16181d] border-neutral-800/80 text-neutral-300 hover:bg-[#1f2229]'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  );
-                })}
-              </div>
+              <LayoutGroup id="export_report_modal_preset">
+                <div className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-2xl grid grid-cols-3 gap-1.5 relative select-none">
+                  {([
+                    { key: 'this_month', label: 'Tháng này' },
+                    { key: 'last_month', label: 'Tháng trước' },
+                    { key: 'last_3_months', label: '3 tháng qua' },
+                    { key: 'this_year', label: `Năm ${currentYear}` },
+                    { key: 'all', label: 'Tất cả' },
+                    { key: 'custom', label: 'Tùy chọn' },
+                  ] as const).map((p) => {
+                    const isSelected = datePreset === p.key;
+                    return (
+                      <button
+                        key={p.key}
+                        type="button"
+                        onClick={() => setDatePreset(p.key)}
+                        className={`relative h-9 py-1.5 px-1 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center cursor-pointer ${
+                          isSelected
+                            ? 'text-white font-extrabold'
+                            : 'text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        {isSelected && (
+                          <motion.div
+                            layoutId="export_report_modal_preset_tab"
+                            transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                            className="absolute inset-0 bg-[#2c3039] border border-neutral-650/80 rounded-xl shadow-xs"
+                          />
+                        )}
+                        <span className="relative z-10 truncate">{p.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </LayoutGroup>
 
               {/* Custom Date Inputs if 'custom' selected */}
               {datePreset === 'custom' && (
@@ -316,100 +325,98 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
               </div>
             </div>
 
-            {/* Section B: Nguồn tiền (Account Filter) - UI & ANIMATION GIỐNG TAB DÒNG TIỀN */}
+            {/* Section B: Nguồn tiền (Account Filter) */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Layers size={13} className="text-blue-400" />
                 <span>Nguồn Tiền Báo Cáo</span>
               </label>
 
-              <div className="bg-[#121212] rounded-2xl p-1.5 border border-neutral-800 shadow-sm">
-                <LayoutGroup id="export_report_modal_account">
-                  <div
-                    ref={accountControlRef}
-                    onPointerDown={handleAccountPointerDown}
-                    onPointerMove={handleAccountPointerMove}
-                    onPointerUp={handleAccountPointerUp}
-                    onPointerCancel={handleAccountPointerUp}
-                    className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
+              <LayoutGroup id="export_report_modal_account">
+                <div
+                  ref={accountControlRef}
+                  onPointerDown={handleAccountPointerDown}
+                  onPointerMove={handleAccountPointerMove}
+                  onPointerUp={handleAccountPointerUp}
+                  onPointerCancel={handleAccountPointerUp}
+                  className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-2xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setAccountFilter('all')}
+                    className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                      accountFilter === 'all'
+                        ? 'text-black font-extrabold'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setAccountFilter('all')}
-                      className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                        accountFilter === 'all'
-                          ? 'text-black font-extrabold'
-                          : 'text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      {accountFilter === 'all' && (
-                        <motion.div
-                          layoutId="export_report_modal_account_tab"
-                          transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                          className="absolute inset-0 bg-white rounded-lg shadow-sm"
-                        />
-                      )}
-                      <span className="relative z-10 flex items-center justify-center gap-1.5">
-                        <Layers
-                          size={15}
-                          className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
-                        />
-                        <span>Tất cả</span>
-                      </span>
-                    </button>
+                    {accountFilter === 'all' && (
+                      <motion.div
+                        layoutId="export_report_modal_account_tab"
+                        transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                        className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center justify-center gap-1.5">
+                      <Layers
+                        size={15}
+                        className={accountFilter === 'all' ? 'text-black' : 'text-neutral-400'}
+                      />
+                      <span>Tất cả</span>
+                    </span>
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setAccountFilter('wallet')}
-                      className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                        accountFilter === 'wallet'
-                          ? 'text-amber-300 font-extrabold'
-                          : 'text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      {accountFilter === 'wallet' && (
-                        <motion.div
-                          layoutId="export_report_modal_account_tab"
-                          transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                          className="absolute inset-0 bg-amber-500/25 rounded-lg shadow-xs border border-amber-500/40"
-                        />
-                      )}
-                      <span className="relative z-10 flex items-center justify-center gap-1.5">
-                        <Wallet
-                          size={15}
-                          className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-400'}
-                        />
-                        <span>Ví</span>
-                      </span>
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountFilter('wallet')}
+                    className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                      accountFilter === 'wallet'
+                        ? 'text-amber-300 font-extrabold'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    {accountFilter === 'wallet' && (
+                      <motion.div
+                        layoutId="export_report_modal_account_tab"
+                        transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                        className="absolute inset-0 bg-amber-500/25 rounded-lg shadow-xs border border-amber-500/40"
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center justify-center gap-1.5">
+                      <Wallet
+                        size={15}
+                        className={accountFilter === 'wallet' ? 'text-amber-400' : 'text-neutral-400'}
+                      />
+                      <span>Ví</span>
+                    </span>
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setAccountFilter('bank')}
-                      className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
-                        accountFilter === 'bank'
-                          ? 'text-cyan-300 font-extrabold'
-                          : 'text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      {accountFilter === 'bank' && (
-                        <motion.div
-                          layoutId="export_report_modal_account_tab"
-                          transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                          className="absolute inset-0 bg-cyan-500/25 rounded-lg shadow-xs border border-cyan-500/40"
-                        />
-                      )}
-                      <span className="relative z-10 flex items-center justify-center gap-1.5">
-                        <Building2
-                          size={15}
-                          className={accountFilter === 'bank' ? 'text-cyan-400' : 'text-neutral-400'}
-                        />
-                        <span>Bank</span>
-                      </span>
-                    </button>
-                  </div>
-                </LayoutGroup>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setAccountFilter('bank')}
+                    className={`relative h-8 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                      accountFilter === 'bank'
+                        ? 'text-cyan-300 font-extrabold'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    {accountFilter === 'bank' && (
+                      <motion.div
+                        layoutId="export_report_modal_account_tab"
+                        transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                        className="absolute inset-0 bg-cyan-500/25 rounded-lg shadow-xs border border-cyan-500/40"
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center justify-center gap-1.5">
+                      <Building2
+                        size={15}
+                        className={accountFilter === 'bank' ? 'text-cyan-400' : 'text-neutral-400'}
+                      />
+                      <span>Bank</span>
+                    </span>
+                  </button>
+                </div>
+              </LayoutGroup>
             </div>
 
             {/* Section C: Tóm tắt nhanh số liệu (Realtime KPI Preview) */}
@@ -565,44 +572,57 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
         </div>
       </div>
 
-      {/* 3. Interactive Fullscreen Report Preview Modal */}
+      {/* 3. Half-Page / Sheet Report Preview Modal */}
       {isPreviewOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col justify-between">
-          {/* Top Bar */}
-          <div className="px-4 py-3 bg-[#121418] border-b border-neutral-800 flex items-center justify-between z-10 text-white">
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet size={18} className="text-emerald-400" />
-              <span className="text-sm font-bold">Xem Trước Báo Cáo PDF</span>
+        <div
+          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 text-neutral-100 animate-in fade-in duration-200"
+          onClick={() => setIsPreviewOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl bg-[#0e1013] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[65vh] sm:h-[70vh] max-h-[85vh] overflow-hidden relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Bar */}
+            <div className="px-4 py-3 bg-[#121418]/95 border-b border-neutral-800/80 backdrop-blur-md flex items-center justify-between z-10 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <FileSpreadsheet size={16} />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-white">Xem Trước Báo Cáo PDF</h3>
+                  <p className="text-[11px] text-neutral-400">Bản in A4 / Căn chỉnh trực quan</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrintPdf}
+                  className="py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-md"
+                >
+                  <Printer size={14} />
+                  <span>In / Lưu PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(false)}
+                  className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handlePrintPdf}
-                className="py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md"
-              >
-                <Printer size={14} />
-                <span>In / Lưu PDF</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsPreviewOpen(false)}
-                className="w-8 h-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white flex items-center justify-center cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Report Paper Iframe Container */}
-          <div className="flex-1 bg-neutral-900 overflow-auto p-2 sm:p-6 flex justify-center">
-            <div className="w-full max-w-[860px] bg-white text-black shadow-2xl rounded-sm overflow-hidden min-h-full">
-              <iframe
-                title="Bản xem trước báo cáo tài chính"
-                srcDoc={reportHtml}
-                className="w-full h-full min-h-[85vh] border-0"
-              />
+            {/* Report Paper Iframe Container */}
+            <div className="flex-1 bg-[#14161b] overflow-y-auto p-2 sm:p-4 flex justify-center">
+              <div className="w-full max-w-[800px] bg-white text-black shadow-lg rounded-xl overflow-hidden min-h-full border border-neutral-300">
+                <iframe
+                  title="Bản xem trước báo cáo tài chính"
+                  srcDoc={reportHtml}
+                  className="w-full h-full min-h-[500px] border-0"
+                />
+              </div>
             </div>
           </div>
         </div>

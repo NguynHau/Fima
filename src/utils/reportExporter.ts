@@ -296,21 +296,21 @@ export function generateReportHtml(
     .map((item, idx) => {
       return `
       <tr>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 500;">
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #111827; text-align: left;">
           ${idx + 1}. ${tCategory(item.category)}
         </td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #4b5563;">
           ${item.count}
         </td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600; color: #dc2626;">
-          ${formatVND(item.amount)}
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 700; color: #dc2626; white-space: nowrap;">
+          −${formatVND(item.amount)}
         </td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #4b5563;">
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600; color: #4b5563;">
           ${item.percentage.toFixed(1)}%
         </td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; min-width: 120px;">
-          <div style="background-color: #f3f4f6; height: 8px; border-radius: 9999px; overflow: hidden;">
-            <div style="background-color: #ef4444; height: 8px; width: ${Math.min(100, Math.max(2, item.percentage))}%;"></div>
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; text-align: left;">
+          <div style="background-color: #f3f4f6; height: 8px; border-radius: 9999px; overflow: hidden; width: 100%;">
+            <div style="background-color: #ef4444; height: 8px; width: ${Math.min(100, Math.max(3, item.percentage))}%;"></div>
           </div>
         </td>
       </tr>
@@ -326,28 +326,28 @@ export function generateReportHtml(
       const timeStr = formatTimeVN(tx.createdAt);
       return `
       <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'};">
-        <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+        <td style="padding: 9px 8px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
           ${idx + 1}
         </td>
-        <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; white-space: nowrap;">
-          <strong>${formatDateVN(tx.date)}</strong>
-          ${timeStr ? `<div style="font-size: 11px; color: #9ca3af;">${timeStr}</div>` : ''}
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; text-align: left; white-space: nowrap;">
+          <strong style="color: #111827;">${formatDateVN(tx.date)}</strong>
+          ${timeStr ? `<div style="font-size: 11px; color: #6b7280; margin-top: 1px;">${timeStr}</div>` : ''}
         </td>
-        <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px;">
-          <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; background-color: ${isIncome ? '#dcfce7' : '#fee2e2'}; color: ${color};">
+        <td style="padding: 9px 8px; border-bottom: 1px solid #e5e7eb; font-size: 12px; text-align: center;">
+          <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; background-color: ${isIncome ? '#dcfce7' : '#fee2e2'}; color: ${color};">
             ${isIncome ? 'Thu' : 'Chi'}
           </span>
         </td>
-        <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-weight: 500; font-size: 13px;">
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 13px; text-align: left; color: #111827;">
           ${tCategory(tx.category)}
         </td>
-        <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #4b5563;">
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; text-align: left; color: #4b5563;">
           ${tx.account === 'wallet' ? '💵 Ví tiền mặt' : '🏦 Ngân hàng'}
         </td>
-        <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #4b5563;">
-          ${tx.note || '<span style="color: #9ca3af; font-style: italic;">—</span>'}
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; text-align: left; color: #4b5563;">
+          ${tx.note ? `<span>${tx.note}</span>` : '<span style="color: #9ca3af; font-style: italic;">—</span>'}
         </td>
-        <td style="padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 700; font-size: 14px; color: ${color}; white-space: nowrap;">
+        <td style="padding: 9px 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 700; font-size: 13px; color: ${color}; white-space: nowrap;">
           ${sign}${formatVND(tx.amount)}
         </td>
       </tr>
@@ -365,113 +365,155 @@ export function generateReportHtml(
   <style>
     @page {
       size: A4 portrait;
-      margin: 14mm 12mm;
+      margin: 12mm 12mm 12mm 12mm;
     }
     * {
       box-sizing: border-box;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
-    body {
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       color: #111827;
-      background-color: #ffffff;
-      margin: 0;
-      padding: 24px;
       font-size: 13px;
       line-height: 1.5;
     }
+    .print-actions-bar {
+      background: #1e293b;
+      color: #ffffff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #0f172a;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .btn-save-pdf {
+      background: #10b981;
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-save-pdf:hover {
+      background: #059669;
+    }
     .report-container {
-      max-width: 860px;
+      width: 100%;
+      max-width: 820px;
       margin: 0 auto;
+      padding: 20px 16px 32px 16px;
     }
     .header {
+      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 2px solid #111827;
-      padding-bottom: 16px;
-      margin-bottom: 20px;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
     }
     .brand-title {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
       letter-spacing: -0.5px;
       color: #111827;
       margin: 0;
+      line-height: 1.2;
     }
     .brand-subtitle {
-      font-size: 12px;
+      font-size: 11px;
       color: #6b7280;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 2px;
+      letter-spacing: 0.8px;
+      margin-top: 3px;
+      font-weight: 600;
     }
     .meta-box {
       text-align: right;
       font-size: 12px;
       color: #4b5563;
+      line-height: 1.6;
     }
     .meta-box strong {
       color: #111827;
     }
     .kpi-grid {
+      width: 100%;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .kpi-card {
       border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 14px;
+      border-radius: 10px;
+      padding: 12px 14px;
       background: #f9fafb;
     }
     .kpi-title {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #6b7280;
       margin-bottom: 4px;
     }
     .kpi-value {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
+      line-height: 1.2;
     }
     .kpi-sub {
       font-size: 11px;
       color: #6b7280;
-      margin-top: 2px;
+      margin-top: 3px;
     }
     .section-title {
-      font-size: 15px;
+      width: 100%;
+      font-size: 13px;
       font-weight: 700;
       color: #111827;
-      margin: 20px 0 10px 0;
+      margin: 22px 0 10px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      border-left: 3px solid #111827;
+      padding-left: 8px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
+      table-layout: fixed;
     }
     th {
       background-color: #f3f4f6;
       color: #374151;
       font-weight: 700;
-      font-size: 12px;
+      font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      padding: 9px 10px;
+      padding: 9px 8px;
+      border-top: 1px solid #e5e7eb;
       border-bottom: 2px solid #d1d5db;
     }
     .footer {
+      width: 100%;
       border-top: 1px solid #e5e7eb;
-      padding-top: 14px;
-      margin-top: 30px;
+      padding-top: 12px;
+      margin-top: 24px;
       display: flex;
       justify-content: space-between;
       color: #9ca3af;
@@ -484,16 +526,31 @@ export function generateReportHtml(
       .no-print {
         display: none !important;
       }
+      .report-container {
+        max-width: 100%;
+        padding: 0;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Top Action Bar for Screen / Iframe Preview (Hidden during print) -->
+  <div class="print-actions-bar no-print">
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;">
+      <span>📑 Xem trước bản in A4</span>
+      <span style="font-size: 11px; color: #94a3b8; font-weight: normal;">• Chọn "Lưu dưới dạng PDF" (Save as PDF) tại hộp thoại in</span>
+    </div>
+    <button type="button" onclick="window.print()" class="btn-save-pdf">
+      <span>🖨️ Lưu Báo Cáo / In PDF</span>
+    </button>
+  </div>
+
   <div class="report-container">
     <!-- Header -->
     <div class="header">
       <div>
         <h1 class="brand-title">FIMA • BÁO CÁO TÀI CHÍNH</h1>
-        <div class="brand-subtitle">Smart Personal Expense & Cashflow Management</div>
+        <div class="brand-subtitle">Quản lý chi tiêu & Dòng tiền cá nhân</div>
       </div>
       <div class="meta-box">
         <div>Kỳ báo cáo: <strong>${formatDateVN(options.startDate)} – ${formatDateVN(options.endDate)}</strong></div>
@@ -534,16 +591,16 @@ export function generateReportHtml(
         ? `
       <div class="section-title">
         <span>CƠ CẤU CHI TIÊU THEO DANH MỤC</span>
-        <span style="font-size: 12px; font-weight: normal; color: #6b7280;">(Xếp theo số tiền lớn nhất)</span>
+        <span style="font-size: 11px; font-weight: normal; color: #6b7280;">(Xếp theo số tiền lớn nhất)</span>
       </div>
       <table>
         <thead>
           <tr>
-            <th style="text-align: left;">Danh mục</th>
-            <th style="text-align: center;">Số lượng</th>
-            <th style="text-align: right;">Tổng chi</th>
-            <th style="text-align: right;">Tỷ lệ</th>
-            <th style="text-align: left;">Biểu đồ tỷ lệ</th>
+            <th style="width: 32%; text-align: left;">Danh mục</th>
+            <th style="width: 14%; text-align: center;">Số lượng</th>
+            <th style="width: 22%; text-align: right;">Tổng chi</th>
+            <th style="width: 12%; text-align: right;">Tỷ lệ</th>
+            <th style="width: 20%; text-align: left;">Biểu đồ</th>
           </tr>
         </thead>
         <tbody>
@@ -557,7 +614,7 @@ export function generateReportHtml(
     <!-- Detailed Transactions Table -->
     <div class="section-title">
       <span>NHẬT KÝ CHI TIẾT GIAO DỊCH (${filtered.length})</span>
-      <span style="font-size: 12px; font-weight: normal; color: #6b7280;">Thứ tự mới nhất trước</span>
+      <span style="font-size: 11px; font-weight: normal; color: #6b7280;">Thứ tự mới nhất trước</span>
     </div>
     ${
       filtered.length > 0
@@ -565,13 +622,13 @@ export function generateReportHtml(
       <table>
         <thead>
           <tr>
-            <th style="width: 32px; text-align: center;">#</th>
-            <th style="text-align: left;">Thời gian</th>
-            <th style="text-align: left;">Loại</th>
-            <th style="text-align: left;">Danh mục</th>
-            <th style="text-align: left;">Nguồn tiền</th>
-            <th style="text-align: left;">Ghi chú</th>
-            <th style="text-align: right;">Số tiền</th>
+            <th style="width: 6%; text-align: center;">#</th>
+            <th style="width: 16%; text-align: left;">Thời gian</th>
+            <th style="width: 10%; text-align: center;">Loại</th>
+            <th style="width: 18%; text-align: left;">Danh mục</th>
+            <th style="width: 14%; text-align: left;">Nguồn tiền</th>
+            <th style="width: 20%; text-align: left;">Ghi chú</th>
+            <th style="width: 16%; text-align: right;">Số tiền</th>
           </tr>
         </thead>
         <tbody>
@@ -585,7 +642,7 @@ export function generateReportHtml(
     <!-- Footer -->
     <div class="footer">
       <div>Được tạo tự động từ ứng dụng FIMA - Quản lý chi tiêu thông minh</div>
-      <div>Trang 1 / 1</div>
+      <div>Bản in chuẩn báo cáo tài chính</div>
     </div>
   </div>
 </body>
@@ -603,18 +660,52 @@ export function printReportPdf(
   balances?: BalancesSummary
 ): void {
   const html = generateReportHtml(transactions, options, userSettings, balances);
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    alert('Vui lòng cho phép mở popup để xem trước và in báo cáo PDF.');
-    return;
-  }
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
+  
+  // Create hidden iframe approach for 100% reliable printing across iframes & browsers
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.opacity = '0';
+  iframe.style.pointerEvents = 'none';
+  document.body.appendChild(iframe);
 
-  // Trigger print after resources load
-  printWindow.onload = () => {
-    printWindow.focus();
-    printWindow.print();
-  };
+  try {
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch (e) {
+          console.warn('Iframe print failed, falling back to popup window:', e);
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.open();
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.onload = () => {
+              printWindow.focus();
+              printWindow.print();
+            };
+          }
+        } finally {
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+          }, 3000);
+        }
+      }, 350);
+    }
+  } catch (err) {
+    console.error('Print PDF error:', err);
+  }
 }
