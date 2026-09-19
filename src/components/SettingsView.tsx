@@ -29,9 +29,9 @@ import {
   Coins,
   ChevronDown,
 } from 'lucide-react';
-import { type UserSettings } from '../types';
+import { type UserSettings, type Transaction, type BalancesSummary } from '../types';
 import { AIManager } from '../services/ai/AIManager';
-import { getUserSettings, updateUserSettings, clearAllData } from '../db/database';
+import { getUserSettings, updateUserSettings, clearAllData, getTransactions, calculateBalances } from '../db/database';
 import { exportBackupZip, importBackupZip, triggerBlobDownload } from '../services/backupService';
 import {
   checkForRemoteUpdate,
@@ -56,7 +56,11 @@ import {
   setStoredWallpaperBlur,
   applyWallpaperBlur,
 } from '../utils/wallpaperManager';
-import { getStoredUiTransparency, setStoredUiTransparency, applyUiTransparency } from '../utils/uiAppearanceManager';
+import {
+  getStoredUiTransparency,
+  setStoredUiTransparency,
+  applyUiTransparency,
+} from '../utils/uiAppearanceManager';
 import {
   loadStoredSystemColors,
   applySystemColorsToDocument,

@@ -12,6 +12,7 @@ import {
   Camera,
   PiggyBank,
   ReceiptText,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { type UserSettings, type Transaction, type BalancesSummary } from '../types';
 import { updateUserSettings } from '../db/database';
@@ -20,6 +21,7 @@ import { t } from '../utils/translations';
 import { ImageCropModal } from './ImageCropModal';
 import { BudgetSettingsModal } from './BudgetSettingsModal';
 import { ExpenseReviewModal } from './ExpenseReviewModal';
+import { ExportReportModal } from './ExportReportModal';
 
 interface ProfileViewProps {
   userSettings: UserSettings | null;
@@ -45,6 +47,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   // Expense & Budget Review modal state
   const [isExpenseReviewOpen, setIsExpenseReviewOpen] = useState(false);
+
+  // Financial Report Export modal state
+  const [isExportReportOpen, setIsExportReportOpen] = useState(false);
 
   // Initial Balance Edit State
   const [showEditBalanceModal, setShowEditBalanceModal] = useState(false);
@@ -522,7 +527,36 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </button>
       </div>
 
-      {/* 5. THẺ CÀI ĐẶT SỐ DƯ BAN ĐẦU (NẰM PHÍA DƯỚI CÙNG, THIẾT KẾ GIỐNG TAB CÀI ĐẶT, KHÔNG HIỆN SỐ BÊN NGOÀI) */}
+      {/* 5. THẺ XUẤT BÁO CÁO TÀI CHÍNH (EXCEL & PDF) */}
+      <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet
+              size={18}
+              className="shrink-0"
+              stroke="url(#profile-pink-purple-grad)"
+              strokeWidth={2.3}
+            />
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-neutral-200">
+              Xuất Báo Cáo
+            </h3>
+          </div>
+          <p className="text-xs text-neutral-400 leading-relaxed font-medium">
+            Xuất sổ chi tiết giao dịch Excel (.xlsx) và bản in PDF chuẩn hóa đơn A4 theo tuần, tháng, năm hoặc tùy chọn.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsExportReportOpen(true)}
+          className="w-full py-2.5 px-4 bg-[#1a1a1a] hover:bg-[#262626] text-neutral-200 border border-neutral-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 active:scale-98 transition-colors cursor-pointer shadow-xs"
+        >
+          <FileSpreadsheet size={16} className="text-neutral-400 shrink-0" />
+          <span>Xuất Báo Cáo (Excel / PDF)</span>
+        </button>
+      </div>
+
+      {/* 6. THẺ CÀI ĐẶT SỐ DƯ BAN ĐẦU (NẰM PHÍA DƯỚI CÙNG, THIẾT KẾ GIỐNG TAB CÀI ĐẶT, KHÔNG HIỆN SỐ BÊN NGOÀI) */}
       <div className="bg-[#121212] rounded-3xl p-4 sm:p-5 border border-neutral-800 shadow-sm space-y-3">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
@@ -670,6 +704,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           onCropComplete={handleAvatarCropComplete}
         />
       )}
+
+      {/* Financial Report Export Modal (Excel & PDF) */}
+      <ExportReportModal
+        isOpen={isExportReportOpen}
+        onClose={() => setIsExportReportOpen(false)}
+        transactions={transactions}
+        userSettings={userSettings}
+        balances={balances}
+      />
     </div>
   );
 };

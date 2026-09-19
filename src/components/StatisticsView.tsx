@@ -1307,7 +1307,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
       {/* AI ASSISTANT SECTION */}
       <AIAssistantSection transactions={transactions} />
 
-      {/* QUICK ACCESS CARDS: DANH SÁCH GIAO DỊCH & GỢI Ý THÔNG TIN NHANH */}
+      {/* QUICK ACCESS CARDS: DANH SÁCH GIAO DỊCH, GỢI Ý */}
       <div className="space-y-2.5">
         {/* Danh sách các giao dịch */}
         <div

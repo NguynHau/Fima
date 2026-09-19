@@ -7,7 +7,6 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
-  Trash2,
   Download,
   Check,
 } from 'lucide-react';
@@ -411,21 +410,6 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               ) : (
                 <Download size={15} />
               )}
-            </button>
-          )}
-
-          {onDeleteTransaction && (
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onDeleteTransaction(currentTx);
-              }}
-              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-rose-950/40 border border-neutral-800 text-neutral-400 hover:text-rose-400 flex items-center justify-center active:scale-95 transition-colors cursor-pointer shrink-0"
-              title="Xóa giao dịch"
-              aria-label="Xóa giao dịch"
-            >
-              <Trash2 size={15} />
             </button>
           )}
 
