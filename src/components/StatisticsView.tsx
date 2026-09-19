@@ -1534,9 +1534,9 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
             </button>
           </div>
         ) : (
-          /* Custom Date Inputs - Compact & smaller size */
-          <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-1 px-1">
-            <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+          /* Custom Date Inputs - Compact & responsive */
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-1 px-1 w-full max-w-sm mx-auto min-w-0">
+            <label className="flex-1 min-w-0 flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1.5 transition-colors cursor-pointer">
               <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
                 Từ
               </span>
@@ -1544,11 +1544,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0 w-[108px] sm:w-[120px]"
+                className="w-full min-w-0 max-w-full bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0"
               />
             </label>
             <span className="text-neutral-500 text-xs font-bold shrink-0">→</span>
-            <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+            <label className="flex-1 min-w-0 flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1.5 transition-colors cursor-pointer">
               <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
                 Đến
               </span>
@@ -1556,7 +1556,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0 w-[108px] sm:w-[120px]"
+                className="w-full min-w-0 max-w-full bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0"
               />
             </label>
           </div>
@@ -2264,8 +2264,8 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-1 px-1">
-                  <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-1 px-1 w-full max-w-sm mx-auto min-w-0">
+                  <label className="flex-1 min-w-0 flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1.5 transition-colors cursor-pointer">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
                       {t('common.from')}
                     </span>
@@ -2273,11 +2273,11 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                       type="date"
                       value={txListCustomStartDate}
                       onChange={(e) => setTxListCustomStartDate(e.target.value)}
-                      className="bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0 w-[108px] sm:w-[120px]"
+                      className="w-full min-w-0 max-w-full bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0"
                     />
                   </label>
                   <span className="text-neutral-500 text-xs font-bold shrink-0">→</span>
-                  <label className="flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+                  <label className="flex-1 min-w-0 flex items-center gap-1 sm:gap-1.5 bg-[#1a1a1a] hover:bg-[#222222] border border-neutral-800 rounded-lg px-2 py-1.5 transition-colors cursor-pointer">
                     <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">
                       {t('common.to')}
                     </span>
@@ -2285,7 +2285,7 @@ export const StatisticsView: React.FC<StatisticsViewProps> = ({
                       type="date"
                       value={txListCustomEndDate}
                       onChange={(e) => setTxListCustomEndDate(e.target.value)}
-                      className="bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0 w-[108px] sm:w-[120px]"
+                      className="w-full min-w-0 max-w-full bg-transparent text-[11px] sm:text-xs text-white outline-none font-medium cursor-pointer [color-scheme:dark] p-0"
                     />
                   </label>
                 </div>

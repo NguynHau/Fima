@@ -179,3 +179,31 @@ body[data-ui-transparency="active"] main [class*="bg-amber-500/20"] {
   backdrop-filter: var(--ui-card-blur, none);
   -webkit-backdrop-filter: var(--ui-card-blur, none);
 }
+
+/* =========================================================================
+   Mobile-Optimized Date & Time Inputs (Prevents overflow & styling glitches on iOS/Android)
+   ========================================================================= */
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.2em;
+  margin: 0;
+  padding: 0;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.75);
+  opacity: 0.85;
+  margin-left: 4px;
+}
+

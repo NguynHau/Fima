@@ -346,28 +346,32 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
 
               {/* Custom Date Inputs if 'custom' selected */}
               {datePreset === 'custom' && (
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="text-[11px] text-neutral-400 font-medium block mb-1">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1 w-full min-w-0">
+                  <div className="min-w-0">
+                    <label className="text-[11px] text-neutral-400 font-medium block mb-1 truncate">
                       Từ ngày
                     </label>
-                    <input
-                      type="date"
-                      value={customStartDate}
-                      onChange={(e) => setCustomStartDate(e.target.value)}
-                      className="w-full bg-[#16181d] border border-neutral-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                    />
+                    <div className="relative w-full min-w-0">
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="w-full min-w-0 max-w-full bg-[#16181d] border border-neutral-700/80 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark] block"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-[11px] text-neutral-400 font-medium block mb-1">
+                  <div className="min-w-0">
+                    <label className="text-[11px] text-neutral-400 font-medium block mb-1 truncate">
                       Đến ngày
                     </label>
-                    <input
-                      type="date"
-                      value={customEndDate}
-                      onChange={(e) => setCustomEndDate(e.target.value)}
-                      className="w-full bg-[#16181d] border border-neutral-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                    />
+                    <div className="relative w-full min-w-0">
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="w-full min-w-0 max-w-full bg-[#16181d] border border-neutral-700/80 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark] block"
+                      />
+                    </div>
                   </div>
                 </div>
               )}

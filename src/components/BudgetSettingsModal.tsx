@@ -584,27 +584,27 @@ export const BudgetSettingsModal: React.FC<BudgetSettingsModalProps> = ({
                     </div>
 
                     {budgetPeriodType === 'cycle' && (
-                      <div className="grid grid-cols-2 gap-2 pt-1.5 bg-[#121212] p-2.5 rounded-xl border border-neutral-800">
-                        <div>
-                          <label className="block text-[10px] font-bold text-neutral-400 mb-1">
+                      <div className="grid grid-cols-2 gap-2 pt-1.5 bg-[#121212] p-2.5 rounded-xl border border-neutral-800 w-full min-w-0">
+                        <div className="min-w-0">
+                          <label className="block text-[10px] font-bold text-neutral-400 mb-1 truncate">
                             {t('budget.start_date')}
                           </label>
                           <input
                             type="date"
                             value={budgetStartDate}
                             onChange={(e) => setBudgetStartDate(e.target.value)}
-                            className="w-full bg-[#1a1a1a] border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-white"
+                            className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-white [color-scheme:dark] block"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-neutral-400 mb-1">
+                        <div className="min-w-0">
+                          <label className="block text-[10px] font-bold text-neutral-400 mb-1 truncate">
                             {t('budget.end_date')}
                           </label>
                           <input
                             type="date"
                             value={budgetEndDate}
                             onChange={(e) => setBudgetEndDate(e.target.value)}
-                            className="w-full bg-[#1a1a1a] border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-white"
+                            className="w-full min-w-0 max-w-full bg-[#1a1a1a] border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-white [color-scheme:dark] block"
                           />
                         </div>
                       </div>

@@ -218,7 +218,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             <label className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block px-0.5">
               {t('debts.form.date_label')}
             </label>
-            <div className="relative">
+            <div className="relative w-full min-w-0">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500">
                 <CalendarIcon size={16} />
               </span>
@@ -226,7 +226,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-[#1e1e1e] rounded-2xl border border-neutral-800 py-3.5 pl-10 pr-4 text-xs sm:text-sm text-white font-semibold focus:outline-none focus:border-neutral-500 transition-all"
+                className="w-full min-w-0 max-w-full bg-[#1e1e1e] rounded-2xl border border-neutral-800 py-3.5 pl-10 pr-4 text-xs sm:text-sm text-white font-semibold focus:outline-none focus:border-neutral-500 transition-all [color-scheme:dark] block"
               />
             </div>
           </div>
