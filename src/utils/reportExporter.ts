@@ -480,6 +480,71 @@ export function generateReportHtml(
       color: #6b7280;
       margin-top: 3px;
     }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .chart-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 14px 16px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .chart-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1f2937;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f3f4f6;
+      padding-bottom: 6px;
+    }
+    .bar-chart-container {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      height: 130px;
+      padding-top: 15px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 10px;
+    }
+    .bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 28%;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .bar-pill {
+      width: 100%;
+      max-width: 44px;
+      border-radius: 6px 6px 0 0;
+      transition: height 0.3s;
+      min-height: 4px;
+      position: relative;
+    }
+    .bar-val-label {
+      font-size: 10px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+    .bar-name-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-top: 6px;
+      text-align: center;
+    }
     .section-title {
       width: 100%;
       font-size: 13px;
@@ -534,17 +599,6 @@ export function generateReportHtml(
   </style>
 </head>
 <body>
-  <!-- Top Action Bar for Screen / Iframe Preview (Hidden during print) -->
-  <div class="print-actions-bar no-print">
-    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;">
-      <span>📑 Xem trước bản in A4</span>
-      <span style="font-size: 11px; color: #94a3b8; font-weight: normal;">• Chọn "Lưu dưới dạng PDF" (Save as PDF) tại hộp thoại in</span>
-    </div>
-    <button type="button" onclick="window.print()" class="btn-save-pdf">
-      <span>🖨️ Lưu Báo Cáo / In PDF</span>
-    </button>
-  </div>
-
   <div class="report-container">
     <!-- Header -->
     <div class="header">
@@ -581,6 +635,94 @@ export function generateReportHtml(
         </div>
         <div class="kpi-sub">
           ${summary.totalIncome > 0 ? `Tỷ lệ tích lũy: ${((summary.netSavings / summary.totalIncome) * 100).toFixed(1)}%` : 'Không có thu nhập'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Charts Section (Đồ thị trực quan trong PDF) -->
+    <div class="charts-grid">
+      <!-- Chart 1: So sánh Dòng tiền Tổng quát -->
+      <div class="chart-card">
+        <div class="chart-title">
+          <span>📊 Biểu Đồ Cân Đối Thu - Chi</span>
+          <span style="font-size: 10px; color: #6b7280; font-weight: normal;">Quy mô tỷ lệ</span>
+        </div>
+        <div class="bar-chart-container">
+          <div class="bar-col">
+            <div class="bar-val-label" style="color: #16a34a;">+${formatVND(summary.totalIncome)}</div>
+            <div class="bar-pill" style="height: ${Math.min(100, Math.max(8, (summary.totalIncome / Math.max(summary.totalIncome, summary.totalExpense, Math.abs(summary.netSavings), 1)) * 100))}%; background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);"></div>
+            <div class="bar-name-label">Thu Nhập</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-val-label" style="color: #dc2626;">−${formatVND(summary.totalExpense)}</div>
+            <div class="bar-pill" style="height: ${Math.min(100, Math.max(8, (summary.totalExpense / Math.max(summary.totalIncome, summary.totalExpense, Math.abs(summary.netSavings), 1)) * 100))}%; background: linear-gradient(180deg, #f87171 0%, #dc2626 100%);"></div>
+            <div class="bar-name-label">Chi Tiêu</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-val-label" style="color: ${summary.netSavings >= 0 ? '#2563eb' : '#ea580c'};">
+              ${summary.netSavings >= 0 ? '+' : '−'}${formatVND(Math.abs(summary.netSavings))}
+            </div>
+            <div class="bar-pill" style="height: ${Math.min(100, Math.max(8, (Math.abs(summary.netSavings) / Math.max(summary.totalIncome, summary.totalExpense, Math.abs(summary.netSavings), 1)) * 100))}%; background: linear-gradient(180deg, ${summary.netSavings >= 0 ? '#60a5fa 0%, #2563eb 100%' : '#fb923c 0%, #ea580c 100%'});"></div>
+            <div class="bar-name-label">${summary.netSavings >= 0 ? 'Thặng Dư' : 'Thâm Hụt'}</div>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #4b5563; background: #f9fafb; padding: 6px 10px; border-radius: 6px; border: 1px solid #f3f4f6;">
+          <span>Tỷ suất tiết kiệm: <strong style="color: #111827;">${summary.totalIncome > 0 ? ((summary.netSavings / summary.totalIncome) * 100).toFixed(1) : '0'}%</strong></span>
+          <span>Đánh giá: <strong style="color: ${summary.netSavings >= 0 ? '#16a34a' : '#dc2626'};">${summary.netSavings >= 0 ? 'Tài chính vững mạnh' : 'Cần thắt chặt chi tiêu'}</strong></span>
+        </div>
+      </div>
+
+      <!-- Chart 2: Cơ cấu phân bổ chi tiêu & Nguồn tiền -->
+      <div class="chart-card">
+        <div class="chart-title">
+          <span>🎯 Phân Bổ Danh Mục & Nguồn Tiền</span>
+          <span style="font-size: 10px; color: #6b7280; font-weight: normal;">Tỷ trọng %</span>
+        </div>
+        ${
+          summary.categoryBreakdown.length > 0
+            ? `
+          <div style="margin-bottom: 8px;">
+            <div style="font-size: 11px; font-weight: 600; color: #4b5563; margin-bottom: 5px;">Cơ cấu các nhóm chi tiêu hàng đầu:</div>
+            <div style="display: flex; width: 100%; height: 12px; border-radius: 6px; overflow: hidden; background: #f3f4f6; margin-bottom: 8px;">
+              ${summary.categoryBreakdown
+                .map((item, idx) => {
+                  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#64748b'];
+                  const c = colors[idx % colors.length];
+                  return `<div style="background-color: ${c}; width: ${item.percentage}%; height: 100%;" title="${tCategory(item.category)}: ${item.percentage.toFixed(1)}%"></div>`;
+                })
+                .join('')}
+            </div>
+            <div style="margin-top: 6px;">
+              ${summary.categoryBreakdown
+                .slice(0, 3)
+                .map((item, idx) => {
+                  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#64748b'];
+                  const c = colors[idx % colors.length];
+                  return `
+                  <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${c};"></div>
+                      <span style="font-weight: 600; color: #374151;">${tCategory(item.category)}</span>
+                    </div>
+                    <div style="font-weight: 700; color: #111827;">${item.percentage.toFixed(1)}% <span style="font-weight: normal; color: #6b7280;">(${formatVND(item.amount)})</span></div>
+                  </div>
+                `;
+                })
+                .join('')}
+            </div>
+          </div>
+        `
+            : '<p style="font-size: 11px; color: #9ca3af; text-align: center; padding: 12px 0;">Chưa có dữ liệu chi tiêu trong kỳ.</p>'
+        }
+        <div style="border-top: 1px dashed #e5e7eb; padding-top: 8px; margin-top: 6px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin-bottom: 4px;">
+            <span style="color: #d97706;">💵 Ví tiền mặt (${(((summary.accountSummary.walletIncome + summary.accountSummary.walletExpense) / ((summary.accountSummary.walletIncome + summary.accountSummary.walletExpense + summary.accountSummary.bankIncome + summary.accountSummary.bankExpense) || 1)) * 100).toFixed(0)}%)</span>
+            <span style="color: #0891b2;">🏦 Ngân hàng (${(((summary.accountSummary.bankIncome + summary.accountSummary.bankExpense) / ((summary.accountSummary.walletIncome + summary.accountSummary.walletExpense + summary.accountSummary.bankIncome + summary.accountSummary.bankExpense) || 1)) * 100).toFixed(0)}%)</span>
+          </div>
+          <div style="display: flex; width: 100%; height: 8px; border-radius: 4px; overflow: hidden; background: #f3f4f6;">
+            <div style="width: ${(((summary.accountSummary.walletIncome + summary.accountSummary.walletExpense) / ((summary.accountSummary.walletIncome + summary.accountSummary.walletExpense + summary.accountSummary.bankIncome + summary.accountSummary.bankExpense) || 1)) * 100).toFixed(0)}%; background-color: #f59e0b;" title="Ví tiền mặt"></div>
+            <div style="width: ${(((summary.accountSummary.bankIncome + summary.accountSummary.bankExpense) / ((summary.accountSummary.walletIncome + summary.accountSummary.walletExpense + summary.accountSummary.bankIncome + summary.accountSummary.bankExpense) || 1)) * 100).toFixed(0)}%; background-color: #06b6d4;" title="Ngân hàng"></div>
+          </div>
         </div>
       </div>
     </div>

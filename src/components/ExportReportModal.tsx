@@ -63,6 +63,57 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
   const [datePreset, setDatePreset] = useState<DatePreset>('this_month');
   const [accountFilter, setAccountFilter] = useState<'all' | 'wallet' | 'bank'>('all');
 
+  const presetTabs: { key: DatePreset; label: string }[] = useMemo(() => [
+    { key: 'this_month', label: 'Tháng này' },
+    { key: 'last_month', label: 'Tháng trước' },
+    { key: 'last_3_months', label: '3 tháng qua' },
+    { key: 'this_year', label: `Năm ${currentYear}` },
+    { key: 'all', label: 'Tất cả' },
+    { key: 'custom', label: 'Tùy chọn' },
+  ], [currentYear]);
+
+  const presetControlRef = useRef<HTMLDivElement>(null);
+  const isDraggingPresetRef = useRef(false);
+
+  const updatePresetFromPointer = (clientX: number, clientY: number) => {
+    if (!presetControlRef.current) return;
+    const rect = presetControlRef.current.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const relX = clientX - rect.left;
+    const relY = clientY - rect.top;
+    const colRatio = Math.max(0, Math.min(0.999, relX / rect.width));
+    const rowRatio = Math.max(0, Math.min(0.999, relY / rect.height));
+    const col = Math.floor(colRatio * 3); // 3 columns
+    const row = Math.floor(rowRatio * 2); // 2 rows
+    const targetIdx = row * 3 + col;
+    const selected = presetTabs[targetIdx]?.key;
+    if (selected && selected !== datePreset) {
+      setDatePreset(selected);
+    }
+  };
+
+  const handlePresetPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDraggingPresetRef.current = true;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    updatePresetFromPointer(e.clientX, e.clientY);
+  };
+
+  const handlePresetPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingPresetRef.current) return;
+    updatePresetFromPointer(e.clientX, e.clientY);
+  };
+
+  const handlePresetPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingPresetRef.current) {
+      isDraggingPresetRef.current = false;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
+
   const accountTabs: ('all' | 'wallet' | 'bank')[] = ['all', 'wallet', 'bank'];
   const accountControlRef = useRef<HTMLDivElement>(null);
   const isDraggingAccountRef = useRef(false);
@@ -113,6 +164,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [excelSuccess, setExcelSuccess] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const previewSheetDrag = useBottomSheetDrag({ onClose: () => setIsPreviewOpen(false) });
 
   // Compute active start & end dates based on preset
   const { startDate, endDate } = useMemo(() => {
@@ -257,24 +309,24 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
               </label>
 
               <LayoutGroup id="export_report_modal_preset">
-                <div className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-2xl grid grid-cols-3 gap-1.5 relative select-none">
-                  {([
-                    { key: 'this_month', label: 'Tháng này' },
-                    { key: 'last_month', label: 'Tháng trước' },
-                    { key: 'last_3_months', label: '3 tháng qua' },
-                    { key: 'this_year', label: `Năm ${currentYear}` },
-                    { key: 'all', label: 'Tất cả' },
-                    { key: 'custom', label: 'Tùy chọn' },
-                  ] as const).map((p) => {
+                <div
+                  ref={presetControlRef}
+                  onPointerDown={handlePresetPointerDown}
+                  onPointerMove={handlePresetPointerMove}
+                  onPointerUp={handlePresetPointerUp}
+                  onPointerCancel={handlePresetPointerUp}
+                  className="bg-[#1a1a1a] border border-neutral-800 p-1 rounded-2xl grid grid-cols-3 gap-1.5 relative touch-none select-none"
+                >
+                  {presetTabs.map((p) => {
                     const isSelected = datePreset === p.key;
                     return (
                       <button
                         key={p.key}
                         type="button"
                         onClick={() => setDatePreset(p.key)}
-                        className={`relative h-9 py-1.5 px-1 rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`relative h-8 py-1.5 px-1 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center justify-center cursor-pointer ${
                           isSelected
-                            ? 'text-white font-extrabold'
+                            ? 'text-black font-extrabold'
                             : 'text-neutral-400 hover:text-white'
                         }`}
                       >
@@ -282,7 +334,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
                           <motion.div
                             layoutId="export_report_modal_preset_tab"
                             transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                            className="absolute inset-0 bg-[#2c3039] border border-neutral-650/80 rounded-xl shadow-xs"
+                            className="absolute inset-0 bg-white rounded-lg shadow-sm"
                           />
                         )}
                         <span className="relative z-10 truncate">{p.label}</span>
@@ -575,39 +627,40 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
       {/* 3. Half-Page / Sheet Report Preview Modal */}
       {isPreviewOpen && (
         <div
-          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 text-neutral-100 animate-in fade-in duration-200"
-          onClick={() => setIsPreviewOpen(false)}
+          style={previewSheetDrag.backdropStyle}
+          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-end justify-center p-0 pt-[max(env(safe-area-inset-top,0px),16px)] text-neutral-100 select-none"
+          onClick={previewSheetDrag.closeWithAnimation}
         >
           <div
-            className="w-full max-w-2xl bg-[#0e1013] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col h-[65vh] sm:h-[70vh] max-h-[85vh] overflow-hidden relative"
+            style={previewSheetDrag.sheetStyle}
+            className="w-full max-w-lg bg-[#0e1013] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Top Bar */}
-            <div className="px-4 py-3 bg-[#121418]/95 border-b border-neutral-800/80 backdrop-blur-md flex items-center justify-between z-10 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <FileSpreadsheet size={16} />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-white">Xem Trước Báo Cáo PDF</h3>
-                  <p className="text-[11px] text-neutral-400">Bản in A4 / Căn chỉnh trực quan</p>
-                </div>
-              </div>
+            {/* Header & Drag Handle */}
+            <div className="flex flex-col border-b border-neutral-800/80 bg-[#121418]/95 backdrop-blur-md shrink-0 px-4 pt-1.5 pb-3 z-20 space-y-2">
+              <BottomSheetDragHandle
+                isHandleActive={previewSheetDrag.isHandleActive}
+                onPointerDown={previewSheetDrag.handlePointerDown}
+                onPointerMove={previewSheetDrag.handlePointerMove}
+              />
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrintPdf}
-                  className="py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-md"
-                >
-                  <Printer size={14} />
-                  <span>In / Lưu PDF</span>
-                </button>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Eye size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white leading-tight">Xem Trước Báo Cáo</h3>
+                    <p className="text-[11px] text-neutral-400">Bản in A4 / Căn chỉnh trực quan</p>
+                  </div>
+                </div>
 
                 <button
                   type="button"
-                  onClick={() => setIsPreviewOpen(false)}
-                  className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                  onClick={previewSheetDrag.closeWithAnimation}
+                  className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+                  title="Đóng"
+                  aria-label="Đóng"
                 >
                   <X size={16} />
                 </button>
@@ -616,11 +669,11 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
 
             {/* Report Paper Iframe Container */}
             <div className="flex-1 bg-[#14161b] overflow-y-auto p-2 sm:p-4 flex justify-center">
-              <div className="w-full max-w-[800px] bg-white text-black shadow-lg rounded-xl overflow-hidden min-h-full border border-neutral-300">
+              <div className="w-full bg-white text-black shadow-lg rounded-xl overflow-hidden min-h-[500px] border border-neutral-200">
                 <iframe
                   title="Bản xem trước báo cáo tài chính"
                   srcDoc={reportHtml}
-                  className="w-full h-full min-h-[500px] border-0"
+                  className="w-full h-full min-h-[520px] border-0"
                 />
               </div>
             </div>
