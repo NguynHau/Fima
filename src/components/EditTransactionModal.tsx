@@ -84,14 +84,16 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setCropModalImageSrc(event.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
-      stopInlineCamera();
+      try {
+        const activeQuality: PhotoQuality = photoQuality || 'low';
+        const compressed = await compressImageWithQuality(file, activeQuality);
+        setInlineNewPhotoBlob(compressed);
+        stopInlineCamera();
+      } catch (err) {
+        console.error('Lỗi nén ảnh chọn từ thư viện:', err);
+        setInlineNewPhotoBlob(file);
+        stopInlineCamera();
+      }
     }
     if (libraryInputRef.current) {
       libraryInputRef.current.value = '';
@@ -316,11 +318,13 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
+      setErrorMessage(null);
       await deleteTransaction(transaction.id);
+      setShowDeleteConfirm(false);
       onSuccess();
     } catch (err) {
-      console.error(err);
-      setErrorMessage('Không thể xóa giao dịch.');
+      console.error('Lỗi khi xóa giao dịch:', err);
+      setErrorMessage('Không thể xóa giao dịch. Vui lòng thử lại.');
       setIsDeleting(false);
     }
   };
@@ -600,7 +604,10 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         {/* 5. Xóa */}
         <button
           type="button"
-          onClick={() => setShowDeleteConfirm(true)}
+          onClick={() => {
+            setErrorMessage(null);
+            setShowDeleteConfirm(true);
+          }}
           className="flex flex-col items-center gap-1 text-rose-400 hover:text-rose-300 active:scale-90 transition-all cursor-pointer group flex-1"
         >
           <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 group-hover:border-rose-500/60 flex items-center justify-center text-rose-300 group-hover:text-rose-200 transition-all shadow-md">
@@ -732,9 +739,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               <Trash2 size={26} />
             </div>
             <h3 className="text-base font-extrabold text-white mb-1.5">Xóa giao dịch?</h3>
-            <p className="text-xs sm:text-sm text-neutral-300 mb-6 leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-neutral-300 mb-4 leading-relaxed font-medium">
               Giao dịch và ảnh chứng từ sẽ bị xóa hoàn toàn khỏi thiết bị.
             </p>
+            {errorMessage && (
+              <div className="mb-4 p-2.5 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-200 text-xs font-bold">
+                {errorMessage}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"

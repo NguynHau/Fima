@@ -64,6 +64,16 @@ export class FinanceDatabase extends Dexie {
       savings: 'id, name, targetAmount, createdAt',
       budgetHistory: 'id, budgetId, categoryId, periodType, startDate, endDate, closedAt',
     });
+    this.version(6).stores({
+      transactions: 'id, date, type, account, category, categoryId, imageId, createdAt, [date+type]',
+      images: 'id, createdAt',
+      settings: 'id',
+      categories: 'id, name, type, order, isDefault, createdAt',
+      debts: 'id, name, amount, date, type, status, createdAt',
+      budgets: 'id, categoryId, categoryName, createdAt',
+      savings: 'id, name, targetAmount, createdAt',
+      budgetHistory: 'id, budgetId, categoryId, periodType, startDate, endDate, closedAt',
+    });
   }
 }
 
@@ -273,13 +283,15 @@ export async function updateTransaction(
     if (params.newImageBlob) {
       // Delete previous image if exists and not referenced elsewhere
       if (existing.imageId) {
-        const otherUsing = await db.transactions
-          .where('imageId')
-          .equals(existing.imageId)
-          .and((t) => t.id !== id)
-          .count();
-        if (otherUsing === 0) {
-          await db.images.delete(existing.imageId);
+        try {
+          const otherUsing = await db.transactions
+            .filter((t) => t.id !== id && t.imageId === existing.imageId)
+            .count();
+          if (otherUsing === 0) {
+            await db.images.delete(existing.imageId);
+          }
+        } catch (imgErr) {
+          console.warn('Không thể dọn dẹp ảnh cũ:', imgErr);
         }
       }
       // Create new image
@@ -316,19 +328,24 @@ export async function deleteTransaction(id: string): Promise<void> {
   const existing = await db.transactions.get(id);
   if (!existing) return;
 
-  await db.transaction('rw', db.transactions, db.images, async () => {
-    if (existing.imageId) {
+  const imageIdToDelete = existing.imageId;
+
+  // First, safely delete the transaction record
+  await db.transactions.delete(id);
+
+  // If the transaction had an associated image, clean it up if no other transaction uses it
+  if (imageIdToDelete) {
+    try {
       const otherTxUsingImage = await db.transactions
-        .where('imageId')
-        .equals(existing.imageId)
-        .and((t) => t.id !== id)
+        .filter((t) => t.id !== id && t.imageId === imageIdToDelete)
         .count();
       if (otherTxUsingImage === 0) {
-        await db.images.delete(existing.imageId);
+        await db.images.delete(imageIdToDelete);
       }
+    } catch (imgErr) {
+      console.warn('Không thể xóa tệp ảnh liên kết:', imgErr);
     }
-    await db.transactions.delete(id);
-  });
+  }
 }
 
 /**

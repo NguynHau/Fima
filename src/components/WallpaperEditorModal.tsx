@@ -67,17 +67,27 @@ export const WallpaperEditorModal: React.FC<WallpaperEditorModalProps> = ({
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  const handleWallpaperFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWallpaperFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setWallpaperCropSrc(event.target.result as string);
-        setIsWallpaperCropOpen(true);
+    setIsProcessingWallpaper(true);
+    try {
+      const rawUrl = URL.createObjectURL(file);
+      const optimized = await optimizeWallpaper(rawUrl);
+      if (onApplyWallpaper) {
+        await onApplyWallpaper(optimized);
       }
-    };
-    reader.readAsDataURL(file);
+      if (uiTransparency === 0) {
+        await onTransparencyChange(50);
+      }
+      showToast('Đã áp dụng hình nền mới thành công!');
+    } catch (err) {
+      console.error('Error optimizing wallpaper:', err);
+      showToast('Lỗi khi xử lý hình nền.');
+    } finally {
+      setIsProcessingWallpaper(false);
+      setWallpaperCropSrc(null);
+    }
     e.target.value = '';
   };
 

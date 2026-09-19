@@ -152,15 +152,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
-  // Handle Avatar Image Selection & Open Cropper
+  // Handle Avatar Image Selection & Apply directly
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       if (event.target?.result) {
-        setCropModalImageSrc(event.target.result as string);
+        const dataUrl = event.target.result as string;
+        try {
+          await updateUserSettings({ avatarDataUrl: dataUrl });
+          onDataChanged();
+        } catch (err) {
+          console.error('Error saving avatar:', err);
+        }
       }
     };
     reader.readAsDataURL(file);

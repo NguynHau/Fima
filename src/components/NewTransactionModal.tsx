@@ -138,17 +138,29 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
     }
   };
 
-  const handleLibraryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLibraryFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setCropModalImageSrc(event.target.result as string);
+      try {
+        const activeQuality: PhotoQuality = photoQuality || 'low';
+        const compressed = await compressImageWithQuality(file, activeQuality);
+        setPhotoBlob(compressed);
+        if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+        const url = URL.createObjectURL(compressed);
+        setPhotoPreviewUrl(url);
+
+        // Trigger AI OCR recognition for new library image if online
+        if (isOnline) {
+          triggerReceiptAnalysis(compressed);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Lỗi khi nén ảnh chọn từ thư viện:', err);
+        setPhotoBlob(file);
+        if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+        const url = URL.createObjectURL(file);
+        setPhotoPreviewUrl(url);
+      }
     }
     if (libraryInputRef.current) {
       libraryInputRef.current.value = '';

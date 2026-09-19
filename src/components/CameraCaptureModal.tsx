@@ -178,13 +178,18 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setCropModalImageSrc(event.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        setIsProcessing(true);
+        const compressed = await compressImageWithQuality(file, photoQuality);
+        stopCamera();
+        onPhotoCaptured(compressed, photoQuality);
+      } catch (err) {
+        console.error('Lỗi khi xử lý ảnh chọn từ thư viện:', err);
+        stopCamera();
+        onPhotoCaptured(file, photoQuality);
+      } finally {
+        setIsProcessing(false);
+      }
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (libraryInputRef.current) libraryInputRef.current.value = '';

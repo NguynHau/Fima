@@ -7,6 +7,9 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
+  Trash2,
+  Download,
+  Check,
 } from 'lucide-react';
 import {
   type Transaction,
@@ -29,6 +32,7 @@ interface TransactionDetailModalProps {
   transactions: Transaction[];
   initialTransactionId: string | null;
   onEditTransaction?: (tx: Transaction) => void;
+  onDeleteTransaction?: (tx: Transaction) => void;
   allTransactions?: Transaction[];
   balances?: BalancesSummary;
   userSettings?: UserSettings | null;
@@ -40,6 +44,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   transactions,
   initialTransactionId,
   onEditTransaction,
+  onDeleteTransaction,
   allTransactions,
   balances,
   userSettings,
@@ -49,6 +54,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const [loadedImages, setLoadedImages] = useState<Record<string, string>>({});
   const [fallbackAllTx, setFallbackAllTx] = useState<Transaction[]>([]);
   const [fallbackSettings, setFallbackSettings] = useState<UserSettings | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   const wheelTimeoutRef = useRef<number | null>(null);
 
@@ -134,6 +141,66 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       setCurrentIndex((prev) => prev - 1);
     }
   }, [currentIndex]);
+
+  const handleDownloadPhoto = async () => {
+    if (!currentTx || !currentTx.imageId) return;
+    try {
+      setIsDownloading(true);
+      const blob = await getImageBlob(currentTx.imageId);
+      const fileName = `fima-${currentTx.date}-${currentTx.id.slice(-6)}.jpg`;
+
+      if (!blob) {
+        const existingUrl = loadedImages[currentTx.imageId];
+        if (existingUrl) {
+          const a = document.createElement('a');
+          a.href = existingUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setDownloadSuccess(true);
+          setTimeout(() => setDownloadSuccess(false), 1500);
+        }
+        return;
+      }
+
+      const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+
+      // If mobile browser supports Web Share with files, invoke native sheet (allows saving directly to Photos app on iOS/Android)
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Ảnh hóa đơn',
+          });
+          setDownloadSuccess(true);
+          setTimeout(() => setDownloadSuccess(false), 1500);
+          return;
+        } catch (shareErr: any) {
+          if (shareErr.name === 'AbortError') {
+            return;
+          }
+          console.warn('Web Share không khả dụng, chuyển sang tải trực tiếp:', shareErr);
+        }
+      }
+
+      // Direct download link trigger fallback
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 1500);
+    } catch (err) {
+      console.error('Lỗi khi tải ảnh về điện thoại:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Calculate balance before and after for the current transaction
   const { photoBalanceBefore, photoBalanceAfter } = useMemo(() => {
@@ -320,6 +387,45 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               aria-label="Chỉnh sửa giao dịch"
             >
               <Pencil size={15} />
+            </button>
+          )}
+
+          {/* Download Photo Button (Kế nút xóa) */}
+          {currentTx?.imageId && (
+            <button
+              type="button"
+              onClick={handleDownloadPhoto}
+              disabled={isDownloading}
+              className={`w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-[#262626] border border-neutral-800 flex items-center justify-center active:scale-95 transition-all cursor-pointer shrink-0 disabled:opacity-50 ${
+                downloadSuccess
+                  ? 'text-emerald-400 border-emerald-500/40 bg-emerald-950/20'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+              title="Tải ảnh về điện thoại"
+              aria-label="Tải ảnh về điện thoại"
+            >
+              {downloadSuccess ? (
+                <Check size={15} className="text-emerald-400" />
+              ) : isDownloading ? (
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Download size={15} />
+              )}
+            </button>
+          )}
+
+          {onDeleteTransaction && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onDeleteTransaction(currentTx);
+              }}
+              className="w-8 h-8 rounded-lg bg-[#1a1a1a] hover:bg-rose-950/40 border border-neutral-800 text-neutral-400 hover:text-rose-400 flex items-center justify-center active:scale-95 transition-colors cursor-pointer shrink-0"
+              title="Xóa giao dịch"
+              aria-label="Xóa giao dịch"
+            >
+              <Trash2 size={15} />
             </button>
           )}
 

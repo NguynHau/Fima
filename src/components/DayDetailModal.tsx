@@ -614,20 +614,29 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
   const handleConfirmDelete = async () => {
     if (!txToDelete) return;
+    const targetTx = txToDelete;
     setIsDeleting(true);
     try {
       if (onDeleteTransaction) {
-        await onDeleteTransaction(txToDelete);
+        await onDeleteTransaction(targetTx);
       } else {
-        await deleteTransaction(txToDelete.id);
+        await deleteTransaction(targetTx.id);
       }
-      if (imageAssets[txToDelete.id]) {
-        URL.revokeObjectURL(imageAssets[txToDelete.id].url);
+      if (imageAssets[targetTx.id]) {
+        try {
+          URL.revokeObjectURL(imageAssets[targetTx.id].url);
+        } catch {}
+      }
+      setDbTransactions((prev) => prev.filter((t) => t.id !== targetTx.id));
+      setFallbackAllTx((prev) => prev.filter((t) => t.id !== targetTx.id));
+      if (selectedPhoto?.tx.id === targetTx.id) {
+        setSelectedPhoto(null);
       }
       setTxToDelete(null);
       setActiveSwipedId(null);
     } catch (err) {
       console.error('Lỗi khi xóa giao dịch:', err);
+      alert('Không thể xóa giao dịch. Vui lòng thử lại.');
     } finally {
       setIsDeleting(false);
     }
@@ -1103,6 +1112,10 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
           transactions={filteredTransactions}
           initialTransactionId={selectedPhoto?.tx.id || null}
           onEditTransaction={onSelectTransaction}
+          onDeleteTransaction={(tx) => {
+            setSelectedPhoto(null);
+            setTxToDelete(tx);
+          }}
           allTransactions={allTransactions}
           balances={balances}
           userSettings={userSettings}
